@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+.pnpm-debug.log*
+
+# Build/Phần mềm tạo ra
+dist/
+build/
+.next/
+out/
+
+# Environment/Bảo mật (Cực kỳ quan trọng)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Hệ điều hành (File rác của máy tính)
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE/Editor (Cấu hình riêng của VS Code)
+.vscode/
+.idea/
