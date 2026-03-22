@@ -32,8 +32,8 @@ export function CustomerList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
-  // Filter customers
   const filteredCustomers = customers.filter(
     (customer) =>
       customer.customer_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -47,10 +47,16 @@ export function CustomerList() {
     setBlockDialogOpen(true);
   };
 
-  const confirmToggleBlock = () => {
-    if (selectedCustomer) {
-      const newActive = !selectedCustomer.is_active;
-      updateCustomer(selectedCustomer.id, { is_active: newActive });
+  const confirmToggleBlock = async () => {
+    if (!selectedCustomer || isUpdatingStatus) {
+      return;
+    }
+
+    const newActive = !selectedCustomer.is_active;
+    setIsUpdatingStatus(true);
+
+    try {
+      await updateCustomer(selectedCustomer.id, { is_active: newActive });
       toast.success(
         `Đã ${!newActive ? "khóa" : "mở khóa"} tài khoản ${
           selectedCustomer.full_name
@@ -58,18 +64,21 @@ export function CustomerList() {
       );
       setBlockDialogOpen(false);
       setSelectedCustomer(null);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Không thể cập nhật trạng thái tài khoản";
+      toast.error(message);
+    } finally {
+      setIsUpdatingStatus(false);
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Quản lý khách hàng</h2>
         <p className="text-gray-600">Xem và quản lý tài khoản khách hàng</p>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-6">
@@ -103,7 +112,6 @@ export function CustomerList() {
         </Card>
       </div>
 
-      {/* Search */}
       <Card>
         <CardContent className="pt-6">
           <div className="relative">
@@ -118,7 +126,6 @@ export function CustomerList() {
         </CardContent>
       </Card>
 
-      {/* Customers table */}
       <Card>
         <CardHeader>
           <CardTitle>Danh sách khách hàng ({filteredCustomers.length})</CardTitle>
@@ -152,7 +159,6 @@ export function CustomerList() {
                           alt={customer.full_name}
                           className="w-10 h-10 rounded-full object-cover"
                           onError={(e) => {
-                            // Fallback to icon if image fails to load
                             e.currentTarget.style.display = 'none';
                             const parent = e.currentTarget.parentElement;
                             if (parent) {
@@ -227,7 +233,6 @@ export function CustomerList() {
         </CardContent>
       </Card>
 
-      {/* Block/Unblock dialog */}
       <AlertDialog open={blockDialogOpen} onOpenChange={setBlockDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -242,8 +247,8 @@ export function CustomerList() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmToggleBlock}>
-              Xác nhận
+            <AlertDialogAction onClick={confirmToggleBlock} disabled={isUpdatingStatus}>
+              {isUpdatingStatus ? "Đang xử lý..." : "Xác nhận"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

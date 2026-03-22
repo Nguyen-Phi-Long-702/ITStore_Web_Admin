@@ -22,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "../../components/ui/table";
-import { formatCurrency, productStatusConfig } from "../../utils/statusUtils";
+import { formatCurrency } from "../../utils/statusUtils";
 import { toast } from "sonner";
 import { useData } from "../../contexts/DataContext";
 
@@ -72,23 +72,14 @@ export function ProductVariantsView() {
     );
     setStockDialogOpen(false);
 
-    // Update the product variant in the context
     updateProductVariant(selectedVariant.id, {
       ...selectedVariant,
       stock: newStock,
     });
   };
 
-  // Group variants by color and version
   const variantsByColor = product.variants?.reduce((acc: any, variant) => {
     const key = variant.color || "Không phân loại";
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(variant);
-    return acc;
-  }, {});
-
-  const variantsByVersion = product.variants?.reduce((acc: any, variant) => {
-    const key = variant.version || "Phiên bản cơ bản";
     if (!acc[key]) acc[key] = [];
     acc[key].push(variant);
     return acc;
@@ -100,7 +91,6 @@ export function ProductVariantsView() {
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/products")}>
@@ -119,7 +109,6 @@ export function ProductVariantsView() {
         </Button>
       </div>
 
-      {/* Stats cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
@@ -151,7 +140,6 @@ export function ProductVariantsView() {
         </Card>
       </div>
 
-      {/* All variants table */}
       <Card>
         <CardHeader>
           <CardTitle>Tất cả biến thể</CardTitle>
@@ -227,7 +215,6 @@ export function ProductVariantsView() {
         </CardContent>
       </Card>
 
-      {/* Stock update dialog */}
       <Dialog open={stockDialogOpen} onOpenChange={setStockDialogOpen}>
         <DialogContent>
           <DialogHeader>

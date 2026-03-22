@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { Label } from "../components/ui/label";
 import {
   Select,
   SelectContent,
@@ -39,181 +38,237 @@ import {
   DollarSign,
   Users,
 } from "lucide-react";
-import {
-  mockRevenueData,
-  mockTopProducts,
-  mockProductVariants,
-} from "../utils/mockData";
 import { formatCurrency } from "../utils/statusUtils";
+import { useData } from "../contexts/DataContext";
 
 export function Reports() {
   const [timeRange, setTimeRange] = useState("week");
+  const { orders, customers, productVariants, products, categories } = useData();
 
-  // Generate data based on time range
   const reportData = useMemo(() => {
-    const multiplier = {
-      week: 1,
-      month: 4,
-      quarter: 12,
-      year: 48,
-    }[timeRange] || 1;
+    const now = new Date();
+    const days = timeRange === "week" ? 7 : timeRange === "month" ? 30 : timeRange === "quarter" ? 90 : 365;
 
-    // Generate revenue data based on time range
-    const generateRevenueData = () => {
-      const days = timeRange === "week" ? 7 : timeRange === "month" ? 30 : timeRange === "quarter" ? 90 : 365;
-      const data = [];
-      const baseRevenue = 6000000;
-      
-      for (let i = days - 1; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        const variation = Math.random() * 0.3 + 0.85; // 85% - 115%
-        data.push({
-          date: date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }),
-          revenue: Math.floor(baseRevenue * variation * (timeRange === "year" ? 7 : timeRange === "quarter" ? 2 : 1)),
-          timestamp: date.getTime(), // Add timestamp for unique identification
-        });
-      }
-      
-      // Group data for better visualization if needed
-      if (timeRange === "year") {
-        // Group by month
-        const monthlyData: { [key: string]: { revenue: number; timestamp: number } } = {};
-        data.forEach((item) => {
-          const monthKey = item.date.split("/")[1] + "/" + item.date.split("/")[2];
-          if (!monthlyData[monthKey]) {
-            monthlyData[monthKey] = { revenue: 0, timestamp: item.timestamp };
-          }
-          monthlyData[monthKey].revenue += item.revenue;
-        });
-        return Object.entries(monthlyData).map(([date, data]) => ({ 
-          date, 
-          revenue: data.revenue,
-          id: `month-${date.replace('/', '-')}-${data.timestamp}`
-        }));
-      } else if (timeRange === "quarter") {
-        // Group by week
-        const weeklyData: { [key: string]: { revenue: number; weekNum: number } } = {};
-        data.forEach((item, index) => {
-          const weekNum = Math.floor(index / 7) + 1;
-          const weekKey = `Tuần ${weekNum}`;
-          if (!weeklyData[weekKey]) {
-            weeklyData[weekKey] = { revenue: 0, weekNum };
-          }
-          weeklyData[weekKey].revenue += item.revenue;
-        });
-        return Object.entries(weeklyData).map(([date, data]) => ({ 
-          date, 
-          revenue: data.revenue,
-          id: `week-${data.weekNum}`
-        }));
-      }
-      
-      return data.map((item, index) => ({ 
-        date: item.date,
-        revenue: item.revenue,
-        id: `day-${item.timestamp}`
-      }));
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - (days - 1));
+
+    const previousStart = new Date(start);
+    previousStart.setDate(previousStart.getDate() - days);
+
+    const inRange = (value: string, rangeStart: Date, rangeEnd: Date) => {
+      const time = new Date(value).getTime();
+      return time >= rangeStart.getTime() && time <= rangeEnd.getTime();
     };
 
-    const totalRevenue = timeRange === "week" 
-      ? 45678000 
-      : timeRange === "month" 
-      ? 182450000 
-      : timeRange === "quarter" 
-      ? 523890000 
-      : 2145600000;
+    const filteredOrders = orders.filter((order) => inRange(order.created_at, start, now));
+    const previousOrders = orders.filter((order) => {
+      const time = new Date(order.created_at).getTime();
+      return time >= previousStart.getTime() && time < start.getTime();
+    });
+    const previousRevenue = previousOrders.reduce((sum, order) => sum + order.total, 0);
+    const previousAvgOrderValue = previousOrders.length > 0 ? Math.floor(previousRevenue / previousOrders.length) : 0;
 
-    const totalOrders = timeRange === "week" 
-      ? 234 
-      : timeRange === "month" 
-      ? 945 
-      : timeRange === "quarter" 
-      ? 2856 
-      : 11345;
+    const filteredCustomers = customers.filter((customer) => inRange(customer.created_at, start, now));
 
-    const newCustomers = timeRange === "week" 
-      ? 23 
-      : timeRange === "month" 
-      ? 89 
-      : timeRange === "quarter" 
-      ? 267 
-      : 1045;
+    const totalRevenue = filteredOrders.reduce((sum, order) => sum + order.total, 0);
+    const totalOrders = filteredOrders.length;
+    const newCustomers = filteredCustomers.length;
+    const avgOrderValue = totalOrders > 0 ? Math.floor(totalRevenue / totalOrders) : 0;
+
+    const revenueData = (() => {
+      if (timeRange === "year") {
+        const monthlyMap = new Map<string, { revenue: number; sortValue: number }>();
+        for (let i = 0; i < 12; i += 1) {
+          const monthDate = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
+          const key = monthDate.toLocaleDateString("vi-VN", { month: "2-digit", year: "numeric" });
+          monthlyMap.set(key, { revenue: 0, sortValue: monthDate.getTime() });
+        }
+
+        filteredOrders.forEach((order) => {
+          const date = new Date(order.created_at);
+          const key = date.toLocaleDateString("vi-VN", { month: "2-digit", year: "numeric" });
+          if (!monthlyMap.has(key)) {
+            monthlyMap.set(key, { revenue: 0, sortValue: new Date(date.getFullYear(), date.getMonth(), 1).getTime() });
+          }
+          const current = monthlyMap.get(key);
+          if (current) {
+            current.revenue += order.total;
+          }
+        });
+
+        return Array.from(monthlyMap.entries())
+          .sort((a, b) => a[1].sortValue - b[1].sortValue)
+          .map(([date, data]) => ({ date, revenue: data.revenue, id: `month-${date.replace("/", "-")}` }));
+      }
+
+      if (timeRange === "quarter") {
+        const weekMap = new Map<string, number>();
+
+        for (let i = 0; i < 13; i += 1) {
+          weekMap.set(`Tuần ${i + 1}`, 0);
+        }
+
+        filteredOrders.forEach((order) => {
+          const orderDate = new Date(order.created_at).getTime();
+          const dayOffset = Math.floor((orderDate - start.getTime()) / (1000 * 60 * 60 * 24));
+          const weekIndex = Math.min(12, Math.max(0, Math.floor(dayOffset / 7)));
+          const weekKey = `Tuần ${weekIndex + 1}`;
+          weekMap.set(weekKey, (weekMap.get(weekKey) || 0) + order.total);
+        });
+
+        return Array.from(weekMap.entries()).map(([date, revenue], index) => ({
+          date,
+          revenue,
+          id: `week-${index + 1}`,
+        }));
+      }
+
+      const dayMap = new Map<string, number>();
+      for (let i = days - 1; i >= 0; i -= 1) {
+        const day = new Date(now);
+        day.setHours(0, 0, 0, 0);
+        day.setDate(day.getDate() - i);
+        dayMap.set(day.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }), 0);
+      }
+
+      filteredOrders.forEach((order) => {
+        const key = new Date(order.created_at).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+        if (dayMap.has(key)) {
+          dayMap.set(key, (dayMap.get(key) || 0) + order.total);
+        }
+      });
+
+      return Array.from(dayMap.entries()).map(([date, revenue], index) => ({
+        date,
+        revenue,
+        id: `day-${index + 1}`,
+      }));
+    })();
 
     const orderStatusData = [
-      { 
-        name: "Hoàn thành", 
-        value: Math.floor(156 * multiplier), 
+      {
+        name: "Hoàn thành",
+        value: filteredOrders.filter((order) => order.order_status === "delivered").length,
         color: "#10b981",
-        id: "status-completed"
+        id: "status-completed",
       },
-      { 
-        name: "Đang giao", 
-        value: Math.floor(42 * multiplier), 
+      {
+        name: "Đang giao",
+        value: filteredOrders.filter((order) => order.order_status === "shipping").length,
         color: "#3b82f6",
-        id: "status-shipping"
+        id: "status-shipping",
       },
-      { 
-        name: "Đang xử lý", 
-        value: Math.floor(28 * multiplier), 
+      {
+        name: "Đang xử lý",
+        value: filteredOrders.filter((order) => ["pending", "confirmed", "preparing", "packed"].includes(order.order_status)).length,
         color: "#f59e0b",
-        id: "status-processing"
+        id: "status-processing",
       },
-      { 
-        name: "Đã hủy", 
-        value: Math.floor(8 * multiplier), 
+      {
+        name: "Đã hủy",
+        value: filteredOrders.filter((order) => order.order_status === "cancelled").length,
         color: "#ef4444",
-        id: "status-cancelled"
+        id: "status-cancelled",
       },
     ];
 
-    const categoryData = [
-      { 
-        category: "Vi điều khiển", 
-        revenue: Math.floor(12500000 * multiplier), 
-        orders: Math.floor(85 * multiplier),
-        id: "cat-microcontroller"
-      },
-      { 
-        category: "Cảm biến", 
-        revenue: Math.floor(8900000 * multiplier), 
-        orders: Math.floor(132 * multiplier),
-        id: "cat-sensor"
-      },
-      { 
-        category: "Module điều khiển", 
-        revenue: Math.floor(6700000 * multiplier), 
-        orders: Math.floor(95 * multiplier),
-        id: "cat-module"
-      },
-      { 
-        category: "Led", 
-        revenue: Math.floor(5200000 * multiplier), 
-        orders: Math.floor(178 * multiplier),
-        id: "cat-led"
-      },
-      { 
-        category: "Động cơ", 
-        revenue: Math.floor(4800000 * multiplier), 
-        orders: Math.floor(64 * multiplier),
-        id: "cat-motor"
-      },
-    ];
+    const categoryMap = new Map<number, { revenue: number; orders: number }>();
+    filteredOrders.forEach((order) => {
+      order.items?.forEach((item) => {
+        const variant = productVariants.find((v) => v.id === item.variant_id);
+        const product = variant ? products.find((p) => p.id === variant.product_id) : undefined;
+        if (!product) {
+          return;
+        }
+
+        const current = categoryMap.get(product.category_id) || { revenue: 0, orders: 0 };
+        categoryMap.set(product.category_id, {
+          revenue: current.revenue + item.subtotal,
+          orders: current.orders + item.quantity,
+        });
+      });
+    });
+
+    const categoryData = Array.from(categoryMap.entries())
+      .map(([categoryId, data]) => ({
+        category: categories.find((c) => c.id === categoryId)?.name || `Danh mục ${categoryId}`,
+        revenue: data.revenue,
+        orders: data.orders,
+        id: `cat-${categoryId}`,
+      }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5);
+
+    const topProducts = (() => {
+      const productMap = new Map<number, { totalSold: number; totalRevenue: number }>();
+
+      filteredOrders.forEach((order) => {
+        order.items?.forEach((item) => {
+          const variant = productVariants.find((v) => v.id === item.variant_id);
+          if (!variant) {
+            return;
+          }
+
+          const current = productMap.get(variant.product_id) || { totalSold: 0, totalRevenue: 0 };
+          productMap.set(variant.product_id, {
+            totalSold: current.totalSold + item.quantity,
+            totalRevenue: current.totalRevenue + item.subtotal,
+          });
+        });
+      });
+
+      return Array.from(productMap.entries())
+        .map(([productId, data]) => ({
+          product_id: productId,
+          product_name: products.find((product) => product.id === productId)?.name || `SP-${productId}`,
+          total_sold: data.totalSold,
+          total_revenue: data.totalRevenue,
+        }))
+        .sort((a, b) => b.total_sold - a.total_sold)
+        .slice(0, 5);
+    })();
+
+    const lowStockProducts = productVariants.filter((variant) => variant.stock > 0 && variant.stock < 10).slice(0, 5);
 
     return {
-      revenueData: generateRevenueData(),
+      revenueData,
       totalRevenue,
       totalOrders,
-      avgOrderValue: Math.floor(totalRevenue / totalOrders),
+      avgOrderValue,
       newCustomers,
       orderStatusData,
       categoryData,
+      topProducts,
+      lowStockProducts,
+      previousRevenue,
+      previousOrders: previousOrders.length,
+      previousAvgOrderValue,
+      previousCustomers: customers.filter((customer) => {
+        const time = new Date(customer.created_at).getTime();
+        return time >= previousStart.getTime() && time < start.getTime();
+      }).length,
     };
-  }, [timeRange]);
+  }, [timeRange, orders, customers, productVariants, products, categories]);
+
+  const growth = useMemo(() => {
+    const calcGrowth = (current: number, previous: number) => {
+      if (previous === 0) {
+        return current === 0 ? 0 : 100;
+      }
+      return Number((((current - previous) / previous) * 100).toFixed(1));
+    };
+
+    return {
+      revenue: calcGrowth(reportData.totalRevenue, reportData.previousRevenue),
+      orders: calcGrowth(reportData.totalOrders, reportData.previousOrders),
+      avgOrderValue: calcGrowth(reportData.avgOrderValue, reportData.previousAvgOrderValue),
+      customers: calcGrowth(reportData.newCustomers, reportData.previousCustomers),
+    };
+  }, [reportData]);
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Báo cáo & Thống kê</h2>
@@ -240,7 +295,6 @@ export function Reports() {
         </div>
       </div>
 
-      {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
@@ -252,7 +306,7 @@ export function Reports() {
                 </p>
                 <div className="flex items-center gap-1 mt-1">
                   <TrendingUp className="h-4 w-4 text-green-600" />
-                  <span className="text-sm text-green-600">+12.5%</span>
+                  <span className="text-sm text-green-600">{growth.revenue > 0 ? "+" : ""}{growth.revenue}%</span>
                 </div>
               </div>
               <DollarSign className="h-8 w-8 text-green-600" />
@@ -268,7 +322,7 @@ export function Reports() {
                 <p className="text-2xl font-bold text-blue-600">{reportData.totalOrders}</p>
                 <div className="flex items-center gap-1 mt-1">
                   <TrendingUp className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm text-blue-600">+8.3%</span>
+                  <span className="text-sm text-blue-600">{growth.orders > 0 ? "+" : ""}{growth.orders}%</span>
                 </div>
               </div>
               <Package className="h-8 w-8 text-blue-600" />
@@ -286,7 +340,7 @@ export function Reports() {
                 </p>
                 <div className="flex items-center gap-1 mt-1">
                   <TrendingUp className="h-4 w-4 text-purple-600" />
-                  <span className="text-sm text-purple-600">+5.2%</span>
+                  <span className="text-sm text-purple-600">{growth.avgOrderValue > 0 ? "+" : ""}{growth.avgOrderValue}%</span>
                 </div>
               </div>
               <DollarSign className="h-8 w-8 text-purple-600" />
@@ -302,7 +356,7 @@ export function Reports() {
                 <p className="text-2xl font-bold text-orange-600">{reportData.newCustomers}</p>
                 <div className="flex items-center gap-1 mt-1">
                   <TrendingUp className="h-4 w-4 text-orange-600" />
-                  <span className="text-sm text-orange-600">+15.2%</span>
+                  <span className="text-sm text-orange-600">{growth.customers > 0 ? "+" : ""}{growth.customers}%</span>
                 </div>
               </div>
               <Users className="h-8 w-8 text-orange-600" />
@@ -311,9 +365,7 @@ export function Reports() {
         </Card>
       </div>
 
-      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Revenue trend */}
         <Card>
           <CardHeader>
             <CardTitle>Xu hướng doanh thu</CardTitle>
@@ -339,7 +391,6 @@ export function Reports() {
           </CardContent>
         </Card>
 
-        {/* Order status */}
         <Card>
           <CardHeader>
             <CardTitle>Phân bổ trạng thái đơn hàng</CardTitle>
@@ -358,7 +409,7 @@ export function Reports() {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {reportData.orderStatusData.map((entry, index) => (
+                  {reportData.orderStatusData.map((entry) => (
                     <Cell key={`cell-${entry.id}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -368,7 +419,6 @@ export function Reports() {
           </CardContent>
         </Card>
 
-        {/* Category revenue */}
         <Card>
           <CardHeader>
             <CardTitle>Doanh thu theo danh mục</CardTitle>
@@ -392,7 +442,6 @@ export function Reports() {
           </CardContent>
         </Card>
 
-        {/* Low stock products */}
         <Card>
           <CardHeader>
             <CardTitle>Sản phẩm sắp hết hàng</CardTitle>
@@ -407,9 +456,7 @@ export function Reports() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockProductVariants
-                  .filter((v) => v.stock > 0 && v.stock < 10)
-                  .slice(0, 5)
+                {reportData.lowStockProducts
                   .map((variant) => (
                     <TableRow key={variant.id}>
                       <TableCell className="font-mono text-sm">
@@ -440,7 +487,6 @@ export function Reports() {
         </Card>
       </div>
 
-      {/* Top products */}
       <Card>
         <CardHeader>
           <CardTitle>Sản phẩm bán chạy nhất</CardTitle>
@@ -456,7 +502,7 @@ export function Reports() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockTopProducts.map((product, index) => (
+              {reportData.topProducts.map((product, index) => (
                 <TableRow key={product.product_id}>
                   <TableCell>
                     <div

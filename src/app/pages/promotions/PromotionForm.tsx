@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router";
 import { ArrowLeft, Save } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
@@ -24,6 +24,7 @@ export function PromotionForm() {
   const existingCoupon = isEdit
     ? coupons.find((c) => c.id.toString() === id)
     : null;
+  const hydratedCouponIdRef = useRef<string | null>(null);
 
   const [formData, setFormData] = useState({
     code: existingCoupon?.code || "",
@@ -35,9 +36,13 @@ export function PromotionForm() {
     is_active: existingCoupon?.is_active ?? true,
   });
 
-  // Update form data when existingCoupon changes
   useEffect(() => {
-    if (existingCoupon) {
+    if (!isEdit) {
+      hydratedCouponIdRef.current = null;
+      return;
+    }
+
+    if (existingCoupon && hydratedCouponIdRef.current !== existingCoupon.id.toString()) {
       setFormData({
         code: existingCoupon.code,
         discount_type: existingCoupon.discount_type,
@@ -47,10 +52,27 @@ export function PromotionForm() {
         expires_at: existingCoupon.expires_at || "",
         is_active: existingCoupon.is_active,
       });
+      hydratedCouponIdRef.current = existingCoupon.id.toString();
     }
-  }, [existingCoupon]);
+  }, [isEdit, existingCoupon]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const normalizeExpiresAt = (value: string) => {
+    if (!value) {
+      return undefined;
+    }
+
+    if (/Z$|[+-]\d{2}:\d{2}$/.test(value)) {
+      return value;
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) {
+      return `${value}:00`;
+    }
+
+    return value;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.code || !formData.discount_value) {
@@ -58,20 +80,42 @@ export function PromotionForm() {
       return;
     }
 
-    if (isEdit && existingCoupon) {
-      updateCoupon(existingCoupon.id, formData);
-      toast.success("Cập nhật mã giảm giá thành công");
-    } else {
-      addCoupon(formData);
-      toast.success("Tạo mã giảm giá mới thành công");
-    }
+    const normalizedPayload = {
+      ...formData,
+      code: formData.code.trim().toUpperCase(),
+      discount_value: Number(formData.discount_value),
+      min_order_value: Number(formData.min_order_value) || 0,
+      max_uses: Number(formData.max_uses) || 0,
+      expires_at: normalizeExpiresAt(formData.expires_at) || "",
+    };
 
-    navigate("/promotions");
+    try {
+      if (isEdit && existingCoupon) {
+        await updateCoupon(existingCoupon.id, {
+          ...normalizedPayload,
+          used_count: existingCoupon.used_count || 0,
+        });
+        toast.success("Cập nhật mã giảm giá thành công");
+      } else {
+        await addCoupon({
+          ...normalizedPayload,
+          used_count: 0,
+        });
+        toast.success("Tạo mã giảm giá mới thành công");
+      }
+
+      navigate("/promotions");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Không thể lưu mã giảm giá lên backend";
+      toast.error(message);
+    }
   };
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
       <div className="flex items-center gap-4">
         <Button
           variant="ghost"
@@ -94,7 +138,6 @@ export function PromotionForm() {
 
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main content */}
           <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader>
@@ -226,7 +269,6 @@ export function PromotionForm() {
             </Card>
           </div>
 
-          {/* Sidebar */}
           <div className="space-y-6">
             <Card>
               <CardHeader>

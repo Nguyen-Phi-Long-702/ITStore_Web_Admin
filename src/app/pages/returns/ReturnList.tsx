@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { Search, Filter, ArrowUpDown, Eye } from "lucide-react";
+import { Filter, ArrowUpDown, Eye } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -42,9 +42,7 @@ export function ReturnList() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"date" | "amount">("date");
 
-  // Filter returns
   let filteredReturns = returnRequests.filter((returnRequest) => {
-    // Generate codes for searching
     const returnCode = `YC${returnRequest.id.toString().padStart(6, "0")}`;
     const orderCode = returnRequest.order_id ? `DH${returnRequest.order_id.toString().padStart(6, "0")}` : "";
     
@@ -59,7 +57,6 @@ export function ReturnList() {
     return matchesSearch && matchesStatus;
   });
 
-  // Sort returns
   filteredReturns.sort((a, b) => {
     if (sortBy === "date") {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
@@ -77,13 +74,11 @@ export function ReturnList() {
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Quản lý trả hàng</h2>
         <p className="text-gray-600">Xử lý yêu cầu trả hàng và hoàn tiền</p>
       </div>
 
-      {/* Stats cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
@@ -111,7 +106,6 @@ export function ReturnList() {
         </Card>
       </div>
 
-      {/* Filters and search */}
       <Card>
         <CardHeader>
           <CardTitle>Danh sách yêu cầu trả hàng</CardTitle>
@@ -150,7 +144,6 @@ export function ReturnList() {
             </Select>
           </div>
 
-          {/* Table */}
           <div className="border rounded-lg">
             <Table>
               <TableHeader>

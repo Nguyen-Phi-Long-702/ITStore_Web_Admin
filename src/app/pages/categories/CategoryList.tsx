@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Search, Plus, Edit, Trash2, FolderOpen } from "lucide-react";
+import { Search, Plus, Edit, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import {
@@ -48,15 +47,13 @@ export function CategoryList() {
     name: "",
   });
 
-  // Count products for each category
   const getProductCount = (categoryId: number) => {
     return products.filter((product) => product.category_id === categoryId).length;
   };
 
-  // Filter categories
   const filteredCategories = categories.filter((category) =>
     category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    category.category_code.toLowerCase().includes(searchTerm.toLowerCase())
+    (category.category_code || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleAdd = () => {
@@ -78,7 +75,7 @@ export function CategoryList() {
     setDeleteDialogOpen(true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.name.trim()) {
       toast.error("Vui lòng nhập tên danh mục");
       return;
@@ -86,27 +83,29 @@ export function CategoryList() {
 
     const slug = generateSlug(formData.name);
 
-    if (selectedCategory) {
-      // Edit existing category
-      updateCategory(selectedCategory.id, {
-        name: formData.name,
-        slug: slug,
-      });
-      toast.success(`Đã cập nhật danh mục "${formData.name}"`);
-    } else {
-      // Add new category
-      addCategory({
-        name: formData.name,
-        slug: slug,
-      });
-      toast.success(`Đã thêm danh mục "${formData.name}"`);
-    }
+    try {
+      if (selectedCategory) {
+        await updateCategory(selectedCategory.id, {
+          name: formData.name,
+          slug: slug,
+        });
+        toast.success(`Đã cập nhật danh mục "${formData.name}"`);
+      } else {
+        await addCategory({
+          name: formData.name,
+          slug: slug,
+        });
+        toast.success(`Đã thêm danh mục "${formData.name}"`);
+      }
 
-    setDialogOpen(false);
-    setFormData({ name: "" });
+      setDialogOpen(false);
+      setFormData({ name: "" });
+    } catch {
+      toast.error("Không thể lưu dữ liệu lên backend");
+    }
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (selectedCategory) {
       const productCount = getProductCount(selectedCategory.id);
       if (productCount > 0) {
@@ -118,16 +117,19 @@ export function CategoryList() {
         return;
       }
 
-      deleteCategory(selectedCategory.id);
-      toast.success(`Đã xóa danh mục "${selectedCategory.name}"`);
-      setDeleteDialogOpen(false);
-      setSelectedCategory(null);
+      try {
+        await deleteCategory(selectedCategory.id);
+        toast.success(`Đã xóa danh mục "${selectedCategory.name}"`);
+        setDeleteDialogOpen(false);
+        setSelectedCategory(null);
+      } catch {
+        toast.error("Không thể xóa danh mục trên backend");
+      }
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Quản lý danh mục</h2>
@@ -141,7 +143,6 @@ export function CategoryList() {
         )}
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
@@ -165,7 +166,6 @@ export function CategoryList() {
         </Card>
       </div>
 
-      {/* Search */}
       <Card>
         <CardContent className="pt-6">
           <div className="relative">
@@ -180,7 +180,6 @@ export function CategoryList() {
         </CardContent>
       </Card>
 
-      {/* Categories table */}
       <Card>
         <CardHeader>
           <CardTitle>Danh sách danh mục ({filteredCategories.length})</CardTitle>
@@ -229,7 +228,9 @@ export function CategoryList() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {new Date(category.created_at).toLocaleDateString("vi-VN")}
+                        {Number.isNaN(new Date(category.created_at).getTime())
+                          ? "-"
+                          : new Date(category.created_at).toLocaleDateString("vi-VN")}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -264,7 +265,6 @@ export function CategoryList() {
         </CardContent>
       </Card>
 
-      {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -301,7 +301,6 @@ export function CategoryList() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete confirmation dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

@@ -5,10 +5,8 @@ import {
   Package,
   User,
   MapPin,
-  CreditCard,
   FileText,
   XCircle,
-  RefreshCw,
   CheckCircle,
   Truck,
   RotateCcw,
@@ -16,14 +14,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
-import { Separator } from "../../components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -79,7 +69,6 @@ export function OrderDetail() {
 
   const orderNumber = `DH${order.id.toString().padStart(6, "0")}`;
 
-  // Check if this order has return request
   const hasReturnRequest = returnRequests.some(
     (r) => r.order_id === order.id
   );
@@ -113,7 +102,6 @@ export function OrderDetail() {
     }
     toast.success("Đã tạo yêu cầu trả hàng");
     setReturnDialogOpen(false);
-    // Navigate to returns after a short delay
     setTimeout(() => {
       navigate("/returns");
     }, 1000);
@@ -123,7 +111,6 @@ export function OrderDetail() {
     toast.info("Chức năng in phiếu giao hàng");
   };
 
-  // Timeline steps
   const orderTimeline = [
     { status: "pending", label: "Chờ xác nhận", completed: true },
     {
@@ -155,14 +142,12 @@ export function OrderDetail() {
     },
   ];
 
-  // Format shipping address
   const shippingAddress = order.address
     ? `${order.address.street}, ${order.address.ward}, ${order.address.district}, ${order.address.province}`
     : "Chưa có địa chỉ";
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/orders")}>
@@ -215,7 +200,6 @@ export function OrderDetail() {
         </div>
       </div>
 
-      {/* Order timeline */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
@@ -257,9 +241,7 @@ export function OrderDetail() {
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Order items */}
           <Card>
             <CardHeader>
               <CardTitle>Sản phẩm đã đặt</CardTitle>
@@ -333,7 +315,6 @@ export function OrderDetail() {
             </CardContent>
           </Card>
 
-          {/* Customer info */}
           <Card>
             <CardHeader>
               <CardTitle>Thông tin khách hàng</CardTitle>
@@ -366,9 +347,7 @@ export function OrderDetail() {
           </Card>
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
-          {/* Order status */}
           <Card>
             <CardHeader>
               <CardTitle>Cập nhật trạng thái</CardTitle>
@@ -441,7 +420,6 @@ export function OrderDetail() {
             </CardContent>
           </Card>
 
-          {/* Payment info */}
           <Card>
             <CardHeader>
               <CardTitle>Thanh toán</CardTitle>
@@ -476,7 +454,6 @@ export function OrderDetail() {
             </CardContent>
           </Card>
 
-          {/* Order info */}
           <Card>
             <CardHeader>
               <CardTitle>Thông tin đơn hàng</CardTitle>
@@ -497,7 +474,6 @@ export function OrderDetail() {
         </div>
       </div>
 
-      {/* Cancel dialog */}
       <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -528,7 +504,6 @@ export function OrderDetail() {
         </DialogContent>
       </Dialog>
 
-      {/* Refund dialog */}
       <Dialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -557,7 +532,6 @@ export function OrderDetail() {
         </DialogContent>
       </Dialog>
 
-      {/* Return dialog */}
       <Dialog open={returnDialogOpen} onOpenChange={setReturnDialogOpen}>
         <DialogContent>
           <DialogHeader>

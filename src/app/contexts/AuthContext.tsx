@@ -15,19 +15,16 @@ interface User {
 }
 
 interface Permissions {
-  // Navigation
   canAccessReports: boolean;
   canAccessSettings: boolean;
   canAccessPromotions: boolean;
   canAccessReturns: boolean;
   
-  // Products
   canCreateProduct: boolean;
   canEditProduct: boolean;
   canDeleteProduct: boolean;
   canManageInventory: boolean;
   
-  // Categories & Brands
   canCreateCategory: boolean;
   canEditCategory: boolean;
   canDeleteCategory: boolean;
@@ -35,18 +32,15 @@ interface Permissions {
   canEditBrand: boolean;
   canDeleteBrand: boolean;
   
-  // Orders
   canViewOrders: boolean;
   canEditOrderStatus: boolean;
   canCancelOrder: boolean;
   canProcessRefund: boolean;
   
-  // Customers
   canViewCustomers: boolean;
   canEditCustomer: boolean;
   canDeleteCustomer: boolean;
   
-  // Promotions
   canCreatePromotion: boolean;
   canEditPromotion: boolean;
   canDeletePromotion: boolean;
@@ -56,39 +50,281 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   permissions: Permissions;
-  login: (username: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
   isLoading: boolean;
   hasPermission: (permission: keyof Permissions) => boolean;
-  updateUser: (updates: Partial<Omit<User, "id" | "username" | "role" | "created_at">>) => void;
-  changePassword: (oldPassword: string, newPassword: string) => Promise<boolean>;
+  updateUser: (
+    updates: Partial<Omit<User, "id" | "username" | "role" | "created_at" | "email">>,
+  ) => Promise<{ ok: boolean; message?: string }>;
+  changePassword: (
+    oldPassword: string,
+    newPassword: string,
+  ) => Promise<{ ok: boolean; message?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users for authentication
-const MOCK_USERS: Array<User & { password: string }> = [
-  {
-    id: 24521007,
-    username: "admin",
-    password: "admin123",
-    full_name: "Nguyễn Phi Long",
-    email: "24521007@gm.uit.edu.vn",
-    role: "admin",
-    phone: "0123456789",
-    date_of_birth: "2006-02-07",
-    gender: "male",
-    address: "123 đường A, HCM",
-    created_at: "2026-02-07T00:00:00Z",
-  },
-];
-
 const AUTH_STORAGE_KEY = "auth_user";
+const ACCESS_TOKEN_STORAGE_KEY = "auth_access_token";
+const REFRESH_TOKEN_STORAGE_KEY = "auth_refresh_token";
+const API_BASE_URL = "http://localhost:3000";
 
-// Permission configuration by role
+function getAuthHeaders(headers?: HeadersInit): HeadersInit {
+  const rawToken = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+  const token = rawToken?.trim();
+  if (!token || token === "undefined" || token === "null") {
+    if (rawToken) {
+      localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+    }
+    return headers ?? {};
+  }
+
+  return {
+    ...(headers ?? {}),
+    Authorization: `Bearer ${token}`,
+  };
+}
+
+type AuthPayload = {
+  access_token?: string;
+  accessToken?: string;
+  token?: string;
+  refresh_token?: string;
+  refreshToken?: string;
+  user?: any;
+  data?: {
+    access_token?: string;
+    accessToken?: string;
+    token?: string;
+    refresh_token?: string;
+    refreshToken?: string;
+    user?: any;
+  };
+};
+
+function firstNonEmptyString(...values: unknown[]): string | null {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim().length > 0) {
+      return value;
+    }
+  }
+  return null;
+}
+
+function resolveAccessToken(payload: AuthPayload | any): string | null {
+  return firstNonEmptyString(
+    payload?.access_token,
+    payload?.accessToken,
+    payload?.token,
+    payload?.jwt,
+    payload?.bearerToken,
+    payload?.data?.access_token,
+    payload?.data?.accessToken,
+    payload?.data?.token,
+    payload?.data?.jwt,
+    payload?.data?.bearerToken,
+    payload?.tokens?.access_token,
+    payload?.tokens?.accessToken,
+    payload?.tokens?.token,
+    payload?.data?.tokens?.access_token,
+    payload?.data?.tokens?.accessToken,
+    payload?.data?.tokens?.token,
+    payload?.auth?.access_token,
+    payload?.auth?.accessToken,
+    payload?.auth?.token,
+    payload?.data?.auth?.access_token,
+    payload?.data?.auth?.accessToken,
+    payload?.data?.auth?.token,
+  );
+}
+
+function resolveRefreshToken(payload: AuthPayload | any): string | null {
+  return firstNonEmptyString(
+    payload?.refresh_token,
+    payload?.refreshToken,
+    payload?.data?.refresh_token,
+    payload?.data?.refreshToken,
+    payload?.tokens?.refresh_token,
+    payload?.tokens?.refreshToken,
+    payload?.data?.tokens?.refresh_token,
+    payload?.data?.tokens?.refreshToken,
+    payload?.auth?.refresh_token,
+    payload?.auth?.refreshToken,
+    payload?.data?.auth?.refresh_token,
+    payload?.data?.auth?.refreshToken,
+  );
+}
+
+function toAdminUser(raw: any): User | null {
+  if (!raw?.id || !raw?.email) {
+    return null;
+  }
+
+  if (raw.role && raw.role !== "admin") {
+    return null;
+  }
+
+  const fallbackUsername =
+    typeof raw.email === "string" && raw.email.includes("@")
+      ? raw.email.split("@")[0]
+      : `admin-${raw.id}`;
+
+  return {
+    id: raw.id,
+    username: raw.username || fallbackUsername,
+    full_name: raw.full_name || raw.name || fallbackUsername,
+    email: raw.email,
+    role: "admin",
+    avatar: raw.avatar || raw.avatar_url,
+    phone: raw.phone || raw.phone_number,
+    date_of_birth: raw.date_of_birth,
+    gender: raw.gender,
+    address: raw.address,
+    created_at: raw.created_at || new Date().toISOString(),
+  };
+}
+
+function extractRawUser(payload: any): any {
+  return (
+    payload?.user ??
+    payload?.data?.user ??
+    payload?.data?.profile ??
+    payload?.profile ??
+    payload?.data ??
+    payload
+  );
+}
+
+async function fetchCurrentUser(userId?: number): Promise<User | null> {
+  const endpoints = [
+    "/api/auth/me",
+    "/auth/me",
+    "/api/admin/users/me",
+    "/api/admin/profile",
+    "/admins/me",
+    ...(userId ? [`/api/admin/users/${userId}`, `/admins/${userId}`, `/api/users/${userId}`] : []),
+  ];
+
+  for (const endpoint of endpoints) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: "GET",
+        credentials: "include",
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        continue;
+      }
+
+      const payload = (await response.json().catch(() => null)) as any;
+      const userFromApi = toAdminUser(extractRawUser(payload));
+      if (userFromApi) {
+        return userFromApi;
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
+function toCamelPayload(input: Record<string, unknown>): Record<string, unknown> {
+  const output: Record<string, unknown> = {};
+
+  if (Object.prototype.hasOwnProperty.call(input, "full_name")) {
+    output.fullName = input.full_name;
+  }
+  if (Object.prototype.hasOwnProperty.call(input, "date_of_birth")) {
+    output.dateOfBirth = input.date_of_birth;
+  }
+  if (Object.prototype.hasOwnProperty.call(input, "phone")) {
+    output.phone = input.phone;
+  }
+  if (Object.prototype.hasOwnProperty.call(input, "gender")) {
+    output.gender = input.gender;
+  }
+  if (Object.prototype.hasOwnProperty.call(input, "address")) {
+    output.address = input.address;
+  }
+  if (Object.prototype.hasOwnProperty.call(input, "avatar")) {
+    output.avatar = input.avatar;
+    output.avatarUrl = input.avatar;
+  }
+
+  return output;
+}
+
+function toAdminApiPayload(input: Record<string, unknown>): Record<string, unknown> {
+  const output: Record<string, unknown> = {};
+
+  if (Object.prototype.hasOwnProperty.call(input, "full_name")) {
+    output.full_name = input.full_name;
+    output.fullName = input.full_name;
+  }
+  if (Object.prototype.hasOwnProperty.call(input, "phone")) {
+    output.phone = input.phone;
+    output.phone_number = input.phone;
+    output.phoneNumber = input.phone;
+  }
+  if (Object.prototype.hasOwnProperty.call(input, "avatar")) {
+    output.avatar = input.avatar;
+    output.avatar_url = input.avatar;
+    output.avatarUrl = input.avatar;
+  }
+
+  return output;
+}
+
+function collectApiError(payload: any, status: number): string {
+  const candidates = [
+    payload?.message,
+    payload?.error,
+    payload?.errors?.message,
+    Array.isArray(payload?.errors) ? payload.errors.join(", ") : null,
+  ];
+
+  for (const value of candidates) {
+    if (typeof value === "string" && value.trim().length > 0) {
+      return value;
+    }
+  }
+
+  return `HTTP ${status}`;
+}
+
+function clearAuthState() {
+  localStorage.removeItem(AUTH_STORAGE_KEY);
+  localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
+}
+
+async function postAuth(endpoint: string, body: Record<string, unknown>): Promise<any | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    const payload = (await response.json().catch(() => null)) as AuthPayload | any;
+
+    if (!response.ok) {
+      return payload;
+    }
+
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
 const ROLE_PERMISSIONS: Record<"admin", Permissions> = {
   admin: {
-    // Admin has full access
     canAccessReports: true,
     canAccessSettings: true,
     canAccessPromotions: true,
@@ -125,11 +361,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Get permissions based on user role
   const permissions: Permissions = user
     ? ROLE_PERMISSIONS[user.role]
     : {
-        // Default to restrictive permissions
         canAccessReports: false,
         canAccessSettings: false,
         canAccessPromotions: false,
@@ -156,80 +390,429 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         canDeletePromotion: false,
       };
 
-  // Load user from localStorage on mount
   useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem(AUTH_STORAGE_KEY);
-      if (storedUser) {
-        const parsedUser = JSON.parse(storedUser);
-        // Clean up avatar field if it exists and references figma:asset
-        if (parsedUser.avatar && typeof parsedUser.avatar === 'string' && parsedUser.avatar.startsWith('figma:asset')) {
-          delete parsedUser.avatar;
+    let mounted = true;
+
+    const bootstrapAuth = async () => {
+      try {
+        const rawToken = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+        const token = rawToken?.trim();
+        const storedUser = localStorage.getItem(AUTH_STORAGE_KEY);
+        let parsedUser: User | null = null;
+
+        if (storedUser) {
+          try {
+            const parsed = JSON.parse(storedUser);
+            if (parsed?.avatar && typeof parsed.avatar === "string" && parsed.avatar.startsWith("figma:asset")) {
+              delete parsed.avatar;
+            }
+            parsedUser = parsed;
+            if (mounted) {
+              setUser(parsed);
+            }
+          } catch {
+            localStorage.removeItem(AUTH_STORAGE_KEY);
+          }
         }
-        setUser(parsedUser);
+
+        if (!token || token === "undefined" || token === "null") {
+          localStorage.removeItem(AUTH_STORAGE_KEY);
+          localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+          localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
+          if (mounted) {
+            setUser(null);
+          }
+          return;
+        }
+
+        const backendUser = await fetchCurrentUser(parsedUser?.id);
+        if (backendUser) {
+          localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(backendUser));
+          if (mounted) {
+            setUser(backendUser);
+          }
+        } else if (!parsedUser) {
+          localStorage.removeItem(AUTH_STORAGE_KEY);
+          if (mounted) {
+            setUser(null);
+          }
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
-    } catch (error) {
-      console.error("Failed to parse stored user:", error);
-      localStorage.removeItem(AUTH_STORAGE_KEY);
-    } finally {
-      setIsLoading(false);
-    }
+    };
+
+    bootstrapAuth();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  const login = async (username: string, password: string): Promise<boolean> => {
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
+  const login = async (email: string, password: string): Promise<boolean> => {
+    const endpoints = ["/api/auth/login", "/auth/login", "/admins/login", "/login"];
 
-    const foundUser = MOCK_USERS.find(
-      (u) => u.username === username && u.password === password
-    );
+    for (const endpoint of endpoints) {
+      const payload = await postAuth(endpoint, { email, password });
+      const rawUser = payload?.user ?? payload?.data?.user ?? payload;
+      const userFromApi = toAdminUser(rawUser);
 
-    if (foundUser) {
-      const { password: _, ...userWithoutPassword } = foundUser;
-      setUser(userWithoutPassword);
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userWithoutPassword));
+      if (!userFromApi) {
+        continue;
+      }
+
+      const accessToken = resolveAccessToken(payload);
+      const refreshToken = resolveRefreshToken(payload);
+
+      const backendUser = await fetchCurrentUser(userFromApi.id);
+      const finalUser = backendUser ?? userFromApi;
+
+      setUser(finalUser);
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(finalUser));
+      localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+      localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
+      if (accessToken) {
+        localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
+      }
+      if (refreshToken) {
+        localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken);
+      }
       return true;
     }
 
     return false;
   };
 
-  const logout = () => {
+  const logout = async (): Promise<void> => {
+    const endpoints = ["/api/auth/logout", "/auth/logout", "/logout"];
+    const refreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)?.trim();
+    const payload = refreshToken
+      ? { refresh_token: refreshToken, refreshToken }
+      : {};
+
+    for (const endpoint of endpoints) {
+      try {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+          method: "POST",
+          credentials: "include",
+          headers: getAuthHeaders({
+            "Content-Type": "application/json",
+          }),
+          body: JSON.stringify(payload),
+        });
+
+        if (response.ok) {
+          break;
+        }
+
+        if (response.status === 404) {
+          continue;
+        }
+      } catch {
+        continue;
+      }
+    }
+
     setUser(null);
-    localStorage.removeItem(AUTH_STORAGE_KEY);
+    clearAuthState();
   };
 
   const hasPermission = (permission: keyof Permissions): boolean => {
     return permissions[permission];
   };
 
-  const updateUser = (updates: Partial<Omit<User, "id" | "username" | "role" | "created_at">>) => {
-    if (user) {
-      const updatedUser = { ...user, ...updates };
-      setUser(updatedUser);
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updatedUser));
+  const updateUser = async (
+    updates: Partial<Omit<User, "id" | "username" | "role" | "created_at" | "email">>,
+  ): Promise<{ ok: boolean; message?: string }> => {
+    if (!user) {
+      return { ok: false, message: "Không tìm thấy thông tin đăng nhập" };
     }
-  };
 
-  const changePassword = async (oldPassword: string, newPassword: string): Promise<boolean> => {
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    const nextUser = { ...user, ...updates };
+    const requestPayload: Record<string, unknown> = {};
 
-    if (user) {
-      const foundUser = MOCK_USERS.find(
-        (u) => u.username === user.username && u.password === oldPassword
-      );
+    const diffCandidates: Array<[keyof Omit<User, "id" | "username" | "role" | "created_at" | "email">, unknown, unknown]> = [
+      ["full_name", user.full_name, nextUser.full_name],
+      ["phone", user.phone ?? null, nextUser.phone ?? null],
+      ["date_of_birth", user.date_of_birth ?? null, nextUser.date_of_birth ?? null],
+      ["gender", user.gender ?? null, nextUser.gender ?? null],
+      ["address", user.address ?? null, nextUser.address ?? null],
+      ["avatar", user.avatar ?? null, nextUser.avatar ?? null],
+    ];
 
-      if (foundUser) {
-        foundUser.password = newPassword;
-        const { password: _, ...userWithoutPassword } = foundUser;
-        setUser(userWithoutPassword);
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userWithoutPassword));
-        return true;
+    for (const [key, oldValue, newValue] of diffCandidates) {
+      if (oldValue !== newValue) {
+        requestPayload[key] = newValue;
       }
     }
 
-    return false;
+    for (const [key, value] of Object.entries(updates)) {
+      if (key === "email") {
+        continue;
+      }
+
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (trimmed.length === 0) {
+          if (Object.prototype.hasOwnProperty.call(requestPayload, key)) {
+            delete requestPayload[key];
+          }
+          continue;
+        }
+        requestPayload[key] = trimmed;
+        continue;
+      }
+
+      if (value !== undefined) {
+        requestPayload[key] = value;
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(updates, "avatar") && updates.avatar === undefined) {
+      requestPayload.avatar = null;
+    }
+
+    const camelPayload = toCamelPayload(requestPayload);
+    const adminApiPayload = toAdminApiPayload(requestPayload);
+
+    const payloadCandidates: Array<Record<string, unknown>> = [
+      adminApiPayload,
+      camelPayload,
+      requestPayload,
+      { user: adminApiPayload },
+      { data: adminApiPayload },
+      { user: requestPayload },
+      { data: requestPayload },
+      { user: camelPayload },
+      { data: camelPayload },
+      {
+        ...adminApiPayload,
+        full_name: adminApiPayload.full_name ?? user.full_name,
+        email: user.email,
+      },
+    ];
+
+    if (typeof requestPayload.avatar === "string") {
+      payloadCandidates.push({ ...requestPayload, avatar_url: requestPayload.avatar });
+      payloadCandidates.push({ user: { ...requestPayload, avatar_url: requestPayload.avatar } });
+      payloadCandidates.push({ data: { ...requestPayload, avatar_url: requestPayload.avatar } });
+    }
+
+    if (Object.keys(requestPayload).length === 0) {
+      return { ok: true };
+    }
+
+    const endpoints = [
+      `/api/admin/users/${user.id}`,
+      `/api/admin/users/me`,
+      `/api/admin/profile`,
+    ];
+
+    const methods: RequestInit["method"][] = ["PATCH", "PUT", "POST"];
+    let lastError = "Không thể cập nhật thông tin";
+    let hasUnauthorized = false;
+
+    for (const endpoint of endpoints) {
+      for (const method of methods) {
+        for (const payloadCandidate of payloadCandidates) {
+          try {
+            const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+              method,
+              credentials: "include",
+              headers: getAuthHeaders({
+                "Content-Type": "application/json",
+              }),
+              body: JSON.stringify(payloadCandidate),
+            });
+
+            if (!response.ok) {
+              if (response.status === 401 || response.status === 403) {
+                hasUnauthorized = true;
+              }
+              const errorPayload = (await response.json().catch(() => null)) as any;
+              lastError = collectApiError(errorPayload, response.status);
+              continue;
+            }
+
+            const payload = (await response.json().catch(() => null)) as any;
+            const parsedUser = toAdminUser(extractRawUser(payload));
+            const backendUser = await fetchCurrentUser(user.id);
+
+            const mergedUser: User = backendUser
+              ? backendUser
+              : parsedUser
+                ? parsedUser
+                : {
+                    ...user,
+                    ...requestPayload,
+                  };
+
+            setUser(mergedUser);
+            localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(mergedUser));
+            return { ok: true };
+          } catch {
+            lastError = "Không thể kết nối backend";
+            continue;
+          }
+        }
+      }
+    }
+
+    if (hasUnauthorized) {
+      return { ok: false, message: "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại." };
+    }
+
+    return { ok: false, message: lastError };
+  };
+
+  const changePassword = async (
+    oldPassword: string,
+    newPassword: string,
+  ): Promise<{ ok: boolean; message?: string }> => {
+    if (!user) {
+      return { ok: false, message: "Không tìm thấy thông tin đăng nhập" };
+    }
+
+    try {
+      const verifyPayload = await postAuth("/api/auth/login", {
+        email: user.email,
+        password: oldPassword,
+      });
+      const verifiedUser = toAdminUser(extractRawUser(verifyPayload));
+
+      if (!verifiedUser || verifiedUser.id !== user.id) {
+        return { ok: false, message: "Mật khẩu cũ không chính xác" };
+      }
+
+      const dedicatedEndpoints = [
+        "/users/me/password",
+        "/api/users/me/password",
+        `/api/admin/users/${user.id}/password`,
+        "/api/admin/change-password",
+        "/api/auth/change-password",
+        "/auth/change-password",
+        "/api/users/change-password",
+      ];
+
+      const dedicatedPayloads = [
+        {
+          user_id: user.id,
+          old_password: oldPassword,
+          new_password: newPassword,
+        },
+        {
+          userId: user.id,
+          oldPassword,
+          newPassword,
+        },
+        {
+          current_password: oldPassword,
+          new_password: newPassword,
+        },
+        {
+          currentPassword: oldPassword,
+          newPassword,
+        },
+      ];
+
+      const fallbackProfileEndpoints = [
+        `/api/admin/users/${user.id}`,
+        "/api/admin/users/me",
+        "/api/admin/profile",
+      ];
+
+      const fallbackPayloads = [
+        { password: newPassword },
+        { new_password: newPassword },
+        { newPassword },
+        { user: { password: newPassword } },
+        { data: { password: newPassword } },
+      ];
+
+      let lastError = "Không thể đổi mật khẩu";
+      let unauthorized = false;
+      let allNotFound = true;
+
+      for (const endpoint of dedicatedEndpoints) {
+        for (const method of ["POST", "PATCH", "PUT"] as const) {
+          for (const payload of dedicatedPayloads) {
+            const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+              method,
+              credentials: "include",
+              headers: getAuthHeaders({
+                "Content-Type": "application/json",
+              }),
+              body: JSON.stringify(payload),
+            });
+
+            if (response.ok) {
+              return { ok: true };
+            }
+
+            if (response.status !== 404) {
+              allNotFound = false;
+            }
+
+            if (response.status === 401 || response.status === 403) {
+              unauthorized = true;
+            }
+
+            const errorPayload = (await response.json().catch(() => null)) as any;
+            const currentError = collectApiError(errorPayload, response.status);
+            if (currentError) {
+              lastError = currentError;
+            }
+          }
+        }
+      }
+
+      for (const endpoint of fallbackProfileEndpoints) {
+        for (const method of ["PATCH", "PUT", "POST"] as const) {
+          for (const payload of fallbackPayloads) {
+            const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+              method,
+              credentials: "include",
+              headers: getAuthHeaders({
+                "Content-Type": "application/json",
+              }),
+              body: JSON.stringify(payload),
+            });
+
+            if (response.ok) {
+              return { ok: true };
+            }
+
+            if (response.status !== 404) {
+              allNotFound = false;
+            }
+
+            if (response.status === 401 || response.status === 403) {
+              unauthorized = true;
+            }
+
+            const errorPayload = (await response.json().catch(() => null)) as any;
+            const currentError = collectApiError(errorPayload, response.status);
+            if (currentError) {
+              lastError = currentError;
+            }
+          }
+        }
+      }
+
+      if (unauthorized) {
+        return { ok: false, message: "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại." };
+      }
+
+      if (allNotFound) {
+        return { ok: false, message: "Không tìm thấy endpoint đổi mật khẩu phù hợp." };
+      }
+
+      return { ok: false, message: lastError };
+    } catch {
+      return { ok: false, message: "Không thể kết nối backend" };
+    }
   };
 
   const value: AuthContextType = {

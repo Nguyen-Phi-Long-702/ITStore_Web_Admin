@@ -30,8 +30,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select";
-import { formatCurrency, formatDate } from "../../utils/statusUtils";
-import { Product, ProductVariant } from "../../types";
+import { formatCurrency } from "../../utils/statusUtils";
+import { Product } from "../../types";
 import { ColorSwatch } from "../../components/products/ColorSwatch";
 import { toast } from "sonner";
 import { useData } from "../../contexts/DataContext";
@@ -45,7 +45,6 @@ export function InventoryManagement() {
   const [quantity, setQuantity] = useState(0);
   const [note, setNote] = useState("");
 
-  // Get products with low stock based on variants
   const lowStockProducts = products.filter(
     (p) =>
       p.variants &&
@@ -76,7 +75,6 @@ export function InventoryManagement() {
     );
     
     if (variant) {
-      // Update product variant stock
       updateProductVariant(variant.id, {
         stock: variant.stock + quantity,
       });
@@ -97,7 +95,6 @@ export function InventoryManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate("/products")}>
           <ArrowLeft className="h-5 w-5" />
@@ -110,7 +107,6 @@ export function InventoryManagement() {
         </div>
       </div>
 
-      {/* Warning section */}
       {lowStockProducts.length > 0 && (
         <Card className="border-red-200 bg-red-50">
           <CardHeader>
@@ -187,7 +183,6 @@ export function InventoryManagement() {
         </Card>
       )}
 
-      {/* All products inventory */}
       <Card>
         <CardHeader>
           <CardTitle>Tồn kho tất cả sản phẩm</CardTitle>
@@ -220,14 +215,12 @@ export function InventoryManagement() {
 
                   return (
                     <TableRow key={`${product.id}-${variant.id}`}>
-                      {/* Mã sản phẩm - rowSpan */}
                       {isFirstVariant && (
                         <TableCell rowSpan={variants.length} className="font-medium text-blue-600">
                           {product.product_code || `SP${product.id.toString().padStart(6, "0")}`}
                         </TableCell>
                       )}
                       
-                      {/* Tên sản phẩm - rowSpan */}
                       {isFirstVariant && (
                         <TableCell rowSpan={variants.length}>
                           <div className="flex items-center gap-3">
@@ -244,14 +237,12 @@ export function InventoryManagement() {
                         </TableCell>
                       )}
 
-                      {/* SKU - riêng cho mỗi variant */}
                       <TableCell>
                         <code className="text-sm bg-gray-100 px-2 py-1 rounded">
                           {variant.sku}
                         </code>
                       </TableCell>
 
-                      {/* Màu sắc - riêng cho mỗi variant */}
                       <TableCell>
                         {variant.color ? (
                           <div className="flex items-center gap-2">
@@ -269,7 +260,6 @@ export function InventoryManagement() {
                         )}
                       </TableCell>
 
-                      {/* Phiên bản - riêng cho mỗi variant */}
                       <TableCell>
                         {variant.version ? (
                           <Badge variant="outline" className="text-xs">
@@ -280,7 +270,6 @@ export function InventoryManagement() {
                         )}
                       </TableCell>
 
-                      {/* Danh mục - rowSpan */}
                       {isFirstVariant && (
                         <TableCell rowSpan={variants.length}>
                           <Badge variant="outline">
@@ -289,7 +278,6 @@ export function InventoryManagement() {
                         </TableCell>
                       )}
 
-                      {/* Thương hiệu - rowSpan */}
                       {isFirstVariant && (
                         <TableCell rowSpan={variants.length}>
                           <div className="flex items-center gap-2">
@@ -305,7 +293,6 @@ export function InventoryManagement() {
                         </TableCell>
                       )}
 
-                      {/* Giá - riêng cho mỗi variant */}
                       <TableCell className="text-right">
                         <div>
                           <p className="font-semibold text-blue-600">
@@ -319,7 +306,6 @@ export function InventoryManagement() {
                         </div>
                       </TableCell>
 
-                      {/* Tồn kho - riêng cho mỗi variant */}
                       <TableCell className="text-right">
                         <div>
                           <p className={`font-bold ${
@@ -335,7 +321,6 @@ export function InventoryManagement() {
                         </div>
                       </TableCell>
 
-                      {/* Trạng thái - riêng cho mỗi variant */}
                       <TableCell>
                         {variant.stock === 0 ? (
                           <Badge className="bg-red-100 text-red-700">
@@ -356,7 +341,6 @@ export function InventoryManagement() {
                         )}
                       </TableCell>
 
-                      {/* Thao tác - riêng cho mỗi variant */}
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Link to={`/products/variants/${product.id}`}>
@@ -388,7 +372,6 @@ export function InventoryManagement() {
         </CardContent>
       </Card>
 
-      {/* Stock in dialog */}
       <Dialog open={stockInDialogOpen} onOpenChange={setStockInDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>

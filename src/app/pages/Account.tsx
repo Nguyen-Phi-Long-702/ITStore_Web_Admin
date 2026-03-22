@@ -21,7 +21,7 @@ import {
   DialogTitle,
 } from "../components/ui/dialog";
 import { Textarea } from "../components/ui/textarea";
-import { User, Mail, Phone, Calendar, MapPin, Edit2, Save, X, Lock, Eye, EyeOff, Upload, Trash2, Camera } from "lucide-react";
+import { User, Mail, Phone, Calendar, MapPin, Edit2, Save, X, Lock, Eye, EyeOff, Trash2, Camera } from "lucide-react";
 import { toast } from "sonner";
 
 function AccountContent() {
@@ -41,30 +41,36 @@ function AccountContent() {
     newPassword: "",
     confirmPassword: "",
   });
+  const passwordChangeSupported = true;
   
   const [formData, setFormData] = useState({
     full_name: user?.full_name || "",
-    email: user?.email || "",
     phone: user?.phone || "",
     date_of_birth: user?.date_of_birth || "",
     gender: user?.gender || "other",
     address: user?.address || "",
   });
 
-  // Check for query parameter to open password dialog
   useEffect(() => {
     const action = searchParams.get("action");
     if (action === "change-password") {
       setIsPasswordDialogOpen(true);
-      // Remove query parameter after opening dialog
       setSearchParams({});
     }
-  }, [searchParams, setSearchParams]);
+  }, [passwordChangeSupported, searchParams, setSearchParams]);
 
   if (!user) return null;
 
-  const handleSave = () => {
-    updateUser(formData);
+  const handleSave = async () => {
+    const result = await updateUser(formData);
+    if (!result.ok) {
+      toast.error(result.message || "Không thể cập nhật thông tin. Vui lòng thử lại!");
+      if (result.message?.includes("đăng nhập lại")) {
+        setIsEditing(false);
+      }
+      return;
+    }
+
     toast.success("Cập nhật thông tin thành công!");
     setIsEditing(false);
   };
@@ -72,7 +78,6 @@ function AccountContent() {
   const handleCancel = () => {
     setFormData({
       full_name: user?.full_name || "",
-      email: user?.email || "",
       phone: user?.phone || "",
       date_of_birth: user?.date_of_birth || "",
       gender: user?.gender || "other",
@@ -82,7 +87,6 @@ function AccountContent() {
   };
 
   const handleChangePassword = async () => {
-    // Validation
     if (!passwordForm.oldPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
       toast.error("Vui lòng điền đầy đủ thông tin!");
       return;
@@ -98,16 +102,21 @@ function AccountContent() {
       return;
     }
 
+      if (passwordForm.oldPassword === passwordForm.newPassword) {
+        toast.error("Mật khẩu mới không được trùng với mật khẩu cũ!");
+        return;
+      }
+
     setIsChangingPassword(true);
-    const success = await changePassword(passwordForm.oldPassword, passwordForm.newPassword);
+    const result = await changePassword(passwordForm.oldPassword, passwordForm.newPassword);
     setIsChangingPassword(false);
 
-    if (success) {
+    if (result.ok) {
       toast.success("Đổi mật khẩu thành công!");
       setIsPasswordDialogOpen(false);
       setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
     } else {
-      toast.error("Mật khẩu cũ không chính xác!");
+      toast.error(result.message || "Không thể đổi mật khẩu. Vui lòng thử lại!");
     }
   };
 
@@ -119,23 +128,25 @@ function AccountContent() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       toast.error("Vui lòng chọn file ảnh!");
       return;
     }
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Kích thước ảnh không được vượt quá 5MB!");
       return;
     }
 
-    // Convert to base64
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const base64String = e.target?.result as string;
-      updateUser({ avatar: base64String });
+      const result = await updateUser({ avatar: base64String });
+      if (!result.ok) {
+        toast.error(result.message || "Không thể cập nhật ảnh đại diện. Vui lòng thử lại!");
+        return;
+      }
+
       toast.success("Cập nhật ảnh đại diện thành công!");
     };
     reader.onerror = () => {
@@ -144,8 +155,13 @@ function AccountContent() {
     reader.readAsDataURL(file);
   };
 
-  const handleRemoveAvatar = () => {
-    updateUser({ avatar: undefined });
+  const handleRemoveAvatar = async () => {
+    const result = await updateUser({ avatar: undefined });
+    if (!result.ok) {
+      toast.error(result.message || "Không thể xóa ảnh đại diện. Vui lòng thử lại!");
+      return;
+    }
+
     toast.success("Đã xóa ảnh đại diện!");
   };
 
@@ -199,7 +215,6 @@ function AccountContent() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Avatar & Basic Info */}
         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle>Thông tin cơ bản</CardTitle>
@@ -280,14 +295,12 @@ function AccountContent() {
           </CardContent>
         </Card>
 
-        {/* Detailed Information */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Thông tin chi tiết</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Full Name */}
               <div className="space-y-2">
                 <Label htmlFor="full_name">
                   <User className="h-4 w-4 inline mr-2" />
@@ -308,27 +321,14 @@ function AccountContent() {
                 )}
               </div>
 
-              {/* Email */}
               <div className="space-y-2">
                 <Label htmlFor="email">
                   <Mail className="h-4 w-4 inline mr-2" />
                   Email
                 </Label>
-                {isEditing ? (
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                  />
-                ) : (
-                  <p className="text-gray-900 font-medium py-2">{user.email}</p>
-                )}
+                <p className="text-gray-900 font-medium py-2">{user.email}</p>
               </div>
 
-              {/* Phone */}
               <div className="space-y-2">
                 <Label htmlFor="phone">
                   <Phone className="h-4 w-4 inline mr-2" />
@@ -350,7 +350,6 @@ function AccountContent() {
                 )}
               </div>
 
-              {/* Date of Birth */}
               <div className="space-y-2">
                 <Label htmlFor="date_of_birth">
                   <Calendar className="h-4 w-4 inline mr-2" />
@@ -374,7 +373,6 @@ function AccountContent() {
                 )}
               </div>
 
-              {/* Gender */}
               <div className="space-y-2">
                 <Label htmlFor="gender">
                   <User className="h-4 w-4 inline mr-2" />
@@ -403,7 +401,6 @@ function AccountContent() {
                 )}
               </div>
 
-              {/* Address */}
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="address">
                   <MapPin className="h-4 w-4 inline mr-2" />
@@ -429,7 +426,6 @@ function AccountContent() {
         </Card>
       </div>
 
-      {/* Security Card */}
       <Card>
         <CardHeader>
           <CardTitle>Bảo mật</CardTitle>
@@ -442,7 +438,12 @@ function AccountContent() {
                 Thay đổi mật khẩu để bảo vệ tài khoản của bạn
               </p>
             </div>
-            <Button variant="outline" onClick={() => setIsPasswordDialogOpen(true)}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsPasswordDialogOpen(true);
+              }}
+            >
               <Lock className="h-4 w-4 mr-2" />
               Đổi mật khẩu
             </Button>
@@ -450,7 +451,6 @@ function AccountContent() {
         </CardContent>
       </Card>
 
-      {/* Password Change Dialog */}
       <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -542,9 +542,9 @@ function AccountContent() {
               Hủy
             </Button>
             <Button
-              type="button"
               onClick={handleChangePassword}
-              disabled={isChangingPassword}
+              disabled={isChangingPassword || !passwordChangeSupported}
+              className="bg-gray-900 hover:bg-gray-800"
             >
               {isChangingPassword ? (
                 <Lock className="h-4 w-4 animate-spin" />

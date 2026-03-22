@@ -18,44 +18,68 @@ export function SystemConfig() {
   const [bankInfo, setBankInfo] = useState(systemConfig.bankInfo);
   const [banners, setBanners] = useState(systemConfig.banners);
   const [notificationTemplates, setNotificationTemplates] = useState(systemConfig.notificationTemplates);
+  const [lastSyncedConfig, setLastSyncedConfig] = useState(systemConfig);
 
-  // Sync with context when it changes
   useEffect(() => {
+    const hasUnsavedChanges =
+      JSON.stringify(paymentConfig) !== JSON.stringify(lastSyncedConfig.paymentConfig) ||
+      JSON.stringify(shippingConfig) !== JSON.stringify(lastSyncedConfig.shippingConfig) ||
+      JSON.stringify(bankInfo) !== JSON.stringify(lastSyncedConfig.bankInfo) ||
+      JSON.stringify(banners) !== JSON.stringify(lastSyncedConfig.banners) ||
+      JSON.stringify(notificationTemplates) !== JSON.stringify(lastSyncedConfig.notificationTemplates);
+
+    if (hasUnsavedChanges) {
+      return;
+    }
+
     setPaymentConfig(systemConfig.paymentConfig);
     setShippingConfig(systemConfig.shippingConfig);
     setBankInfo(systemConfig.bankInfo);
     setBanners(systemConfig.banners);
     setNotificationTemplates(systemConfig.notificationTemplates);
-  }, [systemConfig]);
+    setLastSyncedConfig(systemConfig);
+  }, [
+    systemConfig,
+    paymentConfig,
+    shippingConfig,
+    bankInfo,
+    banners,
+    notificationTemplates,
+    lastSyncedConfig,
+  ]);
 
   const handleSavePayment = () => {
     updateSystemConfig({ paymentConfig });
+    setLastSyncedConfig((prev) => ({ ...prev, paymentConfig }));
     toast.success("Đã lưu cấu hình phương thức thanh toán");
   };
 
   const handleSaveShipping = () => {
     updateSystemConfig({ shippingConfig });
+    setLastSyncedConfig((prev) => ({ ...prev, shippingConfig }));
     toast.success("Đã lưu cấu hình phí vận chuyển");
   };
 
   const handleSaveBankInfo = () => {
     updateSystemConfig({ bankInfo });
+    setLastSyncedConfig((prev) => ({ ...prev, bankInfo }));
     toast.success("Đã lưu thông tin ngân hàng");
   };
 
   const handleSaveBanners = () => {
     updateSystemConfig({ banners });
+    setLastSyncedConfig((prev) => ({ ...prev, banners }));
     toast.success("Đã lưu cấu hình banner");
   };
 
   const handleSaveNotifications = () => {
     updateSystemConfig({ notificationTemplates });
+    setLastSyncedConfig((prev) => ({ ...prev, notificationTemplates }));
     toast.success("Đã lưu cấu hình thông báo");
   };
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Cấu hình hệ thống</h2>
         <p className="text-gray-600">
@@ -71,7 +95,6 @@ export function SystemConfig() {
           <TabsTrigger value="notifications">Thông báo</TabsTrigger>
         </TabsList>
 
-        {/* Payment configuration */}
         <TabsContent value="payment" className="space-y-6">
           <Card>
             <CardHeader>
@@ -218,7 +241,6 @@ export function SystemConfig() {
           </Card>
         </TabsContent>
 
-        {/* Shipping configuration */}
         <TabsContent value="shipping" className="space-y-6">
           <Card>
             <CardHeader>
@@ -301,7 +323,6 @@ export function SystemConfig() {
           </Card>
         </TabsContent>
 
-        {/* Banner configuration */}
         <TabsContent value="banners" className="space-y-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -352,7 +373,6 @@ export function SystemConfig() {
           </Card>
         </TabsContent>
 
-        {/* Notification configuration */}
         <TabsContent value="notifications" className="space-y-6">
           <Card>
             <CardHeader>

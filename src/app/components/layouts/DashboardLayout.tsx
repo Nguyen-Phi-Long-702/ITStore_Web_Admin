@@ -29,13 +29,34 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { useAuth } from "../../contexts/AuthContext";
+import { useData } from "../../contexts/DataContext";
 import { toast } from "sonner";
 
 export function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout, permissions, isAuthenticated, isLoading } = useAuth();
+  const { orders, returnRequests } = useData();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  const pendingOrderCount = orders.filter((order) =>
+    ["pending", "confirmed", "preparing", "packed", "shipping"].includes(order.order_status)
+  ).length;
+
+  const pendingReturnCount = returnRequests.filter((request) =>
+    ["pending", "approved", "received"].includes(request.status)
+  ).length;
+
+  const formatNavBadge = (count: number) => {
+    if (count <= 0) {
+      return null;
+    }
+
+    return count > 99 ? "99+" : String(count);
+  };
+
+  const orderBadge = formatNavBadge(pendingOrderCount);
+  const returnBadge = formatNavBadge(pendingReturnCount);
 
   if (isLoading) {
     return (
@@ -52,8 +73,8 @@ export function DashboardLayout() {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     toast.success("Đã đăng xuất thành công!");
     navigate("/login");
   };
@@ -63,8 +84,8 @@ export function DashboardLayout() {
     { name: "Sản phẩm", href: "/products", icon: Package, show: true },
     { name: "Thương hiệu", href: "/brands", icon: Tag, show: true },
     { name: "Danh mục", href: "/categories", icon: FolderOpen, show: true },
-    { name: "Đơn hàng", href: "/orders", icon: ShoppingCart, badge: 12, show: permissions.canViewOrders },
-    { name: "Trả hàng", href: "/returns", icon: RotateCcw, badge: 2, show: permissions.canAccessReturns },
+    { name: "Đơn hàng", href: "/orders", icon: ShoppingCart, badge: orderBadge, show: permissions.canViewOrders },
+    { name: "Trả hàng", href: "/returns", icon: RotateCcw, badge: returnBadge, show: permissions.canAccessReturns },
     { name: "Khách hàng", href: "/customers", icon: Users, show: permissions.canViewCustomers },
     { name: "Khuyến mãi", href: "/promotions", icon: Percent, show: permissions.canAccessPromotions },
     { name: "Báo cáo", href: "/reports", icon: BarChart3, show: permissions.canAccessReports },

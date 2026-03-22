@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { Search, Filter, Eye, CheckCircle, XCircle, Package } from "lucide-react";
+import { Search, Eye, CheckCircle, Package } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -20,14 +20,12 @@ import {
   TableHeader,
   TableRow,
 } from "../../components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
 import {
   formatCurrency,
   formatDate,
   orderStatusConfig,
   paymentStatusConfig,
 } from "../../utils/statusUtils";
-import { OrderStatus } from "../../types";
 import { useData } from "../../contexts/DataContext";
 
 export function OrderList() {
@@ -36,7 +34,6 @@ export function OrderList() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
 
-  // Filter orders
   const filteredOrders = orders.filter((order) => {
     const orderNumber = `DH${order.id.toString().padStart(6, "0")}`;
     const matchesSearch =
@@ -50,7 +47,6 @@ export function OrderList() {
     return matchesSearch && matchesStatus && matchesPayment;
   });
 
-  // Group orders by status for tabs
   const ordersByStatus = {
     all: orders,
     pending: orders.filter((o) => o.order_status === "pending"),
@@ -67,7 +63,6 @@ export function OrderList() {
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Quản lý đơn hàng</h2>
         <p className="text-gray-600">
@@ -75,7 +70,6 @@ export function OrderList() {
         </p>
       </div>
 
-      {/* Stats cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
@@ -134,7 +128,6 @@ export function OrderList() {
         </Card>
       </div>
 
-      {/* Filters */}
       <Card>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -181,7 +174,6 @@ export function OrderList() {
         </CardContent>
       </Card>
 
-      {/* Orders table */}
       <Card>
         <CardHeader>
           <CardTitle>Danh sách đơn hàng ({filteredOrders.length})</CardTitle>

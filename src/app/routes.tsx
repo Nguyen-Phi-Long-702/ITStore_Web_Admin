@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from "react-router";
+import { createBrowserRouter } from "react-router";
 import { RootLayout } from "./components/layouts/RootLayout";
 import { DashboardLayout } from "./components/layouts/DashboardLayout";
 import { ErrorBoundary } from "./components/ErrorBoundary";

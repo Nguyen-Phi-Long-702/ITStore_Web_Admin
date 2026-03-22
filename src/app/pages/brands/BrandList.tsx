@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Search, Plus, Edit, Trash2, Tag, Upload, X, Image } from "lucide-react";
+import { Search, Plus, Edit, Trash2, Upload, X, Image } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
@@ -37,7 +37,7 @@ import { useData } from "../../contexts/DataContext";
 import { useAuth } from "../../contexts/AuthContext";
 
 export function BrandList() {
-  const { brands, products, addBrand, updateBrand, deleteBrand } = useData();
+  const { brands, products, addBrand, updateBrand, deleteBrand, brandFetchError } = useData();
   const { permissions } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -47,22 +47,21 @@ export function BrandList() {
   const [formData, setFormData] = useState({
     name: "",
     logo_url: "",
+    logo_file: undefined as File | undefined,
   });
 
-  // Count products for each brand
   const getProductCount = (brandId: number) => {
     return products.filter((product) => product.brand_id === brandId).length;
   };
 
-  // Filter brands
   const filteredBrands = brands.filter((brand) =>
     brand.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    brand.brand_code.toLowerCase().includes(searchTerm.toLowerCase())
+    (brand.brand_code || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleAdd = () => {
     setSelectedBrand(null);
-    setFormData({ name: "", logo_url: "" });
+    setFormData({ name: "", logo_url: "", logo_file: undefined });
     setDialogOpen(true);
   };
 
@@ -71,6 +70,7 @@ export function BrandList() {
     setFormData({
       name: brand.name,
       logo_url: brand.logo_url || "",
+      logo_file: undefined,
     });
     setDialogOpen(true);
   };
@@ -80,38 +80,50 @@ export function BrandList() {
     setDeleteDialogOpen(true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.name.trim()) {
       toast.error("Vui lòng nhập tên thương hiệu");
       return;
     }
 
-    if (selectedBrand) {
-      // Edit existing brand
-      updateBrand(selectedBrand.id, {
-        name: formData.name,
-        logo_url: formData.logo_url || undefined,
-      });
-      toast.success(`Đã cập nhật thương hiệu "${formData.name}"`);
-    } else {
-      // Add new brand
-      addBrand({
-        name: formData.name,
-        logo_url: formData.logo_url || undefined,
-      });
-      toast.success(`Đã thêm thương hiệu "${formData.name}"`);
-    }
+    try {
+      if (selectedBrand) {
+        await updateBrand(selectedBrand.id, {
+          name: formData.name,
+          logo_file: formData.logo_file,
+        });
+        toast.success(`Đã cập nhật thương hiệu "${formData.name}"`);
+      } else {
+        if (!formData.logo_file) {
+          toast.error("Vui lòng chọn logo thương hiệu");
+          return;
+        }
 
-    setDialogOpen(false);
-    setFormData({ name: "", logo_url: "" });
+        await addBrand({
+          name: formData.name,
+          logo_file: formData.logo_file,
+        });
+        toast.success(`Đã thêm thương hiệu "${formData.name}"`);
+      }
+
+      setDialogOpen(false);
+      setFormData({ name: "", logo_url: "", logo_file: undefined });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Không thể lưu thương hiệu lên backend";
+      toast.error(message);
+    }
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (selectedBrand) {
-      deleteBrand(selectedBrand.id);
-      toast.success(`Đã xóa thương hiệu "${selectedBrand.name}"`);
-      setDeleteDialogOpen(false);
-      setSelectedBrand(null);
+      try {
+        await deleteBrand(selectedBrand.id);
+        toast.success(`Đã xóa thương hiệu "${selectedBrand.name}"`);
+        setDeleteDialogOpen(false);
+        setSelectedBrand(null);
+      } catch {
+        toast.error("Không thể xóa thương hiệu trên backend");
+      }
     }
   };
 
@@ -123,33 +135,23 @@ export function BrandList() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       toast.error("Vui lòng chọn file ảnh!");
       return;
     }
 
-    // Validate file size (max 2MB for logo)
     if (file.size > 2 * 1024 * 1024) {
       toast.error("Kích thước ảnh không được vượt quá 2MB!");
       return;
     }
 
-    // Convert to base64
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const base64String = e.target?.result as string;
-      setFormData({ ...formData, logo_url: base64String });
-      toast.success("Đã tải logo lên thành công!");
-    };
-    reader.onerror = () => {
-      toast.error("Có lỗi xảy ra khi đọc file!");
-    };
-    reader.readAsDataURL(file);
+    const previewUrl = URL.createObjectURL(file);
+    setFormData({ ...formData, logo_url: previewUrl, logo_file: file });
+    toast.success("Đã tải logo lên thành công!");
   };
 
   const handleRemoveLogo = () => {
-    setFormData({ ...formData, logo_url: "" });
+    setFormData({ ...formData, logo_url: "", logo_file: undefined });
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -158,7 +160,6 @@ export function BrandList() {
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Quản lý thương hiệu</h2>
@@ -172,7 +173,6 @@ export function BrandList() {
         )}
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
@@ -196,7 +196,6 @@ export function BrandList() {
         </Card>
       </div>
 
-      {/* Search */}
       <Card>
         <CardContent className="pt-6">
           <div className="relative">
@@ -211,10 +210,16 @@ export function BrandList() {
         </CardContent>
       </Card>
 
-      {/* Brands table */}
       <Card>
         <CardHeader>
           <CardTitle>Danh sách thương hiệu ({filteredBrands.length})</CardTitle>
+          {brandFetchError && (
+            <p className="text-sm text-red-600">
+              {brandFetchError.toLowerCase().includes("cloud_name")
+                ? "Backend lỗi cấu hình ảnh (cloud_name), nên chưa lấy được danh sách thương hiệu"
+                : `Không thể đồng bộ thương hiệu từ backend: ${brandFetchError}`}
+            </p>
+          )}
         </CardHeader>
         <CardContent>
           <Table>
@@ -257,7 +262,6 @@ export function BrandList() {
                             alt={brand.name}
                             className="h-8 w-8 object-contain"
                             onError={(e) => {
-                              // Fallback if image fails to load
                               e.currentTarget.style.display = "none";
                             }}
                           />
@@ -278,7 +282,9 @@ export function BrandList() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {new Date(brand.created_at).toLocaleDateString("vi-VN")}
+                        {Number.isNaN(new Date(brand.created_at).getTime())
+                          ? "-"
+                          : new Date(brand.created_at).toLocaleDateString("vi-VN")}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -313,7 +319,6 @@ export function BrandList() {
         </CardContent>
       </Card>
 
-      {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -345,7 +350,7 @@ export function BrandList() {
                 placeholder="https://example.com/logo.png"
                 value={formData.logo_url}
                 onChange={(e) =>
-                  setFormData({ ...formData, logo_url: e.target.value })
+                  setFormData({ ...formData, logo_url: e.target.value, logo_file: undefined })
                 }
               />
               <p className="text-sm text-gray-500">
@@ -416,7 +421,6 @@ export function BrandList() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete confirmation dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

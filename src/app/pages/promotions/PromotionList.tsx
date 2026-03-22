@@ -21,7 +21,6 @@ export function PromotionList() {
   const { coupons, deleteCoupon } = useData();
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Filter coupons
   const filteredCoupons = coupons.filter((coupon) =>
     coupon.code.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -33,32 +32,62 @@ export function PromotionList() {
     }
   };
 
-  const getStatusBadge = (isActive: boolean, expiresAt?: string) => {
-    // Check expiration first (even if paused)
-    if (expiresAt && new Date(expiresAt) < new Date()) {
-      return <Badge className="bg-red-100 text-red-700">Đã hết hạn</Badge>;
-    }
-    if (!isActive) {
-      return <Badge className="bg-gray-100 text-gray-700">Tạm dừng</Badge>;
-    }
-    return <Badge className="bg-green-100 text-green-700">Đang chạy</Badge>;
+  const isExpired = (promotion: typeof coupons[0]) => {
+    return !!(promotion.expires_at && new Date(promotion.expires_at) < new Date());
   };
 
-  // Helper function to check if promotion is actually active (not expired)
+  const isOutOfUses = (promotion: typeof coupons[0]) => {
+    return !!(
+      promotion.max_uses !== undefined &&
+      promotion.max_uses !== null &&
+      promotion.max_uses > 0 &&
+      (promotion.used_count || 0) >= promotion.max_uses
+    );
+  };
+
+  const getStatusBadge = (promotion: typeof coupons[0]) => {
+    if (isExpired(promotion)) {
+      return <Badge className="bg-rose-100 text-rose-700">Đã hết hạn</Badge>;
+    }
+
+    if (isOutOfUses(promotion)) {
+      return <Badge className="bg-orange-100 text-orange-700">Đã hết lượt</Badge>;
+    }
+
+    if (!promotion.is_active) {
+      return <Badge className="bg-slate-100 text-slate-700">Tạm dừng</Badge>;
+    }
+
+    return <Badge className="bg-emerald-100 text-emerald-700">Đang chạy</Badge>;
+  };
+
+  const getStatusOrder = (promotion: typeof coupons[0]) => {
+    if (isExpired(promotion)) return 3;
+    if (isOutOfUses(promotion)) return 2;
+    if (!promotion.is_active) return 1;
+    return 0;
+  };
+
   const isActuallyActive = (promotion: typeof coupons[0]) => {
+    if (isExpired(promotion)) return false;
+    if (isOutOfUses(promotion)) return false;
     if (!promotion.is_active) return false;
-    if (promotion.expires_at && new Date(promotion.expires_at) < new Date()) return false;
     return true;
   };
 
-  // Helper to check if expired
-  const isExpired = (promotion: typeof coupons[0]) => {
-    return promotion.expires_at && new Date(promotion.expires_at) < new Date();
-  };
+  const sortedCoupons = [...filteredCoupons].sort((a, b) => {
+    const statusOrderDiff = getStatusOrder(a) - getStatusOrder(b);
+    if (statusOrderDiff !== 0) {
+      return statusOrderDiff;
+    }
+
+    const aCreatedAt = new Date(a.created_at).getTime();
+    const bCreatedAt = new Date(b.created_at).getTime();
+    return bCreatedAt - aCreatedAt;
+  });
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
@@ -74,7 +103,6 @@ export function PromotionList() {
         </Link>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-6">
@@ -103,7 +131,11 @@ export function PromotionList() {
                 {coupons
                   .filter((c) => isActuallyActive(c))
                   .reduce(
-                    (sum, c) => sum + ((c.max_uses || 0) - (c.used_count || 0)),
+                    (sum, c) =>
+                      sum +
+                      (c.max_uses && c.max_uses > 0
+                        ? Math.max(0, c.max_uses - (c.used_count || 0))
+                        : 0),
                     0
                   )}
               </p>
@@ -113,7 +145,6 @@ export function PromotionList() {
         </Card>
       </div>
 
-      {/* Search */}
       <Card>
         <CardContent className="pt-6">
           <div className="relative">
@@ -128,7 +159,6 @@ export function PromotionList() {
         </CardContent>
       </Card>
 
-      {/* Promotions table */}
       <Card>
         <CardHeader>
           <CardTitle>
@@ -150,7 +180,7 @@ export function PromotionList() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredCoupons.map((promotion) => (
+              {sortedCoupons.map((promotion) => (
                 <TableRow key={promotion.id}>
                   <TableCell>
                     <p className="font-medium font-mono">{promotion.code}</p>
@@ -197,7 +227,7 @@ export function PromotionList() {
                       : "Không giới hạn"}
                   </TableCell>
                   <TableCell>
-                    {getStatusBadge(promotion.is_active, promotion.expires_at)}
+                    {getStatusBadge(promotion)}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">

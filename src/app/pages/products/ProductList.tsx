@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { Plus, Search, Filter, Edit, Trash2, Package, Eye } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Package, Eye } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -37,7 +37,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "sonner";
 
 export function ProductList() {
-  const { products, deleteProduct } = useData();
+  const { products, productVariants, deleteProduct, productFetchError } = useData();
   const { permissions } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -46,13 +46,12 @@ export function ProductList() {
   const [versionFilter, setVersionFilter] = useState<string>("all");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  // Get unique categories
   const categories = Array.from(
     new Set(products.map((p) => p.category?.name).filter(Boolean))
   );
 
-  // Get unique colors from all variants
   const colors = Array.from(
     new Set(
       products.flatMap((p) => 
@@ -61,7 +60,6 @@ export function ProductList() {
     )
   );
 
-  // Get unique versions from all variants
   const versions = Array.from(
     new Set(
       products.flatMap((p) => 
@@ -70,11 +68,11 @@ export function ProductList() {
     )
   );
 
-  // Filter products
   const filteredProducts = products.filter((product) => {
     const matchesSearch =
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.product_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (product.product_code || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (product.sku || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       (product.variants && product.variants.some(v => v.sku.toLowerCase().includes(searchTerm.toLowerCase())));
     const matchesStatus =
       statusFilter === "all" || product.status === statusFilter;
@@ -95,18 +93,27 @@ export function ProductList() {
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
-    if (productToDelete) {
-      deleteProduct(productToDelete.id);
+  const confirmDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    
+    if (!productToDelete || isDeleting) return;
+    
+    setIsDeleting(true);
+    try {
+      await deleteProduct(productToDelete.id);
       setDeleteDialogOpen(false);
       setProductToDelete(null);
       toast.success("Sản phẩm đã được xóa thành công!");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Không thể xóa sản phẩm trên backend";
+      toast.error(message);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Quản lý sản phẩm</h2>
@@ -130,7 +137,6 @@ export function ProductList() {
         </div>
       </div>
 
-      {/* Filters */}
       <Card>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -198,7 +204,6 @@ export function ProductList() {
             </Select>
           </div>
 
-          {/* Active filters display */}
           {(colorFilter !== "all" || versionFilter !== "all") && (
             <div className="flex items-center gap-2 mt-4 pt-4 border-t">
               <span className="text-sm text-gray-600">Lọc theo:</span>
@@ -229,12 +234,18 @@ export function ProductList() {
         </CardContent>
       </Card>
 
-      {/* Products table */}
       <Card>
         <CardHeader>
           <CardTitle>
             Danh sách sản phẩm ({filteredProducts.length})
           </CardTitle>
+          {productFetchError && (
+            <p className="text-sm text-red-600">
+              {productFetchError.toLowerCase().includes("cloud_name")
+                ? "Backend lỗi cấu hình ảnh (cloud_name), nên chưa lấy được danh sách sản phẩm"
+                : `Không thể đồng bộ sản phẩm từ backend: ${productFetchError}`}
+            </p>
+          )}
         </CardHeader>
         <CardContent>
           <Table>
@@ -256,8 +267,12 @@ export function ProductList() {
             <TableBody>
               {filteredProducts.map((product) => {
                 const variants = product.variants || [];
+                const normalizedProductSku = (product.sku || "").trim().toLowerCase();
+                const fallbackVariantBySku = normalizedProductSku
+                  ? productVariants.find((variant) => variant.sku.trim().toLowerCase() === normalizedProductSku)
+                  : undefined;
+                const effectiveVariantCount = variants.length > 0 ? variants.length : (fallbackVariantBySku || product.sku ? 1 : 0);
                 
-                // If product has no variants, show one row with product info
                 if (variants.length === 0) {
                   return (
                     <TableRow key={`${product.id}-no-variant`}>
@@ -272,7 +287,6 @@ export function ProductList() {
                               alt={product.name}
                               className="w-12 h-12 object-cover rounded"
                               onError={(e) => {
-                                // Fallback to icon if image fails to load
                                 e.currentTarget.style.display = 'none';
                                 const parent = e.currentTarget.parentElement;
                                 if (parent) {
@@ -290,17 +304,27 @@ export function ProductList() {
                           )}
                           <div>
                             <p className="font-medium">{product.name}</p>
-                            <p className="text-sm text-gray-600">0 biến thể</p>
+                            <p className="text-sm text-gray-600">{effectiveVariantCount} biến thể</p>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-gray-400">-</TableCell>
+                      <TableCell>{product.sku || "-"}</TableCell>
                       <TableCell className="text-gray-400">-</TableCell>
                       <TableCell className="text-gray-400">-</TableCell>
                       <TableCell>{product.category?.name || "-"}</TableCell>
                       <TableCell>{product.brand?.name || "-"}</TableCell>
-                      <TableCell className="text-right text-gray-400">-</TableCell>
-                      <TableCell className="text-right text-gray-400">-</TableCell>
+                      <TableCell className="text-right">
+                        {fallbackVariantBySku ? formatCurrency(fallbackVariantBySku.price) : <span className="text-gray-400">-</span>}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {fallbackVariantBySku ? (
+                          <span className={fallbackVariantBySku.stock < 10 ? "text-red-600 font-semibold" : ""}>
+                            {fallbackVariantBySku.stock}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <Badge
                           className={`${
@@ -331,10 +355,8 @@ export function ProductList() {
                   );
                 }
 
-                // Show one row per variant
                 return variants.map((variant, index) => (
                   <TableRow key={`${product.id}-${variant.id}`}>
-                    {/* Product code - only show on first variant row with rowSpan */}
                     {index === 0 && (
                       <TableCell 
                         className="font-medium text-blue-600 align-top" 
@@ -344,7 +366,6 @@ export function ProductList() {
                       </TableCell>
                     )}
                     
-                    {/* Product name - only show on first variant row with rowSpan */}
                     {index === 0 && (
                       <TableCell rowSpan={variants.length} className="align-top">
                         <div className="flex items-center gap-3">
@@ -354,7 +375,6 @@ export function ProductList() {
                               alt={product.name}
                               className="w-12 h-12 object-cover rounded"
                               onError={(e) => {
-                                // Fallback to icon if image fails to load
                                 e.currentTarget.style.display = 'none';
                                 const parent = e.currentTarget.parentElement;
                                 if (parent) {
@@ -373,21 +393,19 @@ export function ProductList() {
                           <div>
                             <p className="font-medium">{product.name}</p>
                             <p className="text-sm text-gray-600">
-                              {variants.length} biến thể
+                              {effectiveVariantCount} biến thể
                             </p>
                           </div>
                         </div>
                       </TableCell>
                     )}
 
-                    {/* Variant SKU */}
                     <TableCell>
                       <Badge variant="outline" className="text-xs font-mono">
                         {variant.sku}
                       </Badge>
                     </TableCell>
 
-                    {/* Variant Color */}
                     <TableCell>
                       {variant.color ? (
                         <span className="text-sm">{variant.color}</span>
@@ -396,7 +414,6 @@ export function ProductList() {
                       )}
                     </TableCell>
 
-                    {/* Variant Version */}
                     <TableCell>
                       {variant.version ? (
                         <Badge variant="outline" className="text-xs">
@@ -407,33 +424,28 @@ export function ProductList() {
                       )}
                     </TableCell>
 
-                    {/* Category - only show on first variant row with rowSpan */}
                     {index === 0 && (
                       <TableCell rowSpan={variants.length} className="align-top">
                         {product.category?.name || "-"}
                       </TableCell>
                     )}
 
-                    {/* Brand - only show on first variant row with rowSpan */}
                     {index === 0 && (
                       <TableCell rowSpan={variants.length} className="align-top">
                         {product.brand?.name || "-"}
                       </TableCell>
                     )}
 
-                    {/* Variant Price */}
                     <TableCell className="text-right">
                       {formatCurrency(variant.price)}
                     </TableCell>
 
-                    {/* Variant Stock */}
                     <TableCell className="text-right">
                       <span className={variant.stock < 10 ? "text-red-600 font-semibold" : ""}>
                         {variant.stock}
                       </span>
                     </TableCell>
 
-                    {/* Status - only show on first variant row with rowSpan */}
                     {index === 0 && (
                       <TableCell rowSpan={variants.length} className="align-top">
                         <Badge
@@ -446,7 +458,6 @@ export function ProductList() {
                       </TableCell>
                     )}
 
-                    {/* Actions - only show on first variant row with rowSpan */}
                     {index === 0 && (
                       <TableCell className="text-right align-top" rowSpan={variants.length}>
                         <div className="flex justify-end gap-2">
@@ -483,7 +494,6 @@ export function ProductList() {
         </CardContent>
       </Card>
 
-      {/* Delete confirmation dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -494,8 +504,10 @@ export function ProductList() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Xóa</AlertDialogAction>
+            <AlertDialogCancel disabled={isDeleting}>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} disabled={isDeleting}>
+              {isDeleting ? "Đang xóa..." : "Xóa"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

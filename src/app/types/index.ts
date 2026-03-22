@@ -1,11 +1,6 @@
-// ============================================
-// ENUMS - Khớp với Database Schema
-// ============================================
 
-// User Role
 export type UserRole = "customer" | "admin";
 
-// Order Status
 export type OrderStatus =
   | "pending"
   | "confirmed"
@@ -16,37 +11,24 @@ export type OrderStatus =
   | "failed"
   | "cancelled";
 
-// Product Status
 export type ProductStatus = "active" | "discontinued";
 
-// Payment Status
 export type PaymentStatus = "unpaid" | "paid" | "refunded";
 
-// Payment Method
 export type PaymentMethod = "cod" | "momo" | "bank_transfer";
 
-// Payment Gateway Status
 export type PaymentGatewayStatus = "pending" | "success" | "failed" | "refunded";
 
-// Discount Type
 export type DiscountType = "percent" | "fixed";
 
-// Return Request Status
 export type ReturnStatus = "pending" | "approved" | "rejected" | "received" | "completed";
 
-// Return Item Condition
 export type ReturnCondition = "good" | "damaged" | "wrong_item";
 
-// Notification Type
-export type NotificationType = "order" | "payment" | "promotion" | "system";
-
-// ============================================
-// USER & AUTH
-// ============================================
 export interface User {
   id: number;
-  username?: string; // Tên đăng nhập cho admin
-  customer_code?: string; // Mã khách hàng: KH-000001
+  username?: string;
+  customer_code?: string;
   full_name: string;
   email: string;
   phone?: string;
@@ -55,7 +37,7 @@ export interface User {
   gender?: "male" | "female" | "other";
   address?: string;
   avatar?: string;
-  setting?: any; // JSON
+  setting?: any;
   is_verified: boolean;
   is_active: boolean;
   created_at: string;
@@ -75,12 +57,9 @@ export interface Address {
   created_at: string;
 }
 
-// ============================================
-// PRODUCTS & VARIANTS
-// ============================================
 export interface Category {
   id: number;
-  category_code?: string; // Mã danh mục: CAT-000001
+  category_code?: string;
   name: string;
   slug: string;
   parent_id?: number;
@@ -89,7 +68,7 @@ export interface Category {
 
 export interface Brand {
   id: number;
-  brand_code?: string; // Mã thương hiệu: BRD-000001
+  brand_code?: string;
   name: string;
   logo_url?: string;
   created_at: string;
@@ -97,17 +76,17 @@ export interface Brand {
 
 export interface Product {
   id: number;
-  product_code?: string; // Mã sản phẩm: SP-000001
+  product_code?: string;
+  sku?: string;
   name: string;
   slug: string;
   description?: string;
   category_id: number;
   brand_id: number;
-  specifications?: any; // JSON
+  specifications?: any;
   status: ProductStatus;
   created_at: string;
   updated_at?: string;
-  // Relations (for display)
   category?: Category;
   brand?: Brand;
   variants?: ProductVariant[];
@@ -118,43 +97,27 @@ export interface ProductVariant {
   id: number;
   product_id: number;
   sku: string;
-  version?: string; // VD: "16GB", "1TB", "RTX 4060"
-  color?: string; // VD: "Đen", "Trắng", "Đỏ"
-  color_hex?: string; // VD: "#FF0000"
+  version?: string;
+  color?: string;
+  color_hex?: string;
   price: number;
-  compare_at_price?: number; // Giá gốc để so sánh
+  compare_at_price?: number;
   stock: number;
   is_active: boolean;
   created_at: string;
   updated_at?: string;
-  // Relations
   product?: Product;
 }
 
 export interface ProductImage {
   id: number;
   product_id: number;
-  variant_id?: number; // null = ảnh chung
+  variant_id?: number;
   image_url: string;
   is_primary: boolean;
   sort_order: number;
 }
 
-export interface StockLog {
-  id: number;
-  variant_id: number;
-  admin_id?: number;
-  change_qty: number; // Dương: nhập, âm: xuất
-  note?: string;
-  created_at: string;
-  // Relations
-  variant?: ProductVariant;
-  admin?: User;
-}
-
-// ============================================
-// ORDERS & PAYMENTS
-// ============================================
 export interface Order {
   id: number;
   user_id: number;
@@ -171,7 +134,6 @@ export interface Order {
   note?: string;
   created_at: string;
   updated_at?: string;
-  // Relations (for display)
   user?: User;
   address?: Address;
   coupon?: Coupon;
@@ -185,9 +147,8 @@ export interface OrderItem {
   order_id: number;
   variant_id: number;
   quantity: number;
-  unit_price: number; // Snapshot giá lúc đặt
+  unit_price: number;
   subtotal: number;
-  // Relations
   variant?: ProductVariant;
 }
 
@@ -199,7 +160,6 @@ export interface OrderStatusLog {
   new_status: string;
   note?: string;
   changed_at: string;
-  // Relations
   admin?: User;
 }
 
@@ -209,15 +169,12 @@ export interface Payment {
   method: PaymentMethod;
   amount: number;
   transaction_id?: string;
-  gateway_response?: any; // JSON
+  gateway_response?: any;
   status: PaymentGatewayStatus;
   paid_at?: string;
   created_at: string;
 }
 
-// ============================================
-// COUPONS & PROMOTIONS
-// ============================================
 export interface Coupon {
   id: number;
   code: string;
@@ -231,66 +188,12 @@ export interface Coupon {
   created_at: string;
 }
 
-// ============================================
-// SHOPPING CART
-// ============================================
-export interface Cart {
-  id: number;
-  user_id: number;
-  created_at: string;
-  updated_at?: string;
-  items?: CartItem[];
-}
-
-export interface CartItem {
-  id: number;
-  cart_id: number;
-  variant_id: number;
-  quantity: number;
-  added_at: string;
-  // Relations
-  variant?: ProductVariant;
-}
-
-// ============================================
-// CUSTOMER MANAGEMENT
-// ============================================
 export interface Customer extends User {
   totalOrders?: number;
   totalSpent?: number;
   addresses?: Address[];
 }
 
-// ============================================
-// REVIEWS & WISHLIST
-// ============================================
-export interface Review {
-  id: number;
-  user_id: number;
-  product_id: number;
-  variant_id?: number;
-  order_id?: number;
-  rating: number; // 1-5
-  comment?: string;
-  created_at: string;
-  updated_at?: string;
-  // Relations
-  user?: User;
-  product?: Product;
-}
-
-export interface Wishlist {
-  id: number;
-  user_id: number;
-  product_id: number;
-  added_at: string;
-  // Relations
-  product?: Product;
-}
-
-// ============================================
-// RETURN REQUESTS
-// ============================================
 export interface ReturnRequest {
   id: number;
   order_id: number;
@@ -300,7 +203,6 @@ export interface ReturnRequest {
   admin_note?: string;
   refund_amount?: number;
   created_at: string;
-  // Relations
   order?: Order;
   user?: User;
   items?: ReturnItem[];
@@ -313,7 +215,6 @@ export interface ReturnItem {
   order_item_id: number;
   quantity: number;
   condition?: ReturnCondition;
-  // Relations
   order_item?: OrderItem;
 }
 
@@ -323,31 +224,6 @@ export interface ReturnImage {
   image_url: string;
 }
 
-// ============================================
-// NOTIFICATIONS & BANNERS
-// ============================================
-export interface Notification {
-  id: number;
-  user_id?: number; // null = broadcast
-  title: string;
-  body: string;
-  type: NotificationType;
-  is_read: boolean;
-  created_at: string;
-}
-
-export interface Banner {
-  id: number;
-  image_url: string;
-  link_url?: string;
-  sort_order: number;
-  is_active: boolean;
-  created_at: string;
-}
-
-// ============================================
-// DASHBOARD & REPORTS
-// ============================================
 export interface DashboardStats {
   totalRevenue: number;
   totalOrders: number;
@@ -365,7 +241,7 @@ export interface RevenueData {
   date: string;
   revenue: number;
   orders: number;
-  id?: string; // Unique identifier for React keys
+  id?: string;
 }
 
 export interface TopProduct {
@@ -375,30 +251,18 @@ export interface TopProduct {
   total_revenue: number;
 }
 
-// ============================================
-// INVENTORY MANAGEMENT
-// ============================================
 export interface StockMovement {
   id: number;
   variant_id: number;
   admin_id?: number;
-  change_qty: number; // Dương: nhập, âm: xuất
+  change_qty: number;
   note?: string;
   created_at: string;
-  // Relations
   variant?: ProductVariant;
   admin?: User;
 }
 
-export interface InventoryTransaction extends StockLog {
-  type: "in" | "out";
-}
-
-// ============================================
-// SYSTEM CONFIGURATION
-// ============================================
 export interface SystemConfig {
-  // Payment configuration
   paymentConfig: {
     codEnabled: boolean;
     bankTransferEnabled: boolean;
@@ -407,7 +271,6 @@ export interface SystemConfig {
     vnpayEnabled: boolean;
   };
   
-  // Shipping configuration
   shippingConfig: {
     baseShippingFee: number;
     freeShippingThreshold: number;
@@ -415,14 +278,12 @@ export interface SystemConfig {
     urgentShippingFee: number;
   };
   
-  // Bank information
   bankInfo: {
     bankName: string;
     accountNumber: string;
     accountName: string;
   };
   
-  // Banners
   banners: Array<{
     id: string;
     title: string;
@@ -430,7 +291,6 @@ export interface SystemConfig {
     active: boolean;
   }>;
   
-  // Notification templates
   notificationTemplates: {
     orderNotification: string;
     lowStockNotification: string;

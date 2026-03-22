@@ -10,7 +10,6 @@ import {
   Mail,
   Calendar,
   DollarSign,
-  FileText,
   Image as ImageIcon,
   ZoomIn,
 } from "lucide-react";
@@ -137,7 +136,6 @@ export function ReturnDetail() {
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/returns")}>
@@ -151,9 +149,7 @@ export function ReturnDetail() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Return info */}
           <Card>
             <CardHeader>
               <CardTitle>Thông tin yêu cầu trả hàng</CardTitle>
@@ -205,7 +201,6 @@ export function ReturnDetail() {
             </CardContent>
           </Card>
 
-          {/* Return items */}
           <Card>
             <CardHeader>
               <CardTitle>Sản phẩm yêu cầu trả</CardTitle>
@@ -288,7 +283,6 @@ export function ReturnDetail() {
             </CardContent>
           </Card>
 
-          {/* Return images */}
           {returnRequest.images && returnRequest.images.length > 0 && (
             <Card>
               <CardHeader>
@@ -320,7 +314,6 @@ export function ReturnDetail() {
             </Card>
           )}
 
-          {/* Customer info */}
           <Card>
             <CardHeader>
               <CardTitle>Thông tin khách hàng</CardTitle>
@@ -351,9 +344,7 @@ export function ReturnDetail() {
           </Card>
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
-          {/* Actions */}
           <Card>
             <CardHeader>
               <CardTitle>Xử lý yêu cầu</CardTitle>
@@ -403,7 +394,6 @@ export function ReturnDetail() {
             </CardContent>
           </Card>
 
-          {/* Refund amount */}
           {status !== "rejected" && (
             <Card>
               <CardHeader>
@@ -429,7 +419,6 @@ export function ReturnDetail() {
             </Card>
           )}
 
-          {/* Timeline */}
           <Card>
             <CardHeader>
               <CardTitle>Lịch sử xử lý</CardTitle>
@@ -504,7 +493,6 @@ export function ReturnDetail() {
         </div>
       </div>
 
-      {/* Approve dialog */}
       <Dialog open={approveDialogOpen} onOpenChange={setApproveDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -556,7 +544,6 @@ export function ReturnDetail() {
         </DialogContent>
       </Dialog>
 
-      {/* Reject dialog */}
       <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -587,7 +574,6 @@ export function ReturnDetail() {
         </DialogContent>
       </Dialog>
 
-      {/* Image preview dialog */}
       <Dialog open={imagePreviewOpen} onOpenChange={setImagePreviewOpen}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>

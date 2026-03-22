@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import {
   TrendingUp,
@@ -20,22 +21,131 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import {
-  mockDashboardStats,
-  mockRevenueData,
-  mockTopProducts,
-  mockOrders,
-  mockProductVariants,
-} from "../utils/mockData";
 import { formatCurrency, orderStatusConfig } from "../utils/statusUtils";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Link } from "react-router";
+import { useData } from "../contexts/DataContext";
+import { DashboardStats, RevenueData, TopProduct } from "../types";
 
 export function Dashboard() {
-  const stats = mockDashboardStats;
-  const lowStockProducts = mockProductVariants.filter((v) => v.stock > 0 && v.stock < 10);
-  const recentOrders = mockOrders.slice(0, 5);
+  const { orders, customers, productVariants, products } = useData();
+
+  const recentOrders = useMemo(
+    () => [...orders].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5),
+    [orders]
+  );
+
+  const lowStockProducts = useMemo(
+    () => productVariants.filter((v) => v.stock > 0 && v.stock < 10),
+    [productVariants]
+  );
+
+  const stats = useMemo<DashboardStats>(() => {
+    const now = new Date();
+    const currentStart = new Date(now);
+    currentStart.setHours(0, 0, 0, 0);
+    currentStart.setDate(currentStart.getDate() - 6);
+
+    const previousStart = new Date(currentStart);
+    previousStart.setDate(previousStart.getDate() - 7);
+    const previousEnd = new Date(currentStart);
+
+    const inRange = (dateValue: string, start: Date, end: Date) => {
+      const date = new Date(dateValue).getTime();
+      return date >= start.getTime() && date < end.getTime();
+    };
+
+    const currentOrders = orders.filter((order) => inRange(order.created_at, currentStart, now));
+    const previousOrders = orders.filter((order) => inRange(order.created_at, previousStart, previousEnd));
+
+    const currentRevenue = currentOrders.reduce((sum, order) => sum + order.total, 0);
+    const previousRevenue = previousOrders.reduce((sum, order) => sum + order.total, 0);
+
+    const currentCustomers = customers.filter((customer) => inRange(customer.created_at, currentStart, now)).length;
+    const previousCustomers = customers.filter((customer) => inRange(customer.created_at, previousStart, previousEnd)).length;
+
+    const pendingStatuses = new Set(["pending", "confirmed", "preparing", "packed", "shipping"]);
+    const currentPending = currentOrders.filter((order) => pendingStatuses.has(order.order_status)).length;
+    const previousPending = previousOrders.filter((order) => pendingStatuses.has(order.order_status)).length;
+
+    const calcChange = (current: number, previous: number) => {
+      if (previous === 0) {
+        return current === 0 ? 0 : 100;
+      }
+      return Number((((current - previous) / previous) * 100).toFixed(1));
+    };
+
+    return {
+      totalRevenue: orders.reduce((sum, order) => sum + order.total, 0),
+      totalOrders: orders.length,
+      totalCustomers: customers.length,
+      pendingOrders: orders.filter((order) => pendingStatuses.has(order.order_status)).length,
+      revenueChange: calcChange(currentRevenue, previousRevenue),
+      ordersChange: calcChange(currentOrders.length, previousOrders.length),
+      customersChange: calcChange(currentCustomers, previousCustomers),
+      pendingChange: calcChange(currentPending, previousPending),
+      lowStockProducts: lowStockProducts.length,
+    };
+  }, [orders, customers, lowStockProducts.length]);
+
+  const revenueData = useMemo<RevenueData[]>(() => {
+    const result: RevenueData[] = [];
+
+    for (let i = 6; i >= 0; i -= 1) {
+      const day = new Date();
+      day.setHours(0, 0, 0, 0);
+      day.setDate(day.getDate() - i);
+
+      const nextDay = new Date(day);
+      nextDay.setDate(nextDay.getDate() + 1);
+
+      const dayOrders = orders.filter((order) => {
+        const time = new Date(order.created_at).getTime();
+        return time >= day.getTime() && time < nextDay.getTime();
+      });
+
+      result.push({
+        date: day.toLocaleDateString("vi-VN", { weekday: "short" }),
+        revenue: dayOrders.reduce((sum, order) => sum + order.total, 0),
+        orders: dayOrders.length,
+        id: `revenue-${day.getTime()}`,
+      });
+    }
+
+    return result;
+  }, [orders]);
+
+  const topProducts = useMemo<TopProduct[]>(() => {
+    const salesByProduct = new Map<number, { total_sold: number; total_revenue: number }>();
+
+    orders.forEach((order) => {
+      order.items?.forEach((item) => {
+        const variant = productVariants.find((v) => v.id === item.variant_id);
+        if (!variant) {
+          return;
+        }
+
+        const productId = variant.product_id;
+        const current = salesByProduct.get(productId) || { total_sold: 0, total_revenue: 0 };
+
+        salesByProduct.set(productId, {
+          total_sold: current.total_sold + item.quantity,
+          total_revenue: current.total_revenue + item.subtotal,
+        });
+      });
+    });
+
+    return Array.from(salesByProduct.entries())
+      .map(([product_id, sales]) => ({
+        product_id,
+        product_name: products.find((product) => product.id === product_id)?.name || `SP-${product_id}`,
+        total_sold: sales.total_sold,
+        total_revenue: sales.total_revenue,
+      }))
+      .sort((a, b) => b.total_sold - a.total_sold)
+      .slice(0, 5);
+  }, [orders, productVariants, products]);
 
   const statCards = [
     {
@@ -74,13 +184,11 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
         <p className="text-gray-600">Tổng quan hệ thống</p>
       </div>
 
-      {/* Stats cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((stat) => (
           <Card key={stat.title}>
@@ -114,16 +222,14 @@ export function Dashboard() {
         ))}
       </div>
 
-      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Revenue chart */}
         <Card>
           <CardHeader>
             <CardTitle>Doanh thu 7 ngày</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={mockRevenueData} id="revenue-chart">
+              <LineChart data={revenueData} id="revenue-chart">
                 <CartesianGrid key="revenue-grid" strokeDasharray="3 3" />
                 <XAxis key="revenue-xaxis" dataKey="date" />
                 <YAxis key="revenue-yaxis" />
@@ -145,14 +251,13 @@ export function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Top products chart */}
         <Card>
           <CardHeader>
             <CardTitle>Sản phẩm bán chạy</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={mockTopProducts} id="top-products-chart">
+              <BarChart data={topProducts} id="top-products-chart">
                 <CartesianGrid key="products-grid" strokeDasharray="3 3" />
                 <XAxis key="products-xaxis" dataKey="product_name" angle={-45} textAnchor="end" height={100} />
                 <YAxis key="products-yaxis" />
@@ -170,9 +275,7 @@ export function Dashboard() {
         </Card>
       </div>
 
-      {/* Recent orders and low stock */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent orders */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Đơn hàng gần đây</CardTitle>
@@ -216,7 +319,6 @@ export function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Low stock warning */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2">
