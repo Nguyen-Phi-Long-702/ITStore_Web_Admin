@@ -1,4 +1,9 @@
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../ui/tooltip";
 
 interface ColorSwatchProps {
   color?: string;
@@ -7,7 +12,12 @@ interface ColorSwatchProps {
   showLabel?: boolean;
 }
 
-export function ColorSwatch({ color, colorHex, size = "md", showLabel = false }: ColorSwatchProps) {
+export function ColorSwatch({
+  color,
+  colorHex,
+  size = "md",
+  showLabel = false,
+}: ColorSwatchProps) {
   if (!colorHex && !color) return null;
 
   const sizeClasses = {
@@ -36,9 +46,7 @@ export function ColorSwatch({ color, colorHex, size = "md", showLabel = false }:
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger asChild>
-          {element}
-        </TooltipTrigger>
+        <TooltipTrigger asChild>{element}</TooltipTrigger>
         <TooltipContent>
           <p>{color || colorHex}</p>
         </TooltipContent>

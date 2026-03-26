@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 
 interface User {
   id: number;
@@ -19,28 +25,28 @@ interface Permissions {
   canAccessSettings: boolean;
   canAccessPromotions: boolean;
   canAccessReturns: boolean;
-  
+
   canCreateProduct: boolean;
   canEditProduct: boolean;
   canDeleteProduct: boolean;
   canManageInventory: boolean;
-  
+
   canCreateCategory: boolean;
   canEditCategory: boolean;
   canDeleteCategory: boolean;
   canCreateBrand: boolean;
   canEditBrand: boolean;
   canDeleteBrand: boolean;
-  
+
   canViewOrders: boolean;
   canEditOrderStatus: boolean;
   canCancelOrder: boolean;
   canProcessRefund: boolean;
-  
+
   canViewCustomers: boolean;
   canEditCustomer: boolean;
   canDeleteCustomer: boolean;
-  
+
   canCreatePromotion: boolean;
   canEditPromotion: boolean;
   canDeletePromotion: boolean;
@@ -55,7 +61,9 @@ interface AuthContextType {
   isLoading: boolean;
   hasPermission: (permission: keyof Permissions) => boolean;
   updateUser: (
-    updates: Partial<Omit<User, "id" | "username" | "role" | "created_at" | "email">>,
+    updates: Partial<
+      Omit<User, "id" | "username" | "role" | "created_at" | "email">
+    >,
   ) => Promise<{ ok: boolean; message?: string }>;
   changePassword: (
     oldPassword: string,
@@ -203,7 +211,13 @@ async function fetchCurrentUser(userId?: number): Promise<User | null> {
     "/api/admin/users/me",
     "/api/admin/profile",
     "/admins/me",
-    ...(userId ? [`/api/admin/users/${userId}`, `/admins/${userId}`, `/api/users/${userId}`] : []),
+    ...(userId
+      ? [
+          `/api/admin/users/${userId}`,
+          `/admins/${userId}`,
+          `/api/users/${userId}`,
+        ]
+      : []),
   ];
 
   for (const endpoint of endpoints) {
@@ -231,7 +245,9 @@ async function fetchCurrentUser(userId?: number): Promise<User | null> {
   return null;
 }
 
-function toCamelPayload(input: Record<string, unknown>): Record<string, unknown> {
+function toCamelPayload(
+  input: Record<string, unknown>,
+): Record<string, unknown> {
   const output: Record<string, unknown> = {};
 
   if (Object.prototype.hasOwnProperty.call(input, "full_name")) {
@@ -257,7 +273,9 @@ function toCamelPayload(input: Record<string, unknown>): Record<string, unknown>
   return output;
 }
 
-function toAdminApiPayload(input: Record<string, unknown>): Record<string, unknown> {
+function toAdminApiPayload(
+  input: Record<string, unknown>,
+): Record<string, unknown> {
   const output: Record<string, unknown> = {};
 
   if (Object.prototype.hasOwnProperty.call(input, "full_name")) {
@@ -301,7 +319,10 @@ function clearAuthState() {
   localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
 }
 
-async function postAuth(endpoint: string, body: Record<string, unknown>): Promise<any | null> {
+async function postAuth(
+  endpoint: string,
+  body: Record<string, unknown>,
+): Promise<any | null> {
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: "POST",
@@ -311,7 +332,9 @@ async function postAuth(endpoint: string, body: Record<string, unknown>): Promis
       body: JSON.stringify(body),
     });
 
-    const payload = (await response.json().catch(() => null)) as AuthPayload | any;
+    const payload = (await response.json().catch(() => null)) as
+      | AuthPayload
+      | any;
 
     if (!response.ok) {
       return payload;
@@ -329,28 +352,28 @@ const ROLE_PERMISSIONS: Record<"admin", Permissions> = {
     canAccessSettings: true,
     canAccessPromotions: true,
     canAccessReturns: true,
-    
+
     canCreateProduct: true,
     canEditProduct: true,
     canDeleteProduct: true,
     canManageInventory: true,
-    
+
     canCreateCategory: true,
     canEditCategory: true,
     canDeleteCategory: true,
     canCreateBrand: true,
     canEditBrand: true,
     canDeleteBrand: true,
-    
+
     canViewOrders: true,
     canEditOrderStatus: true,
     canCancelOrder: true,
     canProcessRefund: true,
-    
+
     canViewCustomers: true,
     canEditCustomer: true,
     canDeleteCustomer: true,
-    
+
     canCreatePromotion: true,
     canEditPromotion: true,
     canDeletePromotion: true,
@@ -403,7 +426,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (storedUser) {
           try {
             const parsed = JSON.parse(storedUser);
-            if (parsed?.avatar && typeof parsed.avatar === "string" && parsed.avatar.startsWith("figma:asset")) {
+            if (
+              parsed?.avatar &&
+              typeof parsed.avatar === "string" &&
+              parsed.avatar.startsWith("figma:asset")
+            ) {
               delete parsed.avatar;
             }
             parsedUser = parsed;
@@ -452,7 +479,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    const endpoints = ["/api/auth/login", "/auth/login", "/admins/login", "/login"];
+    const endpoints = [
+      "/api/auth/login",
+      "/auth/login",
+      "/admins/login",
+      "/login",
+    ];
 
     for (const endpoint of endpoints) {
       const payload = await postAuth(endpoint, { email, password });
@@ -487,7 +519,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async (): Promise<void> => {
     const endpoints = ["/api/auth/logout", "/auth/logout", "/logout"];
-    const refreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)?.trim();
+    const refreshToken = localStorage
+      .getItem(REFRESH_TOKEN_STORAGE_KEY)
+      ?.trim();
     const payload = refreshToken
       ? { refresh_token: refreshToken, refreshToken }
       : {};
@@ -524,7 +558,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const updateUser = async (
-    updates: Partial<Omit<User, "id" | "username" | "role" | "created_at" | "email">>,
+    updates: Partial<
+      Omit<User, "id" | "username" | "role" | "created_at" | "email">
+    >,
   ): Promise<{ ok: boolean; message?: string }> => {
     if (!user) {
       return { ok: false, message: "Không tìm thấy thông tin đăng nhập" };
@@ -533,10 +569,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const nextUser = { ...user, ...updates };
     const requestPayload: Record<string, unknown> = {};
 
-    const diffCandidates: Array<[keyof Omit<User, "id" | "username" | "role" | "created_at" | "email">, unknown, unknown]> = [
+    const diffCandidates: Array<
+      [
+        keyof Omit<User, "id" | "username" | "role" | "created_at" | "email">,
+        unknown,
+        unknown,
+      ]
+    > = [
       ["full_name", user.full_name, nextUser.full_name],
       ["phone", user.phone ?? null, nextUser.phone ?? null],
-      ["date_of_birth", user.date_of_birth ?? null, nextUser.date_of_birth ?? null],
+      [
+        "date_of_birth",
+        user.date_of_birth ?? null,
+        nextUser.date_of_birth ?? null,
+      ],
       ["gender", user.gender ?? null, nextUser.gender ?? null],
       ["address", user.address ?? null, nextUser.address ?? null],
       ["avatar", user.avatar ?? null, nextUser.avatar ?? null],
@@ -570,7 +616,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    if (Object.prototype.hasOwnProperty.call(updates, "avatar") && updates.avatar === undefined) {
+    if (
+      Object.prototype.hasOwnProperty.call(updates, "avatar") &&
+      updates.avatar === undefined
+    ) {
       requestPayload.avatar = null;
     }
 
@@ -595,9 +644,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ];
 
     if (typeof requestPayload.avatar === "string") {
-      payloadCandidates.push({ ...requestPayload, avatar_url: requestPayload.avatar });
-      payloadCandidates.push({ user: { ...requestPayload, avatar_url: requestPayload.avatar } });
-      payloadCandidates.push({ data: { ...requestPayload, avatar_url: requestPayload.avatar } });
+      payloadCandidates.push({
+        ...requestPayload,
+        avatar_url: requestPayload.avatar,
+      });
+      payloadCandidates.push({
+        user: { ...requestPayload, avatar_url: requestPayload.avatar },
+      });
+      payloadCandidates.push({
+        data: { ...requestPayload, avatar_url: requestPayload.avatar },
+      });
     }
 
     if (Object.keys(requestPayload).length === 0) {
@@ -631,7 +687,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               if (response.status === 401 || response.status === 403) {
                 hasUnauthorized = true;
               }
-              const errorPayload = (await response.json().catch(() => null)) as any;
+              const errorPayload = (await response
+                .json()
+                .catch(() => null)) as any;
               lastError = collectApiError(errorPayload, response.status);
               continue;
             }
@@ -661,7 +719,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (hasUnauthorized) {
-      return { ok: false, message: "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại." };
+      return {
+        ok: false,
+        message: "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.",
+      };
     }
 
     return { ok: false, message: lastError };
@@ -759,7 +820,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               unauthorized = true;
             }
 
-            const errorPayload = (await response.json().catch(() => null)) as any;
+            const errorPayload = (await response
+              .json()
+              .catch(() => null)) as any;
             const currentError = collectApiError(errorPayload, response.status);
             if (currentError) {
               lastError = currentError;
@@ -792,7 +855,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               unauthorized = true;
             }
 
-            const errorPayload = (await response.json().catch(() => null)) as any;
+            const errorPayload = (await response
+              .json()
+              .catch(() => null)) as any;
             const currentError = collectApiError(errorPayload, response.status);
             if (currentError) {
               lastError = currentError;
@@ -802,11 +867,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (unauthorized) {
-        return { ok: false, message: "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại." };
+        return {
+          ok: false,
+          message: "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.",
+        };
       }
 
       if (allNotFound) {
-        return { ok: false, message: "Không tìm thấy endpoint đổi mật khẩu phù hợp." };
+        return {
+          ok: false,
+          message: "Không tìm thấy endpoint đổi mật khẩu phù hợp.",
+        };
       }
 
       return { ok: false, message: lastError };

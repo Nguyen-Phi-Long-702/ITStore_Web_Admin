@@ -1,7 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useSearchParams } from "react-router";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -21,7 +26,21 @@ import {
   DialogTitle,
 } from "../components/ui/dialog";
 import { Textarea } from "../components/ui/textarea";
-import { User, Mail, Phone, Calendar, MapPin, Edit2, Save, X, Lock, Eye, EyeOff, Trash2, Camera } from "lucide-react";
+import {
+  User,
+  Mail,
+  Phone,
+  Calendar,
+  MapPin,
+  Edit2,
+  Save,
+  X,
+  Lock,
+  Eye,
+  EyeOff,
+  Trash2,
+  Camera,
+} from "lucide-react";
 import { toast } from "sonner";
 
 function AccountContent() {
@@ -31,18 +50,18 @@ function AccountContent() {
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+
   const [passwordForm, setPasswordForm] = useState({
     oldPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
   const passwordChangeSupported = true;
-  
+
   const [formData, setFormData] = useState({
     full_name: user?.full_name || "",
     phone: user?.phone || "",
@@ -64,7 +83,9 @@ function AccountContent() {
   const handleSave = async () => {
     const result = await updateUser(formData);
     if (!result.ok) {
-      toast.error(result.message || "Không thể cập nhật thông tin. Vui lòng thử lại!");
+      toast.error(
+        result.message || "Không thể cập nhật thông tin. Vui lòng thử lại!",
+      );
       if (result.message?.includes("đăng nhập lại")) {
         setIsEditing(false);
       }
@@ -87,7 +108,11 @@ function AccountContent() {
   };
 
   const handleChangePassword = async () => {
-    if (!passwordForm.oldPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+    if (
+      !passwordForm.oldPassword ||
+      !passwordForm.newPassword ||
+      !passwordForm.confirmPassword
+    ) {
       toast.error("Vui lòng điền đầy đủ thông tin!");
       return;
     }
@@ -102,21 +127,30 @@ function AccountContent() {
       return;
     }
 
-      if (passwordForm.oldPassword === passwordForm.newPassword) {
-        toast.error("Mật khẩu mới không được trùng với mật khẩu cũ!");
-        return;
-      }
+    if (passwordForm.oldPassword === passwordForm.newPassword) {
+      toast.error("Mật khẩu mới không được trùng với mật khẩu cũ!");
+      return;
+    }
 
     setIsChangingPassword(true);
-    const result = await changePassword(passwordForm.oldPassword, passwordForm.newPassword);
+    const result = await changePassword(
+      passwordForm.oldPassword,
+      passwordForm.newPassword,
+    );
     setIsChangingPassword(false);
 
     if (result.ok) {
       toast.success("Đổi mật khẩu thành công!");
       setIsPasswordDialogOpen(false);
-      setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+      setPasswordForm({
+        oldPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
     } else {
-      toast.error(result.message || "Không thể đổi mật khẩu. Vui lòng thử lại!");
+      toast.error(
+        result.message || "Không thể đổi mật khẩu. Vui lòng thử lại!",
+      );
     }
   };
 
@@ -143,7 +177,10 @@ function AccountContent() {
       const base64String = e.target?.result as string;
       const result = await updateUser({ avatar: base64String });
       if (!result.ok) {
-        toast.error(result.message || "Không thể cập nhật ảnh đại diện. Vui lòng thử lại!");
+        toast.error(
+          result.message ||
+            "Không thể cập nhật ảnh đại diện. Vui lòng thử lại!",
+        );
         return;
       }
 
@@ -158,7 +195,9 @@ function AccountContent() {
   const handleRemoveAvatar = async () => {
     const result = await updateUser({ avatar: undefined });
     if (!result.ok) {
-      toast.error(result.message || "Không thể xóa ảnh đại diện. Vui lòng thử lại!");
+      toast.error(
+        result.message || "Không thể xóa ảnh đại diện. Vui lòng thử lại!",
+      );
       return;
     }
 
@@ -271,7 +310,7 @@ function AccountContent() {
               <p className="text-gray-600">@{user.username}</p>
               <span
                 className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium mt-2 ${getRoleBadgeColor(
-                  user.role
+                  user.role,
                 )}`}
               >
                 {getRoleLabel(user.role)}
@@ -361,7 +400,10 @@ function AccountContent() {
                     type="date"
                     value={formData.date_of_birth}
                     onChange={(e) =>
-                      setFormData({ ...formData, date_of_birth: e.target.value })
+                      setFormData({
+                        ...formData,
+                        date_of_birth: e.target.value,
+                      })
                     }
                   />
                 ) : (
@@ -396,7 +438,9 @@ function AccountContent() {
                   </Select>
                 ) : (
                   <p className="text-gray-900 font-medium py-2">
-                    {user.gender ? getGenderLabel(user.gender) : "Chưa cập nhật"}
+                    {user.gender
+                      ? getGenderLabel(user.gender)
+                      : "Chưa cập nhật"}
                   </p>
                 )}
               </div>
@@ -451,7 +495,10 @@ function AccountContent() {
         </CardContent>
       </Card>
 
-      <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+      <Dialog
+        open={isPasswordDialogOpen}
+        onOpenChange={setIsPasswordDialogOpen}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Đổi mật khẩu</DialogTitle>
@@ -468,7 +515,10 @@ function AccountContent() {
                   type={showOldPassword ? "text" : "password"}
                   value={passwordForm.oldPassword}
                   onChange={(e) =>
-                    setPasswordForm({ ...passwordForm, oldPassword: e.target.value })
+                    setPasswordForm({
+                      ...passwordForm,
+                      oldPassword: e.target.value,
+                    })
                   }
                 />
                 <button
@@ -492,7 +542,10 @@ function AccountContent() {
                   type={showNewPassword ? "text" : "password"}
                   value={passwordForm.newPassword}
                   onChange={(e) =>
-                    setPasswordForm({ ...passwordForm, newPassword: e.target.value })
+                    setPasswordForm({
+                      ...passwordForm,
+                      newPassword: e.target.value,
+                    })
                   }
                 />
                 <button
@@ -516,7 +569,10 @@ function AccountContent() {
                   type={showConfirmPassword ? "text" : "password"}
                   value={passwordForm.confirmPassword}
                   onChange={(e) =>
-                    setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })
+                    setPasswordForm({
+                      ...passwordForm,
+                      confirmPassword: e.target.value,
+                    })
                   }
                 />
                 <button

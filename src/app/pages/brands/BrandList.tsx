@@ -1,6 +1,11 @@
 import { useState, useRef } from "react";
 import { Search, Plus, Edit, Trash2, Upload, X, Image } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { Input } from "../../components/ui/input";
@@ -37,7 +42,14 @@ import { useData } from "../../contexts/DataContext";
 import { useAuth } from "../../contexts/AuthContext";
 
 export function BrandList() {
-  const { brands, products, addBrand, updateBrand, deleteBrand, brandFetchError } = useData();
+  const {
+    brands,
+    products,
+    addBrand,
+    updateBrand,
+    deleteBrand,
+    brandFetchError,
+  } = useData();
   const { permissions } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -54,9 +66,10 @@ export function BrandList() {
     return products.filter((product) => product.brand_id === brandId).length;
   };
 
-  const filteredBrands = brands.filter((brand) =>
-    brand.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (brand.brand_code || "").toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredBrands = brands.filter(
+    (brand) =>
+      brand.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (brand.brand_code || "").toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const handleAdd = () => {
@@ -109,7 +122,10 @@ export function BrandList() {
       setDialogOpen(false);
       setFormData({ name: "", logo_url: "", logo_file: undefined });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Không thể lưu thương hiệu lên backend";
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Không thể lưu thương hiệu lên backend";
       toast.error(message);
     }
   };
@@ -162,7 +178,9 @@ export function BrandList() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Quản lý thương hiệu</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Quản lý thương hiệu
+          </h2>
           <p className="text-gray-600">Quản lý các thương hiệu sản phẩm</p>
         </div>
         {permissions.canCreateBrand && (
@@ -236,7 +254,10 @@ export function BrandList() {
             <TableBody>
               {filteredBrands.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                  <TableCell
+                    colSpan={6}
+                    className="text-center py-8 text-gray-500"
+                  >
                     Không tìm thấy thương hiệu nào
                   </TableCell>
                 </TableRow>
@@ -246,7 +267,8 @@ export function BrandList() {
                   return (
                     <TableRow key={brand.id}>
                       <TableCell className="font-medium text-blue-600">
-                        {brand.brand_code || `BRD${brand.id.toString().padStart(6, "0")}`}
+                        {brand.brand_code ||
+                          `BRD${brand.id.toString().padStart(6, "0")}`}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
@@ -284,7 +306,9 @@ export function BrandList() {
                       <TableCell>
                         {Number.isNaN(new Date(brand.created_at).getTime())
                           ? "-"
-                          : new Date(brand.created_at).toLocaleDateString("vi-VN")}
+                          : new Date(brand.created_at).toLocaleDateString(
+                              "vi-VN",
+                            )}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -340,7 +364,9 @@ export function BrandList() {
                 id="name"
                 placeholder="Nhập tên thương hiệu"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
               />
             </div>
             <div className="space-y-2">
@@ -350,7 +376,11 @@ export function BrandList() {
                 placeholder="https://example.com/logo.png"
                 value={formData.logo_url}
                 onChange={(e) =>
-                  setFormData({ ...formData, logo_url: e.target.value, logo_file: undefined })
+                  setFormData({
+                    ...formData,
+                    logo_url: e.target.value,
+                    logo_file: undefined,
+                  })
                 }
               />
               <p className="text-sm text-gray-500">

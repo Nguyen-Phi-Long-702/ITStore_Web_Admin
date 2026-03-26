@@ -20,6 +20,8 @@ import { SystemConfig } from "./pages/SystemConfig";
 import { BrandList } from "./pages/brands/BrandList";
 import { CategoryList } from "./pages/categories/CategoryList";
 import { Account } from "./pages/Account";
+import { EmailVerificationSuccess } from "./pages/EmailVerificationSuccess";
+import { PasswordReset } from "./pages/PasswordReset";
 
 export const router = createBrowserRouter([
   {
@@ -27,6 +29,22 @@ export const router = createBrowserRouter([
     Component: RootLayout,
     ErrorBoundary: ErrorBoundary,
     children: [
+      {
+        path: "email-verified",
+        Component: EmailVerificationSuccess,
+      },
+      {
+        path: "email-verification-success",
+        Component: EmailVerificationSuccess,
+      },
+      {
+        path: "reset-password",
+        Component: PasswordReset,
+      },
+      {
+        path: "password-reset",
+        Component: PasswordReset,
+      },
       {
         path: "login",
         Component: Login,

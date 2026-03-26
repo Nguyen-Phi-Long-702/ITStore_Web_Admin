@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import { Search, Eye, CheckCircle, Package } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Badge } from "../../components/ui/badge";
@@ -36,9 +41,10 @@ export function OrderList() {
 
   const filteredOrders = orders.filter((order) => {
     const orderNumber = `DH${order.id.toString().padStart(6, "0")}`;
+    const customerName = order.user?.full_name || "";
     const matchesSearch =
       orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.user?.full_name.toLowerCase().includes(searchTerm.toLowerCase());
+      customerName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus =
       statusFilter === "all" || order.order_status === statusFilter;
     const matchesPayment =
@@ -51,13 +57,13 @@ export function OrderList() {
     all: orders,
     pending: orders.filter((o) => o.order_status === "pending"),
     confirmed: orders.filter(
-      (o) => o.order_status === "confirmed" || o.order_status === "preparing"
+      (o) => o.order_status === "confirmed" || o.order_status === "preparing",
     ),
     packed: orders.filter((o) => o.order_status === "packed"),
     shipping: orders.filter((o) => o.order_status === "shipping"),
     completed: orders.filter((o) => o.order_status === "delivered"),
     cancelled: orders.filter(
-      (o) => o.order_status === "cancelled" || o.order_status === "failed"
+      (o) => o.order_status === "cancelled" || o.order_status === "failed",
     ),
   };
 
@@ -200,7 +206,10 @@ export function OrderList() {
                     <TableCell className="font-medium">{orderNumber}</TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{order.user?.full_name}</p>
+                        <p className="font-medium">
+                          {order.user?.full_name ||
+                            `KH${order.user_id.toString().padStart(6, "0")}`}
+                        </p>
                         <p className="text-sm text-gray-600">
                           {order.user?.phone || order.address?.phone_number}
                         </p>

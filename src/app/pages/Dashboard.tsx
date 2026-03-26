@@ -1,5 +1,10 @@
 import { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
 import {
   TrendingUp,
   TrendingDown,
@@ -31,14 +36,23 @@ import { DashboardStats, RevenueData, TopProduct } from "../types";
 export function Dashboard() {
   const { orders, customers, productVariants, products } = useData();
 
+  const isRevenueOrder = (paymentStatus: string, orderStatus: string) =>
+    paymentStatus === "paid" && orderStatus === "delivered";
+
   const recentOrders = useMemo(
-    () => [...orders].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5),
-    [orders]
+    () =>
+      [...orders]
+        .sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        )
+        .slice(0, 5),
+    [orders],
   );
 
   const lowStockProducts = useMemo(
     () => productVariants.filter((v) => v.stock > 0 && v.stock < 10),
-    [productVariants]
+    [productVariants],
   );
 
   const stats = useMemo<DashboardStats>(() => {
@@ -56,18 +70,48 @@ export function Dashboard() {
       return date >= start.getTime() && date < end.getTime();
     };
 
-    const currentOrders = orders.filter((order) => inRange(order.created_at, currentStart, now));
-    const previousOrders = orders.filter((order) => inRange(order.created_at, previousStart, previousEnd));
+    const currentOrders = orders.filter((order) =>
+      inRange(order.created_at, currentStart, now),
+    );
+    const previousOrders = orders.filter((order) =>
+      inRange(order.created_at, previousStart, previousEnd),
+    );
 
-    const currentRevenue = currentOrders.reduce((sum, order) => sum + order.total, 0);
-    const previousRevenue = previousOrders.reduce((sum, order) => sum + order.total, 0);
+    const currentRevenue = currentOrders.reduce(
+      (sum, order) =>
+        isRevenueOrder(order.payment_status, order.order_status)
+          ? sum + order.total
+          : sum,
+      0,
+    );
+    const previousRevenue = previousOrders.reduce(
+      (sum, order) =>
+        isRevenueOrder(order.payment_status, order.order_status)
+          ? sum + order.total
+          : sum,
+      0,
+    );
 
-    const currentCustomers = customers.filter((customer) => inRange(customer.created_at, currentStart, now)).length;
-    const previousCustomers = customers.filter((customer) => inRange(customer.created_at, previousStart, previousEnd)).length;
+    const currentCustomers = customers.filter((customer) =>
+      inRange(customer.created_at, currentStart, now),
+    ).length;
+    const previousCustomers = customers.filter((customer) =>
+      inRange(customer.created_at, previousStart, previousEnd),
+    ).length;
 
-    const pendingStatuses = new Set(["pending", "confirmed", "preparing", "packed", "shipping"]);
-    const currentPending = currentOrders.filter((order) => pendingStatuses.has(order.order_status)).length;
-    const previousPending = previousOrders.filter((order) => pendingStatuses.has(order.order_status)).length;
+    const pendingStatuses = new Set([
+      "pending",
+      "confirmed",
+      "preparing",
+      "packed",
+      "shipping",
+    ]);
+    const currentPending = currentOrders.filter((order) =>
+      pendingStatuses.has(order.order_status),
+    ).length;
+    const previousPending = previousOrders.filter((order) =>
+      pendingStatuses.has(order.order_status),
+    ).length;
 
     const calcChange = (current: number, previous: number) => {
       if (previous === 0) {
@@ -77,10 +121,18 @@ export function Dashboard() {
     };
 
     return {
-      totalRevenue: orders.reduce((sum, order) => sum + order.total, 0),
+      totalRevenue: orders.reduce(
+        (sum, order) =>
+          isRevenueOrder(order.payment_status, order.order_status)
+            ? sum + order.total
+            : sum,
+        0,
+      ),
       totalOrders: orders.length,
       totalCustomers: customers.length,
-      pendingOrders: orders.filter((order) => pendingStatuses.has(order.order_status)).length,
+      pendingOrders: orders.filter((order) =>
+        pendingStatuses.has(order.order_status),
+      ).length,
       revenueChange: calcChange(currentRevenue, previousRevenue),
       ordersChange: calcChange(currentOrders.length, previousOrders.length),
       customersChange: calcChange(currentCustomers, previousCustomers),
@@ -105,9 +157,17 @@ export function Dashboard() {
         return time >= day.getTime() && time < nextDay.getTime();
       });
 
+      const dayRevenue = dayOrders.reduce(
+        (sum, order) =>
+          isRevenueOrder(order.payment_status, order.order_status)
+            ? sum + order.total
+            : sum,
+        0,
+      );
+
       result.push({
         date: day.toLocaleDateString("vi-VN", { weekday: "short" }),
-        revenue: dayOrders.reduce((sum, order) => sum + order.total, 0),
+        revenue: dayRevenue,
         orders: dayOrders.length,
         id: `revenue-${day.getTime()}`,
       });
@@ -117,9 +177,16 @@ export function Dashboard() {
   }, [orders]);
 
   const topProducts = useMemo<TopProduct[]>(() => {
-    const salesByProduct = new Map<number, { total_sold: number; total_revenue: number }>();
+    const salesByProduct = new Map<
+      number,
+      { total_sold: number; total_revenue: number }
+    >();
 
     orders.forEach((order) => {
+      if (!isRevenueOrder(order.payment_status, order.order_status)) {
+        return;
+      }
+
       order.items?.forEach((item) => {
         const variant = productVariants.find((v) => v.id === item.variant_id);
         if (!variant) {
@@ -127,7 +194,10 @@ export function Dashboard() {
         }
 
         const productId = variant.product_id;
-        const current = salesByProduct.get(productId) || { total_sold: 0, total_revenue: 0 };
+        const current = salesByProduct.get(productId) || {
+          total_sold: 0,
+          total_revenue: 0,
+        };
 
         salesByProduct.set(productId, {
           total_sold: current.total_sold + item.quantity,
@@ -139,7 +209,9 @@ export function Dashboard() {
     return Array.from(salesByProduct.entries())
       .map(([product_id, sales]) => ({
         product_id,
-        product_name: products.find((product) => product.id === product_id)?.name || `SP-${product_id}`,
+        product_name:
+          products.find((product) => product.id === product_id)?.name ||
+          `SP-${product_id}`,
         total_sold: sales.total_sold,
         total_revenue: sales.total_revenue,
       }))
@@ -210,7 +282,9 @@ export function Dashboard() {
                     >
                       {Math.abs(stat.change)}%
                     </span>
-                    <span className="text-sm text-gray-500">so với tuần trước</span>
+                    <span className="text-sm text-gray-500">
+                      so với tuần trước
+                    </span>
                   </div>
                 </div>
                 <div className={`${stat.bgColor} p-3 rounded-lg`}>
@@ -259,7 +333,13 @@ export function Dashboard() {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={topProducts} id="top-products-chart">
                 <CartesianGrid key="products-grid" strokeDasharray="3 3" />
-                <XAxis key="products-xaxis" dataKey="product_name" angle={-45} textAnchor="end" height={100} />
+                <XAxis
+                  key="products-xaxis"
+                  dataKey="product_name"
+                  angle={-45}
+                  textAnchor="end"
+                  height={100}
+                />
                 <YAxis key="products-yaxis" />
                 <Tooltip
                   key="products-tooltip"
@@ -268,7 +348,12 @@ export function Dashboard() {
                   }
                 />
                 <Legend key="products-legend" />
-                <Bar key="products-bar" dataKey="total_sold" fill="#10b981" name="Số lượng bán" />
+                <Bar
+                  key="products-bar"
+                  dataKey="total_sold"
+                  fill="#10b981"
+                  name="Số lượng bán"
+                />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -297,7 +382,7 @@ export function Dashboard() {
                       to={`/orders/${order.id}`}
                       className="font-medium hover:text-blue-600"
                     >
-                      DH{order.id.toString().padStart(6, '0')}
+                      DH{order.id.toString().padStart(6, "0")}
                     </Link>
                     <p className="text-sm text-gray-600">
                       {order.user?.full_name}
@@ -360,9 +445,7 @@ export function Dashboard() {
                       <p className="text-red-600 font-medium">
                         Còn {variant.stock}
                       </p>
-                      <p className="text-sm text-gray-600">
-                        Tối thiểu: 10
-                      </p>
+                      <p className="text-sm text-gray-600">Tối thiểu: 10</p>
                     </div>
                   </div>
                 ))}

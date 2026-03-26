@@ -11,7 +11,12 @@ import {
   Truck,
   RotateCcw,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import {
@@ -49,7 +54,9 @@ export function OrderDetail() {
   const { orders, returnRequests, updateOrder } = useData();
   const order = orders.find((o) => o.id.toString() === id);
 
-  const [orderStatus, setOrderStatus] = useState(order?.order_status || "pending");
+  const [orderStatus, setOrderStatus] = useState(
+    order?.order_status || "pending",
+  );
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [refundDialogOpen, setRefundDialogOpen] = useState(false);
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
@@ -69,14 +76,14 @@ export function OrderDetail() {
 
   const orderNumber = `DH${order.id.toString().padStart(6, "0")}`;
 
-  const hasReturnRequest = returnRequests.some(
-    (r) => r.order_id === order.id
-  );
+  const hasReturnRequest = returnRequests.some((r) => r.order_id === order.id);
 
   const handleUpdateStatus = (newStatus: OrderStatus) => {
     setOrderStatus(newStatus);
     updateOrder(order.id, { order_status: newStatus });
-    toast.success(`Đã cập nhật trạng thái: ${orderStatusConfig[newStatus].label}`);
+    toast.success(
+      `Đã cập nhật trạng thái: ${orderStatusConfig[newStatus].label}`,
+    );
   };
 
   const handleCancelOrder = () => {
@@ -116,14 +123,20 @@ export function OrderDetail() {
     {
       status: "confirmed",
       label: "Đã xác nhận",
-      completed: ["confirmed", "preparing", "packed", "shipping", "delivered"].includes(
-        orderStatus
-      ),
+      completed: [
+        "confirmed",
+        "preparing",
+        "packed",
+        "shipping",
+        "delivered",
+      ].includes(orderStatus),
     },
     {
       status: "preparing",
       label: "Chuẩn bị hàng",
-      completed: ["preparing", "packed", "shipping", "delivered"].includes(orderStatus),
+      completed: ["preparing", "packed", "shipping", "delivered"].includes(
+        orderStatus,
+      ),
     },
     {
       status: "packed",
@@ -150,7 +163,11 @@ export function OrderDetail() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/orders")}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/orders")}
+          >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
@@ -166,10 +183,7 @@ export function OrderDetail() {
             In phiếu
           </Button>
           {orderStatus === "delivered" && !hasReturnRequest && (
-            <Button
-              variant="outline"
-              onClick={() => setReturnDialogOpen(true)}
-            >
+            <Button variant="outline" onClick={() => setReturnDialogOpen(true)}>
               <RotateCcw className="h-4 w-4 mr-2" />
               Tạo yêu cầu trả hàng
             </Button>
@@ -179,7 +193,7 @@ export function OrderDetail() {
               variant="outline"
               onClick={() => {
                 const returnReq = returnRequests.find(
-                  (r) => r.order_id === order.id
+                  (r) => r.order_id === order.id,
                 );
                 if (returnReq) navigate(`/returns/${returnReq.id}`);
               }}
@@ -479,7 +493,8 @@ export function OrderDetail() {
           <DialogHeader>
             <DialogTitle>Hủy đơn hàng</DialogTitle>
             <DialogDescription>
-              Vui lòng nhập lý do hủy đơn hàng. Thông tin này sẽ được gửi đến khách hàng.
+              Vui lòng nhập lý do hủy đơn hàng. Thông tin này sẽ được gửi đến
+              khách hàng.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -494,7 +509,10 @@ export function OrderDetail() {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCancelDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setCancelDialogOpen(false)}
+            >
               Đóng
             </Button>
             <Button variant="destructive" onClick={handleCancelOrder}>
@@ -509,7 +527,8 @@ export function OrderDetail() {
           <DialogHeader>
             <DialogTitle>Xác nhận hoàn tiền</DialogTitle>
             <DialogDescription>
-              Xác nhận hoàn tiền cho khách hàng qua phương thức thanh toán đã sử dụng.
+              Xác nhận hoàn tiền cho khách hàng qua phương thức thanh toán đã sử
+              dụng.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -524,7 +543,10 @@ export function OrderDetail() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRefundDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setRefundDialogOpen(false)}
+            >
               Hủy
             </Button>
             <Button onClick={handleRefund}>Xác nhận hoàn tiền</Button>
@@ -552,7 +574,10 @@ export function OrderDetail() {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setReturnDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setReturnDialogOpen(false)}
+            >
               Đóng
             </Button>
             <Button onClick={handleCreateReturnRequest}>

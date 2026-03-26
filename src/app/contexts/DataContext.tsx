@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
 import {
   Product,
   Category,
@@ -31,7 +38,9 @@ interface DataContextType {
   productFetchError: string | null;
   brandFetchError: string | null;
 
-  addProduct: (product: Omit<Product, "id" | "created_at" | "updated_at">) => Promise<number>;
+  addProduct: (
+    product: Omit<Product, "id" | "created_at" | "updated_at">,
+  ) => Promise<number>;
   updateProduct: (id: number, updates: Partial<Product>) => Promise<void>;
   deleteProduct: (id: number) => Promise<void>;
 
@@ -39,14 +48,21 @@ interface DataContextType {
   updateCategory: (id: number, updates: Partial<Category>) => Promise<void>;
   deleteCategory: (id: number) => Promise<void>;
 
-  addBrand: (brand: Omit<Brand, "id" | "created_at"> & { logo_file?: File }) => Promise<void>;
-  updateBrand: (id: number, updates: Partial<Brand> & { logo_file?: File }) => Promise<void>;
+  addBrand: (
+    brand: Omit<Brand, "id" | "created_at"> & { logo_file?: File },
+  ) => Promise<void>;
+  updateBrand: (
+    id: number,
+    updates: Partial<Brand> & { logo_file?: File },
+  ) => Promise<void>;
   deleteBrand: (id: number) => Promise<void>;
 
   updateCustomer: (id: number, updates: Partial<Customer>) => Promise<void>;
   deleteCustomer: (id: number) => Promise<void>;
 
-  addOrder: (order: Omit<Order, "id" | "created_at" | "updated_at">) => Promise<void>;
+  addOrder: (
+    order: Omit<Order, "id" | "created_at" | "updated_at">,
+  ) => Promise<void>;
   updateOrder: (id: number, updates: Partial<Order>) => Promise<void>;
   deleteOrder: (id: number) => Promise<void>;
 
@@ -55,20 +71,38 @@ interface DataContextType {
   deleteCoupon: (id: number) => Promise<void>;
 
   addProductVariant: (
-    variant: Omit<ProductVariant, "id" | "created_at"> & { variant_image_file?: File }
+    variant: Omit<ProductVariant, "id" | "created_at"> & {
+      variant_image_file?: File;
+    },
   ) => Promise<void>;
-  updateProductVariant: (id: number, updates: Partial<ProductVariant>) => Promise<void>;
+  updateProductVariant: (
+    id: number,
+    updates: Partial<ProductVariant>,
+  ) => Promise<void>;
   deleteProductVariant: (id: number) => Promise<void>;
 
-  addProductImage: (image: Omit<ProductImage, "id"> & { image_file?: File }) => Promise<void>;
-  updateProductImage: (id: number, updates: Partial<ProductImage>) => Promise<void>;
+  addProductImage: (
+    image: Omit<ProductImage, "id"> & { image_file?: File },
+  ) => Promise<void>;
+  updateProductImage: (
+    id: number,
+    updates: Partial<ProductImage>,
+  ) => Promise<void>;
   deleteProductImage: (id: number) => Promise<void>;
   setPrimaryProductImage: (id: number) => Promise<void>;
 
-  addStockMovement: (movement: Omit<StockMovement, "id" | "created_at">) => Promise<void>;
-  updateStockMovement: (id: number, updates: Partial<StockMovement>) => Promise<void>;
+  addStockMovement: (
+    movement: Omit<StockMovement, "id" | "created_at">,
+  ) => Promise<void>;
+  updateStockMovement: (
+    id: number,
+    updates: Partial<StockMovement>,
+  ) => Promise<void>;
   deleteStockMovement: (id: number) => Promise<void>;
-  updateReturnRequest: (id: number, updates: Partial<ReturnRequest>) => Promise<void>;
+  updateReturnRequest: (
+    id: number,
+    updates: Partial<ReturnRequest>,
+  ) => Promise<void>;
 
   updateSystemConfig: (updates: Partial<SystemConfig>) => Promise<void>;
 }
@@ -85,21 +119,63 @@ const CATEGORIES_CACHE_KEY = "data_cache_categories";
 const RESOURCE_PATHS: Record<string, string[]> = {
   products: ["/api/admin/products", "/api/products", "/__webadmin/db/products"],
   productsWrite: ["/api/admin/products"],
-  categories: ["/__webadmin/db/categories", "/api/admin/categories", "/api/categories", "/categories"],
+  categories: [
+    "/__webadmin/db/categories",
+    "/api/admin/categories",
+    "/api/categories",
+    "/categories",
+  ],
   brands: ["/__webadmin/db/brands", "/api/brands"],
   brandsWrite: ["/api/admin/brands"],
   customers: ["/api/admin/users", "/customers", "/users?role=customer"],
   customersWrite: ["/api/admin/users", "/customers", "/users"],
   orders: ["/api/admin/orders", "/orders"],
-  orderItems: ["/api/admin/order-items", "/order-items", "/orderItems", "/order_items"],
+  orderItems: [
+    "/api/admin/order-items",
+    "/order-items",
+    "/orderItems",
+    "/order_items",
+  ],
   coupons: ["/api/admin/coupons", "/coupons", "/__webadmin/db/coupons"],
   couponsWrite: ["/api/admin/coupons"],
-  productVariants: ["/__webadmin/db/product-variants", "/api/admin/variants", "/product-variants", "/productVariants", "/product_variants"],
-  productVariantsWrite: ["/api/admin/variants", "/product-variants", "/productVariants", "/product_variants"],
-  productImages: ["/api/admin/product-images", "/product-images", "/productImages", "/product_images", "/__webadmin/db/product-images"],
-  stockMovements: ["/api/admin/stock/logs", "/stock-movements", "/stockMovements", "/stock_movements"],
-  returnRequests: ["/api/admin/returns", "/return-requests", "/returnRequests", "/return_requests"],
-  systemConfig: ["/api/admin/system-config", "/system-config", "/systemConfig", "/system_config"],
+  productVariants: [
+    "/__webadmin/db/product-variants",
+    "/api/admin/variants",
+    "/product-variants",
+    "/productVariants",
+    "/product_variants",
+  ],
+  productVariantsWrite: [
+    "/api/admin/variants",
+    "/product-variants",
+    "/productVariants",
+    "/product_variants",
+  ],
+  productImages: [
+    "/api/admin/product-images",
+    "/product-images",
+    "/productImages",
+    "/product_images",
+    "/__webadmin/db/product-images",
+  ],
+  stockMovements: [
+    "/api/admin/stock/logs",
+    "/stock-movements",
+    "/stockMovements",
+    "/stock_movements",
+  ],
+  returnRequests: [
+    "/api/admin/returns",
+    "/return-requests",
+    "/returnRequests",
+    "/return_requests",
+  ],
+  systemConfig: [
+    "/api/admin/system-config",
+    "/system-config",
+    "/systemConfig",
+    "/system_config",
+  ],
 };
 
 type ApiEnvelope<T> = {
@@ -269,13 +345,15 @@ function normalizeBrands(input: unknown): Brand[] {
       return {
         id,
         name: String(current.name ?? ""),
-        logo_url: typeof current.logo_url === "string" ? current.logo_url : undefined,
+        logo_url:
+          typeof current.logo_url === "string" ? current.logo_url : undefined,
         brand_code:
           typeof current.brand_code === "string"
             ? current.brand_code
             : `BRD${String(Number.isNaN(id) ? 0 : id).padStart(6, "0")}`,
         created_at:
-          typeof current.created_at === "string" && current.created_at.length > 0
+          typeof current.created_at === "string" &&
+          current.created_at.length > 0
             ? current.created_at
             : new Date().toISOString(),
       } as Brand;
@@ -333,7 +411,9 @@ function normalizeProducts(input: unknown): Product[] {
       const categoryId = Number(
         current.category_id ?? (categoryObj ? categoryObj.id : undefined),
       );
-      const brandId = Number(current.brand_id ?? (brandObj ? brandObj.id : undefined));
+      const brandId = Number(
+        current.brand_id ?? (brandObj ? brandObj.id : undefined),
+      );
       const nestedVariants = Array.isArray(current.variants)
         ? normalizeVariants(
             current.variants.map((variant) => {
@@ -342,7 +422,10 @@ function normalizeProducts(input: unknown): Product[] {
               }
 
               const rawVariant = variant as Record<string, unknown>;
-              if (rawVariant.product_id === undefined && rawVariant.productId === undefined) {
+              if (
+                rawVariant.product_id === undefined &&
+                rawVariant.productId === undefined
+              ) {
                 return {
                   ...rawVariant,
                   product_id: id,
@@ -350,7 +433,7 @@ function normalizeProducts(input: unknown): Product[] {
               }
 
               return rawVariant;
-            })
+            }),
           )
         : undefined;
       const rawSpecifications =
@@ -380,7 +463,9 @@ function normalizeProducts(input: unknown): Product[] {
         id,
         sku: typeof current.sku === "string" ? current.sku : undefined,
         name: String(current.name ?? ""),
-        slug: String(current.slug ?? generateSlug(String(current.name ?? "product"))),
+        slug: String(
+          current.slug ?? generateSlug(String(current.name ?? "product")),
+        ),
         description: normalizedDescription,
         category_id: Number.isNaN(categoryId) ? 0 : categoryId,
         brand_id: Number.isNaN(brandId) ? 0 : brandId,
@@ -393,17 +478,25 @@ function normalizeProducts(input: unknown): Product[] {
               ? current.sku
               : `SP${String(Number.isNaN(id) ? 0 : id).padStart(6, "0")}`,
         created_at:
-          typeof current.created_at === "string" && current.created_at.length > 0
+          typeof current.created_at === "string" &&
+          current.created_at.length > 0
             ? current.created_at
             : new Date().toISOString(),
         updated_at:
-          typeof current.updated_at === "string" && current.updated_at.length > 0
+          typeof current.updated_at === "string" &&
+          current.updated_at.length > 0
             ? current.updated_at
             : undefined,
         variants: nestedVariants,
       } as Product;
     })
-    .filter((product) => !Number.isNaN(product.id) && !!product.name && product.category_id > 0 && product.brand_id > 0);
+    .filter(
+      (product) =>
+        !Number.isNaN(product.id) &&
+        !!product.name &&
+        product.category_id > 0 &&
+        product.brand_id > 0,
+    );
 }
 
 function normalizeCoupons(input: unknown): Coupon[] {
@@ -416,10 +509,12 @@ function normalizeCoupons(input: unknown): Coupon[] {
     .map((item) => {
       const current = item as Record<string, unknown>;
       const id = Number(current.id);
-      const discountType = current.discount_type === "fixed" ? "fixed" : "percent";
+      const discountType =
+        current.discount_type === "fixed" ? "fixed" : "percent";
       const discountValue = Number(current.discount_value);
       const minOrderValue =
-        current.min_order_value === null || current.min_order_value === undefined
+        current.min_order_value === null ||
+        current.min_order_value === undefined
           ? undefined
           : Number(current.min_order_value);
       const maxUses =
@@ -433,16 +528,23 @@ function normalizeCoupons(input: unknown): Coupon[] {
         code: String(current.code ?? ""),
         discount_type: discountType,
         discount_value: Number.isNaN(discountValue) ? 0 : discountValue,
-        min_order_value: minOrderValue !== undefined && !Number.isNaN(minOrderValue) ? minOrderValue : undefined,
-        max_uses: maxUses !== undefined && !Number.isNaN(maxUses) ? maxUses : undefined,
+        min_order_value:
+          minOrderValue !== undefined && !Number.isNaN(minOrderValue)
+            ? minOrderValue
+            : undefined,
+        max_uses:
+          maxUses !== undefined && !Number.isNaN(maxUses) ? maxUses : undefined,
         used_count: Number.isNaN(usedCount) ? 0 : usedCount,
         expires_at:
-          typeof current.expires_at === "string" && current.expires_at.length > 0
+          typeof current.expires_at === "string" &&
+          current.expires_at.length > 0
             ? current.expires_at
             : undefined,
-        is_active: current.is_active === true || String(current.is_active) === "true",
+        is_active:
+          current.is_active === true || String(current.is_active) === "true",
         created_at:
-          typeof current.created_at === "string" && current.created_at.length > 0
+          typeof current.created_at === "string" &&
+          current.created_at.length > 0
             ? current.created_at
             : new Date().toISOString(),
       } as Coupon;
@@ -465,11 +567,14 @@ function normalizeVariants(input: unknown): ProductVariant[] {
           ? (current.product as Record<string, unknown>)
           : undefined;
       const productId = Number(
-        current.product_id ?? current.productId ?? (nestedProduct ? nestedProduct.id : undefined),
+        current.product_id ??
+          current.productId ??
+          (nestedProduct ? nestedProduct.id : undefined),
       );
       const price = Number(current.price);
       const compareAt =
-        current.compare_at_price === null || current.compare_at_price === undefined
+        current.compare_at_price === null ||
+        current.compare_at_price === undefined
           ? undefined
           : Number(current.compare_at_price);
       const stock = Number(current.stock);
@@ -478,24 +583,37 @@ function normalizeVariants(input: unknown): ProductVariant[] {
         id,
         product_id: productId,
         sku: String(current.sku ?? ""),
-        version: typeof current.version === "string" ? current.version : undefined,
+        version:
+          typeof current.version === "string" ? current.version : undefined,
         color: typeof current.color === "string" ? current.color : undefined,
-        color_hex: typeof current.color_hex === "string" ? current.color_hex : undefined,
+        color_hex:
+          typeof current.color_hex === "string" ? current.color_hex : undefined,
         price: Number.isNaN(price) ? 0 : price,
-        compare_at_price: compareAt !== undefined && !Number.isNaN(compareAt) ? compareAt : undefined,
+        compare_at_price:
+          compareAt !== undefined && !Number.isNaN(compareAt)
+            ? compareAt
+            : undefined,
         stock: Number.isNaN(stock) ? 0 : stock,
-        is_active: current.is_active === true || String(current.is_active) === "true",
+        is_active:
+          current.is_active === true || String(current.is_active) === "true",
         created_at:
-          typeof current.created_at === "string" && current.created_at.length > 0
+          typeof current.created_at === "string" &&
+          current.created_at.length > 0
             ? current.created_at
             : new Date().toISOString(),
         updated_at:
-          typeof current.updated_at === "string" && current.updated_at.length > 0
+          typeof current.updated_at === "string" &&
+          current.updated_at.length > 0
             ? current.updated_at
             : undefined,
       } as ProductVariant;
     })
-    .filter((variant) => !Number.isNaN(variant.id) && !Number.isNaN(variant.product_id) && !!variant.sku);
+    .filter(
+      (variant) =>
+        !Number.isNaN(variant.id) &&
+        !Number.isNaN(variant.product_id) &&
+        !!variant.sku,
+    );
 }
 
 function normalizeProductImages(input: unknown): ProductImage[] {
@@ -520,11 +638,17 @@ function normalizeProductImages(input: unknown): ProductImage[] {
         product_id: productId,
         variant_id: variantId,
         image_url: String(current.image_url ?? ""),
-        is_primary: current.is_primary === true || String(current.is_primary) === "true",
+        is_primary:
+          current.is_primary === true || String(current.is_primary) === "true",
         sort_order: Number.isNaN(sortOrder) ? 0 : sortOrder,
       } as ProductImage;
     })
-    .filter((img) => !Number.isNaN(img.id) && !Number.isNaN(img.product_id) && !!img.image_url);
+    .filter(
+      (img) =>
+        !Number.isNaN(img.id) &&
+        !Number.isNaN(img.product_id) &&
+        !!img.image_url,
+    );
 }
 
 function getAuthHeaders(headers?: HeadersInit): HeadersInit {
@@ -543,9 +667,15 @@ function getAuthHeaders(headers?: HeadersInit): HeadersInit {
   };
 }
 
-async function fetchWithTimeout(input: string, init?: RequestInit): Promise<Response> {
+async function fetchWithTimeout(
+  input: string,
+  init?: RequestInit,
+): Promise<Response> {
   const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timeoutId = window.setTimeout(
+    () => controller.abort(),
+    REQUEST_TIMEOUT_MS,
+  );
 
   try {
     return await fetch(input, {
@@ -565,19 +695,25 @@ async function fetchWithTimeout(input: string, init?: RequestInit): Promise<Resp
 }
 
 function buildRequestUrl(path: string): string {
-  if (path.startsWith('/__webadmin/')) {
+  if (path.startsWith("/__webadmin/")) {
     return path;
   }
 
   return `${API_BASE_URL}${path}`;
 }
 
-async function fetchFirstAvailable<T>(paths: string[], fallback: T): Promise<T> {
+async function fetchFirstAvailable<T>(
+  paths: string[],
+  fallback: T,
+): Promise<T> {
   const result = await fetchFirstAvailableDetailed(paths, fallback);
   return result.data;
 }
 
-async function fetchFirstAvailableDetailed<T>(paths: string[], fallback: T): Promise<FetchResult<T>> {
+async function fetchFirstAvailableDetailed<T>(
+  paths: string[],
+  fallback: T,
+): Promise<FetchResult<T>> {
   let bestError: string | null = null;
 
   for (const path of paths) {
@@ -586,10 +722,14 @@ async function fetchFirstAvailableDetailed<T>(paths: string[], fallback: T): Pro
       if (!response.ok) {
         try {
           const payload = (await response.json()) as Record<string, unknown>;
-          const message = typeof payload?.message === "string" ? payload.message : null;
+          const message =
+            typeof payload?.message === "string" ? payload.message : null;
           const currentError = message || `HTTP ${response.status}`;
 
-          if (typeof message === "string" && message.toLowerCase().includes("cloud_name")) {
+          if (
+            typeof message === "string" &&
+            message.toLowerCase().includes("cloud_name")
+          ) {
             return {
               ok: false,
               data: fallback,
@@ -650,7 +790,10 @@ async function requestFirstAvailable(
   return false;
 }
 
-async function createRecord(paths: string[], payload: unknown): Promise<boolean> {
+async function createRecord(
+  paths: string[],
+  payload: unknown,
+): Promise<boolean> {
   return requestFirstAvailable(paths, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -658,7 +801,10 @@ async function createRecord(paths: string[], payload: unknown): Promise<boolean>
   });
 }
 
-async function createRecordWithResponse<T>(paths: string[], payload: unknown): Promise<FetchResult<T | null>> {
+async function createRecordWithResponse<T>(
+  paths: string[],
+  payload: unknown,
+): Promise<FetchResult<T | null>> {
   let bestError: string | null = null;
 
   for (const path of paths) {
@@ -675,7 +821,8 @@ async function createRecordWithResponse<T>(paths: string[], payload: unknown): P
       if (!response.ok) {
         try {
           const data = (await response.json()) as Record<string, unknown>;
-          const message = typeof data?.message === "string" ? data.message : null;
+          const message =
+            typeof data?.message === "string" ? data.message : null;
           if (response.status === 401 || response.status === 403) {
             return {
               ok: false,
@@ -781,8 +928,7 @@ async function updateBrandRecord(
       if (typeof data.message === "string" && data.message.length > 0) {
         message = data.message;
       }
-    } catch {
-    }
+    } catch {}
     throw new Error(message);
   }
 
@@ -791,7 +937,9 @@ async function updateBrandRecord(
 
 async function createProductVariantForProduct(
   productId: number,
-  payload: Omit<ProductVariant, "id" | "created_at"> & { variant_image_file?: File },
+  payload: Omit<ProductVariant, "id" | "created_at"> & {
+    variant_image_file?: File;
+  },
 ): Promise<boolean> {
   if (!payload.variant_image_file) {
     throw new Error("Backend hiện không hỗ trợ tạo biến thể mới khi thiếu ảnh");
@@ -819,11 +967,14 @@ async function createProductVariantForProduct(
     formData.append("is_active", String(payload.is_active));
   }
 
-  const response = await fetchWithTimeout(buildRequestUrl(`/api/admin/products/${productId}/variants`), {
-    method: "POST",
-    headers: getAuthHeaders(),
-    body: formData,
-  });
+  const response = await fetchWithTimeout(
+    buildRequestUrl(`/api/admin/products/${productId}/variants`),
+    {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: formData,
+    },
+  );
 
   if (!response.ok) {
     let message = `HTTP ${response.status}`;
@@ -832,8 +983,7 @@ async function createProductVariantForProduct(
       if (typeof data.message === "string" && data.message.length > 0) {
         message = data.message;
       }
-    } catch {
-    }
+    } catch {}
     throw new Error(message);
   }
 
@@ -846,12 +996,22 @@ async function uploadProductImageFile(
   options?: { is_primary?: boolean; sort_order?: number },
 ): Promise<FetchResult<null>> {
   const endpointConfigs = [
-    { path: `/api/admin/products/${productId}/images`, includeProductId: false },
+    {
+      path: `/api/admin/products/${productId}/images`,
+      includeProductId: false,
+    },
     { path: `/admin/products/${productId}/images`, includeProductId: false },
     { path: "/api/admin/product-images", includeProductId: true },
     { path: "/admin/product-images", includeProductId: true },
   ];
-  const fileFields = ["avatar", "image", "file", "images", "product_image", "productImage"];
+  const fileFields = [
+    "avatar",
+    "image",
+    "file",
+    "images",
+    "product_image",
+    "productImage",
+  ];
   let bestError: string | null = null;
 
   for (const endpointConfig of endpointConfigs) {
@@ -869,11 +1029,14 @@ async function uploadProductImageFile(
           formData.append("sort_order", String(options.sort_order));
         }
 
-        const response = await fetchWithTimeout(buildRequestUrl(endpointConfig.path), {
-          method: "POST",
-          headers: getAuthHeaders(),
-          body: formData,
-        });
+        const response = await fetchWithTimeout(
+          buildRequestUrl(endpointConfig.path),
+          {
+            method: "POST",
+            headers: getAuthHeaders(),
+            body: formData,
+          },
+        );
 
         if (response.ok) {
           return { ok: true, data: null, error: null };
@@ -881,7 +1044,8 @@ async function uploadProductImageFile(
 
         try {
           const payload = (await response.json()) as Record<string, unknown>;
-          const message = typeof payload?.message === "string" ? payload.message : null;
+          const message =
+            typeof payload?.message === "string" ? payload.message : null;
           if (message) {
             bestError = message;
           } else if (!bestError) {
@@ -934,7 +1098,11 @@ async function markProductImageAsPrimary(id: number): Promise<boolean> {
   return false;
 }
 
-async function updateRecord(paths: string[], id: number, payload: unknown): Promise<boolean> {
+async function updateRecord(
+  paths: string[],
+  id: number,
+  payload: unknown,
+): Promise<boolean> {
   const patchOk = await requestFirstAvailable(
     paths,
     {
@@ -970,11 +1138,14 @@ async function updateRecordWithResponse(
   for (const method of ["PATCH", "PUT"] as const) {
     for (const path of paths) {
       try {
-        const response = await fetchWithTimeout(buildRequestUrl(`${path}/${id}`), {
-          method,
-          headers: getAuthHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify(payload),
-        });
+        const response = await fetchWithTimeout(
+          buildRequestUrl(`${path}/${id}`),
+          {
+            method,
+            headers: getAuthHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify(payload),
+          },
+        );
 
         if (response.ok) {
           return { ok: true, data: null, error: null };
@@ -982,7 +1153,8 @@ async function updateRecordWithResponse(
 
         try {
           const data = (await response.json()) as Record<string, unknown>;
-          const message = typeof data?.message === "string" ? data.message : null;
+          const message =
+            typeof data?.message === "string" ? data.message : null;
 
           if (response.status === 401 || response.status === 403) {
             return {
@@ -1033,7 +1205,10 @@ async function deleteRecord(paths: string[], id: number): Promise<boolean> {
   );
 }
 
-async function updateSingleton(paths: string[], payload: unknown): Promise<boolean> {
+async function updateSingleton(
+  paths: string[],
+  payload: unknown,
+): Promise<boolean> {
   const patchOk = await requestFirstAvailable(paths, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -1061,7 +1236,9 @@ async function updateSingleton(paths: string[], payload: unknown): Promise<boole
   });
 }
 
-async function fetchVariantsByProductIds(productIds: number[]): Promise<ProductVariant[]> {
+async function fetchVariantsByProductIds(
+  productIds: number[],
+): Promise<ProductVariant[]> {
   if (productIds.length === 0) {
     return [];
   }
@@ -1069,7 +1246,9 @@ async function fetchVariantsByProductIds(productIds: number[]): Promise<ProductV
   const variantBatches = await Promise.all(
     productIds.map(async (productId) => {
       try {
-        const response = await fetchWithTimeout(buildRequestUrl(`/api/admin/products/${productId}/variants`));
+        const response = await fetchWithTimeout(
+          buildRequestUrl(`/api/admin/products/${productId}/variants`),
+        );
         if (!response.ok) {
           return [] as ProductVariant[];
         }
@@ -1082,7 +1261,10 @@ async function fetchVariantsByProductIds(productIds: number[]): Promise<ProductV
           }
 
           const current = item as Record<string, unknown>;
-          if (current.product_id === undefined && current.productId === undefined) {
+          if (
+            current.product_id === undefined &&
+            current.productId === undefined
+          ) {
             return { ...current, product_id: productId };
           }
 
@@ -1093,7 +1275,7 @@ async function fetchVariantsByProductIds(productIds: number[]): Promise<ProductV
       } catch {
         return [] as ProductVariant[];
       }
-    })
+    }),
   );
 
   const merged = variantBatches.flat();
@@ -1117,7 +1299,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [productImages, setProductImages] = useState<ProductImage[]>([]);
   const [stockMovements, setStockMovements] = useState<StockMovement[]>([]);
   const [returnRequests, setReturnRequests] = useState<ReturnRequest[]>([]);
-  const [productFetchError, setProductFetchError] = useState<string | null>(null);
+  const [productFetchError, setProductFetchError] = useState<string | null>(
+    null,
+  );
   const [brandFetchError, setBrandFetchError] = useState<string | null>(null);
   const [systemConfig, setSystemConfig] = useState<SystemConfig>({
     paymentConfig: {
@@ -1144,8 +1328,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     ],
     notificationTemplates: {
       orderNotification: "Bạn có đơn hàng mới từ [CUSTOMER_NAME]",
-      lowStockNotification: "Sản phẩm [PRODUCT_NAME] sắp hết hàng (còn [QUANTITY])",
-      shipmentNotification: "Đơn hàng [ORDER_NUMBER] đang được giao bởi [SHIPPER_NAME]",
+      lowStockNotification:
+        "Sản phẩm [PRODUCT_NAME] sắp hết hàng (còn [QUANTITY])",
+      shipmentNotification:
+        "Đơn hàng [ORDER_NUMBER] đang được giao bởi [SHIPPER_NAME]",
     },
   });
 
@@ -1209,11 +1395,17 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         fetchFirstAvailable<Order[]>(RESOURCE_PATHS.orders, []),
         fetchFirstAvailable<OrderItem[]>(RESOURCE_PATHS.orderItems, []),
         fetchFirstAvailable<Coupon[]>(RESOURCE_PATHS.coupons, []),
-        fetchFirstAvailable<ProductVariant[]>(RESOURCE_PATHS.productVariants, []),
+        fetchFirstAvailable<ProductVariant[]>(
+          RESOURCE_PATHS.productVariants,
+          [],
+        ),
         fetchFirstAvailable<ProductImage[]>(RESOURCE_PATHS.productImages, []),
         fetchFirstAvailable<StockMovement[]>(RESOURCE_PATHS.stockMovements, []),
         fetchFirstAvailable<ReturnRequest[]>(RESOURCE_PATHS.returnRequests, []),
-        fetchFirstAvailable<SystemConfig | null>(RESOURCE_PATHS.systemConfig, null),
+        fetchFirstAvailable<SystemConfig | null>(
+          RESOURCE_PATHS.systemConfig,
+          null,
+        ),
       ]);
 
       let normalizedProducts: Product[] = [];
@@ -1222,8 +1414,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         normalizedProducts = normalizeProducts(productsResult.data);
 
         if (normalizedProducts.length > 0) {
-          const publicProductsData = await fetchFirstAvailable<Product[]>(["/api/products", "/__webadmin/db/products"], []);
-          const normalizedPublicProducts = normalizeProducts(publicProductsData);
+          const publicProductsData = await fetchFirstAvailable<Product[]>(
+            ["/api/products", "/__webadmin/db/products"],
+            [],
+          );
+          const normalizedPublicProducts =
+            normalizeProducts(publicProductsData);
 
           if (normalizedPublicProducts.length > 0) {
             const publicById = new Map<number, Product>();
@@ -1233,24 +1429,41 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             for (const publicProduct of normalizedPublicProducts) {
               publicById.set(publicProduct.id, publicProduct);
               if (publicProduct.slug) {
-                publicBySlug.set(publicProduct.slug.trim().toLowerCase(), publicProduct);
+                publicBySlug.set(
+                  publicProduct.slug.trim().toLowerCase(),
+                  publicProduct,
+                );
               }
               if (publicProduct.name) {
-                publicByName.set(publicProduct.name.trim().toLowerCase(), publicProduct);
+                publicByName.set(
+                  publicProduct.name.trim().toLowerCase(),
+                  publicProduct,
+                );
               }
             }
 
             normalizedProducts = normalizedProducts.map((product) => {
-              if (typeof product.description === "string" && product.description.trim().length > 0) {
+              if (
+                typeof product.description === "string" &&
+                product.description.trim().length > 0
+              ) {
                 return product;
               }
 
               const byId = publicById.get(product.id);
-              const bySlug = product.slug ? publicBySlug.get(product.slug.trim().toLowerCase()) : undefined;
-              const byName = product.name ? publicByName.get(product.name.trim().toLowerCase()) : undefined;
+              const bySlug = product.slug
+                ? publicBySlug.get(product.slug.trim().toLowerCase())
+                : undefined;
+              const byName = product.name
+                ? publicByName.get(product.name.trim().toLowerCase())
+                : undefined;
               const matched = byId || bySlug || byName;
 
-              if (!matched || !matched.description || matched.description.trim().length === 0) {
+              if (
+                !matched ||
+                !matched.description ||
+                matched.description.trim().length === 0
+              ) {
                 return product;
               }
 
@@ -1263,7 +1476,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         }
 
         setBaseProducts(normalizedProducts);
-        localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(normalizedProducts));
+        localStorage.setItem(
+          PRODUCTS_CACHE_KEY,
+          JSON.stringify(normalizedProducts),
+        );
         setProductFetchError(null);
       } else {
         setProductFetchError(productsResult.error);
@@ -1272,13 +1488,19 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       if (categoriesResult.ok) {
         const normalizedCategories = flattenCategoryTree(categoriesResult.data);
         setCategories(normalizedCategories);
-        localStorage.setItem(CATEGORIES_CACHE_KEY, JSON.stringify(normalizedCategories));
+        localStorage.setItem(
+          CATEGORIES_CACHE_KEY,
+          JSON.stringify(normalizedCategories),
+        );
       }
 
       if (brandsResult.ok) {
         const normalizedBrands = normalizeBrands(brandsResult.data);
         setBrands(normalizedBrands);
-        localStorage.setItem(BRANDS_CACHE_KEY, JSON.stringify(normalizedBrands));
+        localStorage.setItem(
+          BRANDS_CACHE_KEY,
+          JSON.stringify(normalizedBrands),
+        );
         setBrandFetchError(null);
       } else {
         setBrandFetchError(brandsResult.error);
@@ -1291,13 +1513,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
       let mergedVariants = normalizeVariants(productVariantsData);
       if (normalizedProducts.length > 0) {
-        const existingProductIds = new Set(mergedVariants.map((variant) => variant.product_id));
+        const existingProductIds = new Set(
+          mergedVariants.map((variant) => variant.product_id),
+        );
         const missingProductIds = normalizedProducts
           .map((product) => product.id)
           .filter((productId) => !existingProductIds.has(productId));
 
         if (missingProductIds.length > 0) {
-          const fallbackVariants = await fetchVariantsByProductIds(missingProductIds);
+          const fallbackVariants =
+            await fetchVariantsByProductIds(missingProductIds);
           if (fallbackVariants.length > 0) {
             const uniqueById = new Map<number, ProductVariant>();
             for (const variant of mergedVariants) {
@@ -1350,8 +1575,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         ...v,
         product: baseProducts.find((p) => p.id === v.product_id),
       }));
-      const variants = syncedVariants.length > 0 ? syncedVariants : fallbackVariants;
-      const images = productImages.filter((img) => img.product_id === product.id);
+      const variants =
+        syncedVariants.length > 0 ? syncedVariants : fallbackVariants;
+      const images = productImages.filter(
+        (img) => img.product_id === product.id,
+      );
 
       return {
         ...product,
@@ -1367,9 +1595,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const syncedCustomers = baseCustomers.map((customer) => {
-      const customerOrders = baseOrders.filter((o) => o.user_id === customer.id);
+      const customerOrders = baseOrders.filter(
+        (o) => o.user_id === customer.id,
+      );
       const totalOrders = customerOrders.length;
-      
+
       const totalSpent = customerOrders.reduce((sum, order) => {
         if (order.payment_status === "paid") {
           return sum + order.total;
@@ -1389,15 +1619,18 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const syncedOrders = baseOrders.map((order) => {
-      const user = baseCustomers.find((c) => c.id === order.user_id);
+      const user =
+        baseCustomers.find((c) => c.id === order.user_id) ?? order.user;
       const sourceItems =
         order.items && order.items.length > 0
           ? order.items
           : orderItems.filter((item) => item.order_id === order.id);
-      
+
       const items = sourceItems.map((item) => {
         const variant = productVariants.find((v) => v.id === item.variant_id);
-        const product = variant ? baseProducts.find((p) => p.id === variant.product_id) : undefined;
+        const product = variant
+          ? baseProducts.find((p) => p.id === variant.product_id)
+          : undefined;
         return {
           ...item,
           variant,
@@ -1426,7 +1659,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     [loadBackendData],
   );
 
-  const addProduct = async (product: Omit<Product, "id" | "created_at" | "updated_at">) => {
+  const addProduct = async (
+    product: Omit<Product, "id" | "created_at" | "updated_at">,
+  ) => {
     const slug = product.slug || generateSlug(product.name);
     const payload = {
       ...product,
@@ -1434,7 +1669,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       ...(product.status ? { status: toApiProductStatus(product.status) } : {}),
     };
 
-    const payloadCandidates: Array<Record<string, unknown>> = [payload as Record<string, unknown>];
+    const payloadCandidates: Array<Record<string, unknown>> = [
+      payload as Record<string, unknown>,
+    ];
     if (Object.prototype.hasOwnProperty.call(product, "description")) {
       payloadCandidates.push({
         ...payload,
@@ -1460,49 +1697,71 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     let createdResult: FetchResult<Product | null> | null = null;
     for (const payloadCandidate of payloadCandidates) {
-      createdResult = await createRecordWithResponse<Product>(RESOURCE_PATHS.productsWrite, payloadCandidate);
+      createdResult = await createRecordWithResponse<Product>(
+        RESOURCE_PATHS.productsWrite,
+        payloadCandidate,
+      );
       if (createdResult.ok) {
         break;
       }
     }
 
     if (!createdResult || !createdResult.ok) {
-      throw new Error(createdResult?.error || "Không thể cập nhật dữ liệu lên backend");
+      throw new Error(
+        createdResult?.error || "Không thể cập nhật dữ liệu lên backend",
+      );
     }
 
     await loadBackendData();
 
     const createdFromResponse = createdResult.data
-      ? normalizeProducts([createdResult.data]).find((item) => item.slug === slug)
+      ? normalizeProducts([createdResult.data]).find(
+          (item) => item.slug === slug,
+        )
       : undefined;
 
     if (createdFromResponse) {
       return createdFromResponse.id;
     }
 
-    const refreshedProducts = await fetchFirstAvailable<Product[]>(RESOURCE_PATHS.products, []);
+    const refreshedProducts = await fetchFirstAvailable<Product[]>(
+      RESOURCE_PATHS.products,
+      [],
+    );
     const normalizedRefreshedProducts = normalizeProducts(refreshedProducts);
-    const createdFromList = normalizedRefreshedProducts.find((item) => item.slug === slug);
+    const createdFromList = normalizedRefreshedProducts.find(
+      (item) => item.slug === slug,
+    );
 
     if (createdFromList) {
       return createdFromList.id;
     }
 
-    throw new Error("Tạo sản phẩm thành công nhưng không thể lấy ID sản phẩm mới");
+    throw new Error(
+      "Tạo sản phẩm thành công nhưng không thể lấy ID sản phẩm mới",
+    );
   };
 
   const updateProduct = async (id: number, updates: Partial<Product>) => {
     const payload = {
       ...updates,
-      ...(updates.name && !updates.slug ? { slug: generateSlug(updates.name) } : {}),
+      ...(updates.name && !updates.slug
+        ? { slug: generateSlug(updates.name) }
+        : {}),
       ...(updates.status ? { status: toApiProductStatus(updates.status) } : {}),
     };
 
-    const updatePaths = Array.from(new Set([...RESOURCE_PATHS.productsWrite, "/admin/products"]));
+    const updatePaths = Array.from(
+      new Set([...RESOURCE_PATHS.productsWrite, "/admin/products"]),
+    );
     const expectedStatus = updates.status;
-    const mappedStatus = updates.status ? toApiProductStatus(updates.status) : undefined;
+    const mappedStatus = updates.status
+      ? toApiProductStatus(updates.status)
+      : undefined;
 
-    const payloadCandidates: Array<Record<string, unknown>> = [payload as Record<string, unknown>];
+    const payloadCandidates: Array<Record<string, unknown>> = [
+      payload as Record<string, unknown>,
+    ];
 
     if (Object.prototype.hasOwnProperty.call(updates, "description")) {
       payloadCandidates.push({
@@ -1555,7 +1814,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         return true;
       }
 
-      const refreshedProducts = await fetchFirstAvailable<Product[]>(RESOURCE_PATHS.products, []);
+      const refreshedProducts = await fetchFirstAvailable<Product[]>(
+        RESOURCE_PATHS.products,
+        [],
+      );
       const normalizedProducts = normalizeProducts(refreshedProducts);
       const updatedProduct = normalizedProducts.find((item) => item.id === id);
 
@@ -1563,7 +1825,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     };
 
     for (const payloadCandidate of payloadCandidates) {
-      const updatedResult = await updateRecordWithResponse(updatePaths, id, payloadCandidate);
+      const updatedResult = await updateRecordWithResponse(
+        updatePaths,
+        id,
+        payloadCandidate,
+      );
       if (!updatedResult.ok) {
         if (updatedResult.error) {
           lastError = updatedResult.error;
@@ -1595,15 +1861,23 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         for (const endpoint of statusEndpoints) {
           for (const statusPayload of statusPayloads) {
             try {
-              const response = await fetchWithTimeout(buildRequestUrl(endpoint), {
-                method,
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(statusPayload),
-              });
+              const response = await fetchWithTimeout(
+                buildRequestUrl(endpoint),
+                {
+                  method,
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(statusPayload),
+                },
+              );
 
               if (!response.ok) {
-                const payloadData = (await response.json().catch(() => null)) as Record<string, unknown> | null;
-                const message = payloadData && typeof payloadData.message === "string" ? payloadData.message : null;
+                const payloadData = (await response
+                  .json()
+                  .catch(() => null)) as Record<string, unknown> | null;
+                const message =
+                  payloadData && typeof payloadData.message === "string"
+                    ? payloadData.message
+                    : null;
                 if (message) {
                   lastError = message;
                 } else {
@@ -1631,28 +1905,29 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     try {
       let lastError = "Không thể xóa sản phẩm";
 
-      const relatedVariants = productVariants.filter((v) => v.product_id === id);
+      const relatedVariants = productVariants.filter(
+        (v) => v.product_id === id,
+      );
       for (const variant of relatedVariants) {
         try {
           await deleteRecord(RESOURCE_PATHS.productVariantsWrite, variant.id);
-        } catch {
-        }
+        } catch {}
       }
 
-      const relatedImages = productImages.filter((img) => img.product_id === id);
+      const relatedImages = productImages.filter(
+        (img) => img.product_id === id,
+      );
       for (const image of relatedImages) {
         try {
           await deleteRecord(RESOURCE_PATHS.productImages, image.id);
-        } catch {
-        }
+        } catch {}
       }
 
       const deleted = await deleteRecord(
-        Array.from(new Set([
-          ...RESOURCE_PATHS.productsWrite,
-          "/admin/products",
-        ])),
-        id
+        Array.from(
+          new Set([...RESOURCE_PATHS.productsWrite, "/admin/products"]),
+        ),
+        id,
       );
 
       if (deleted) {
@@ -1674,11 +1949,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         for (const payload of softDeleteStatusPayloads) {
           for (const method of ["PATCH", "PUT", "POST"] as const) {
             try {
-              const response = await fetchWithTimeout(buildRequestUrl(endpoint), {
-                method,
-                headers: getAuthHeaders({ "Content-Type": "application/json" }),
-                body: JSON.stringify(payload),
-              });
+              const response = await fetchWithTimeout(
+                buildRequestUrl(endpoint),
+                {
+                  method,
+                  headers: getAuthHeaders({
+                    "Content-Type": "application/json",
+                  }),
+                  body: JSON.stringify(payload),
+                },
+              );
 
               if (response.ok) {
                 await loadBackendData();
@@ -1686,8 +1966,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
               }
 
               try {
-                const payloadData = (await response.json()) as Record<string, unknown>;
-                const message = typeof payloadData?.message === "string" ? payloadData.message : null;
+                const payloadData = (await response.json()) as Record<
+                  string,
+                  unknown
+                >;
+                const message =
+                  typeof payloadData?.message === "string"
+                    ? payloadData.message
+                    : null;
                 if (message) {
                   lastError = message;
                 } else {
@@ -1703,10 +1989,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      const softDeletePaths = Array.from(new Set([
-        ...RESOURCE_PATHS.productsWrite,
-        "/admin/products",
-      ]));
+      const softDeletePaths = Array.from(
+        new Set([...RESOURCE_PATHS.productsWrite, "/admin/products"]),
+      );
 
       const softDeletePayloads = [
         { status: "discontinued" },
@@ -1717,32 +2002,43 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       for (const path of softDeletePaths) {
         for (const payload of softDeletePayloads) {
           for (const method of ["PATCH", "PUT"] as const) {
-          try {
-            const response = await fetchWithTimeout(buildRequestUrl(`${path}/${id}`), {
-              method,
-              headers: getAuthHeaders({ "Content-Type": "application/json" }),
-              body: JSON.stringify(payload),
-            });
-
-            if (response.ok) {
-              await loadBackendData();
-              return;
-            }
-
             try {
-              const payloadData = (await response.json()) as Record<string, unknown>;
-              const message = typeof payloadData?.message === "string" ? payloadData.message : null;
-              if (message) {
-                lastError = message;
-              } else {
+              const response = await fetchWithTimeout(
+                buildRequestUrl(`${path}/${id}`),
+                {
+                  method,
+                  headers: getAuthHeaders({
+                    "Content-Type": "application/json",
+                  }),
+                  body: JSON.stringify(payload),
+                },
+              );
+
+              if (response.ok) {
+                await loadBackendData();
+                return;
+              }
+
+              try {
+                const payloadData = (await response.json()) as Record<
+                  string,
+                  unknown
+                >;
+                const message =
+                  typeof payloadData?.message === "string"
+                    ? payloadData.message
+                    : null;
+                if (message) {
+                  lastError = message;
+                } else {
+                  lastError = `HTTP ${response.status}`;
+                }
+              } catch {
                 lastError = `HTTP ${response.status}`;
               }
             } catch {
-              lastError = `HTTP ${response.status}`;
+              lastError = "Không thể kết nối backend";
             }
-          } catch {
-            lastError = "Không thể kết nối backend";
-          }
           }
         }
       }
@@ -1751,8 +2047,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       try {
         await loadBackendData();
-      } catch {
-      }
+      } catch {}
       throw error;
     }
   };
@@ -1763,27 +2058,42 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       slug: category.slug || generateSlug(category.name),
       created_at: new Date().toISOString(),
     };
-    await syncAfterMutation(() => createRecord(RESOURCE_PATHS.categories, payload));
+    await syncAfterMutation(() =>
+      createRecord(RESOURCE_PATHS.categories, payload),
+    );
   };
 
   const updateCategory = async (id: number, updates: Partial<Category>) => {
     const payload = {
       ...updates,
-      ...(updates.name && !updates.slug ? { slug: generateSlug(updates.name) } : {}),
+      ...(updates.name && !updates.slug
+        ? { slug: generateSlug(updates.name) }
+        : {}),
     };
-    await syncAfterMutation(() => updateRecord(RESOURCE_PATHS.categories, id, payload));
+    await syncAfterMutation(() =>
+      updateRecord(RESOURCE_PATHS.categories, id, payload),
+    );
   };
 
   const deleteCategory = async (id: number) => {
     await syncAfterMutation(() => deleteRecord(RESOURCE_PATHS.categories, id));
   };
 
-  const addBrand = async (brand: Omit<Brand, "id" | "created_at"> & { logo_file?: File }) => {
-    await syncAfterMutation(() => createBrandRecord(RESOURCE_PATHS.brandsWrite, brand));
+  const addBrand = async (
+    brand: Omit<Brand, "id" | "created_at"> & { logo_file?: File },
+  ) => {
+    await syncAfterMutation(() =>
+      createBrandRecord(RESOURCE_PATHS.brandsWrite, brand),
+    );
   };
 
-  const updateBrand = async (id: number, updates: Partial<Brand> & { logo_file?: File }) => {
-    await syncAfterMutation(() => updateBrandRecord(RESOURCE_PATHS.brandsWrite[0], id, updates));
+  const updateBrand = async (
+    id: number,
+    updates: Partial<Brand> & { logo_file?: File },
+  ) => {
+    await syncAfterMutation(() =>
+      updateBrandRecord(RESOURCE_PATHS.brandsWrite[0], id, updates),
+    );
   };
 
   const deleteBrand = async (id: number) => {
@@ -1793,7 +2103,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const updateCustomer = async (id: number, updates: Partial<Customer>) => {
     const payloadCandidates: Array<Record<string, unknown>> = [];
 
-    const hasIsActiveField = Object.prototype.hasOwnProperty.call(updates, "is_active");
+    const hasIsActiveField = Object.prototype.hasOwnProperty.call(
+      updates,
+      "is_active",
+    );
     const isActiveValue = updates.is_active;
     const restUpdates = { ...updates } as Partial<Customer>;
     delete restUpdates.is_active;
@@ -1804,10 +2117,22 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     if (hasIsActiveField && typeof isActiveValue === "boolean") {
       const statusValue = isActiveValue ? "active" : "inactive";
-      payloadCandidates.push({ ...restUpdates, is_active: isActiveValue } as Record<string, unknown>);
-      payloadCandidates.push({ ...restUpdates, active: isActiveValue } as Record<string, unknown>);
-      payloadCandidates.push({ ...restUpdates, isActive: isActiveValue } as Record<string, unknown>);
-      payloadCandidates.push({ ...restUpdates, status: statusValue } as Record<string, unknown>);
+      payloadCandidates.push({
+        ...restUpdates,
+        is_active: isActiveValue,
+      } as Record<string, unknown>);
+      payloadCandidates.push({
+        ...restUpdates,
+        active: isActiveValue,
+      } as Record<string, unknown>);
+      payloadCandidates.push({
+        ...restUpdates,
+        isActive: isActiveValue,
+      } as Record<string, unknown>);
+      payloadCandidates.push({ ...restUpdates, status: statusValue } as Record<
+        string,
+        unknown
+      >);
     }
 
     if (payloadCandidates.length === 0) {
@@ -1846,11 +2171,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         for (const endpoint of statusEndpoints) {
           for (const payload of payloadCandidates) {
             try {
-              const response = await fetchWithTimeout(buildRequestUrl(endpoint), {
-                method,
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-              });
+              const response = await fetchWithTimeout(
+                buildRequestUrl(endpoint),
+                {
+                  method,
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(payload),
+                },
+              );
 
               if (response.ok) {
                 await loadBackendData();
@@ -1859,7 +2187,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
               try {
                 const data = (await response.json()) as Record<string, unknown>;
-                if (typeof data.message === "string" && data.message.length > 0) {
+                if (
+                  typeof data.message === "string" &&
+                  data.message.length > 0
+                ) {
                   lastError = data.message;
                 } else {
                   lastError = `HTTP ${response.status}`;
@@ -1879,10 +2210,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteCustomer = async (id: number) => {
-    await syncAfterMutation(() => deleteRecord(RESOURCE_PATHS.customersWrite, id));
+    await syncAfterMutation(() =>
+      deleteRecord(RESOURCE_PATHS.customersWrite, id),
+    );
   };
 
-  const addOrder = async (order: Omit<Order, "id" | "created_at" | "updated_at">) => {
+  const addOrder = async (
+    order: Omit<Order, "id" | "created_at" | "updated_at">,
+  ) => {
     const payload = {
       ...order,
       created_at: new Date().toISOString(),
@@ -1895,12 +2230,17 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const oldOrder = baseOrders.find((o) => o.id === id);
     const payload = {
       ...updates,
-      ...(oldOrder && updates.order_status === "delivered" && oldOrder.payment_method === "cod" && oldOrder.payment_status === "unpaid"
+      ...(oldOrder &&
+      updates.order_status === "delivered" &&
+      oldOrder.payment_method === "cod" &&
+      oldOrder.payment_status === "unpaid"
         ? { payment_status: "paid" }
         : {}),
       updated_at: new Date().toISOString(),
     };
-    await syncAfterMutation(() => updateRecord(RESOURCE_PATHS.orders, id, payload));
+    await syncAfterMutation(() =>
+      updateRecord(RESOURCE_PATHS.orders, id, payload),
+    );
   };
 
   const deleteOrder = async (id: number) => {
@@ -1913,9 +2253,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       used_count: coupon.used_count ?? 0,
       created_at: new Date().toISOString(),
     };
-    const createdResult = await createRecordWithResponse<Coupon>(RESOURCE_PATHS.couponsWrite, payload);
+    const createdResult = await createRecordWithResponse<Coupon>(
+      RESOURCE_PATHS.couponsWrite,
+      payload,
+    );
     if (!createdResult.ok) {
-      throw new Error(createdResult.error || "Không thể cập nhật dữ liệu lên backend");
+      throw new Error(
+        createdResult.error || "Không thể cập nhật dữ liệu lên backend",
+      );
     }
 
     await loadBackendData();
@@ -1929,42 +2274,65 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     );
 
     if (!updatedResult.ok) {
-      throw new Error(updatedResult.error || "Không thể cập nhật dữ liệu lên backend");
+      throw new Error(
+        updatedResult.error || "Không thể cập nhật dữ liệu lên backend",
+      );
     }
 
     await loadBackendData();
   };
 
   const deleteCoupon = async (id: number) => {
-    await syncAfterMutation(() => deleteRecord(RESOURCE_PATHS.couponsWrite, id));
+    await syncAfterMutation(() =>
+      deleteRecord(RESOURCE_PATHS.couponsWrite, id),
+    );
   };
 
   const addProductVariant = async (
-    variant: Omit<ProductVariant, "id" | "created_at"> & { variant_image_file?: File }
+    variant: Omit<ProductVariant, "id" | "created_at"> & {
+      variant_image_file?: File;
+    },
   ) => {
-    await syncAfterMutation(() => createProductVariantForProduct(variant.product_id, variant));
+    await syncAfterMutation(() =>
+      createProductVariantForProduct(variant.product_id, variant),
+    );
   };
 
-  const updateProductVariant = async (id: number, updates: Partial<ProductVariant>) => {
+  const updateProductVariant = async (
+    id: number,
+    updates: Partial<ProductVariant>,
+  ) => {
     const payload = {
       ...updates,
       updated_at: new Date().toISOString(),
     };
-    await syncAfterMutation(() => updateRecord(RESOURCE_PATHS.productVariantsWrite, id, payload));
+    await syncAfterMutation(() =>
+      updateRecord(RESOURCE_PATHS.productVariantsWrite, id, payload),
+    );
   };
 
   const deleteProductVariant = async (id: number) => {
-    await syncAfterMutation(() => deleteRecord(RESOURCE_PATHS.productVariantsWrite, id));
+    await syncAfterMutation(() =>
+      deleteRecord(RESOURCE_PATHS.productVariantsWrite, id),
+    );
   };
 
-  const addProductImage = async (image: Omit<ProductImage, "id"> & { image_file?: File }) => {
+  const addProductImage = async (
+    image: Omit<ProductImage, "id"> & { image_file?: File },
+  ) => {
     if (image.image_file) {
-      const uploadedResult = await uploadProductImageFile(image.product_id, image.image_file as File, {
-        is_primary: image.is_primary,
-        sort_order: image.sort_order,
-      });
+      const uploadedResult = await uploadProductImageFile(
+        image.product_id,
+        image.image_file as File,
+        {
+          is_primary: image.is_primary,
+          sort_order: image.sort_order,
+        },
+      );
       if (!uploadedResult.ok) {
-        throw new Error(uploadedResult.error || "Không thể upload ảnh sản phẩm lên backend");
+        throw new Error(
+          uploadedResult.error || "Không thể upload ảnh sản phẩm lên backend",
+        );
       }
 
       await loadBackendData();
@@ -1979,12 +2347,19 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
-  const updateProductImage = async (id: number, updates: Partial<ProductImage>) => {
-    await syncAfterMutation(() => updateRecord(RESOURCE_PATHS.productImages, id, updates));
+  const updateProductImage = async (
+    id: number,
+    updates: Partial<ProductImage>,
+  ) => {
+    await syncAfterMutation(() =>
+      updateRecord(RESOURCE_PATHS.productImages, id, updates),
+    );
   };
 
   const deleteProductImage = async (id: number) => {
-    await syncAfterMutation(() => deleteRecord(RESOURCE_PATHS.productImages, id));
+    await syncAfterMutation(() =>
+      deleteRecord(RESOURCE_PATHS.productImages, id),
+    );
   };
 
   const setPrimaryProductImage = async (id: number) => {
@@ -1994,27 +2369,45 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    await syncAfterMutation(() => updateRecord(RESOURCE_PATHS.productImages, id, { is_primary: true }));
+    await syncAfterMutation(() =>
+      updateRecord(RESOURCE_PATHS.productImages, id, { is_primary: true }),
+    );
   };
 
-  const addStockMovement = async (movement: Omit<StockMovement, "id" | "created_at">) => {
+  const addStockMovement = async (
+    movement: Omit<StockMovement, "id" | "created_at">,
+  ) => {
     const payload = {
       ...movement,
       created_at: new Date().toISOString(),
     };
-    await syncAfterMutation(() => createRecord(RESOURCE_PATHS.stockMovements, payload));
+    await syncAfterMutation(() =>
+      createRecord(RESOURCE_PATHS.stockMovements, payload),
+    );
   };
 
-  const updateStockMovement = async (id: number, updates: Partial<StockMovement>) => {
-    await syncAfterMutation(() => updateRecord(RESOURCE_PATHS.stockMovements, id, updates));
+  const updateStockMovement = async (
+    id: number,
+    updates: Partial<StockMovement>,
+  ) => {
+    await syncAfterMutation(() =>
+      updateRecord(RESOURCE_PATHS.stockMovements, id, updates),
+    );
   };
 
   const deleteStockMovement = async (id: number) => {
-    await syncAfterMutation(() => deleteRecord(RESOURCE_PATHS.stockMovements, id));
+    await syncAfterMutation(() =>
+      deleteRecord(RESOURCE_PATHS.stockMovements, id),
+    );
   };
 
-  const updateReturnRequest = async (id: number, updates: Partial<ReturnRequest>) => {
-    await syncAfterMutation(() => updateRecord(RESOURCE_PATHS.returnRequests, id, updates));
+  const updateReturnRequest = async (
+    id: number,
+    updates: Partial<ReturnRequest>,
+  ) => {
+    await syncAfterMutation(() =>
+      updateRecord(RESOURCE_PATHS.returnRequests, id, updates),
+    );
   };
 
   const updateSystemConfig = async (updates: Partial<SystemConfig>) => {
@@ -2022,7 +2415,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       ...systemConfig,
       ...updates,
     };
-    await syncAfterMutation(() => updateSingleton(RESOURCE_PATHS.systemConfig, payload));
+    await syncAfterMutation(() =>
+      updateSingleton(RESOURCE_PATHS.systemConfig, payload),
+    );
   };
 
   const value: DataContextType = {

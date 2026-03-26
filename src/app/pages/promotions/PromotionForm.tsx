@@ -1,7 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router";
 import { ArrowLeft, Save } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -42,7 +47,10 @@ export function PromotionForm() {
       return;
     }
 
-    if (existingCoupon && hydratedCouponIdRef.current !== existingCoupon.id.toString()) {
+    if (
+      existingCoupon &&
+      hydratedCouponIdRef.current !== existingCoupon.id.toString()
+    ) {
       setFormData({
         code: existingCoupon.code,
         discount_type: existingCoupon.discount_type,

@@ -13,7 +13,12 @@ import {
   Image as ImageIcon,
   ZoomIn,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { Label } from "../../components/ui/label";
@@ -45,11 +50,27 @@ const returnStatusConfig: Record<
   ReturnStatus,
   { label: string; color: string; bgColor: string }
 > = {
-  pending: { label: "Chờ duyệt", color: "text-yellow-700", bgColor: "bg-yellow-100" },
-  approved: { label: "Đã chấp nhận", color: "text-blue-700", bgColor: "bg-blue-100" },
+  pending: {
+    label: "Chờ duyệt",
+    color: "text-yellow-700",
+    bgColor: "bg-yellow-100",
+  },
+  approved: {
+    label: "Đã chấp nhận",
+    color: "text-blue-700",
+    bgColor: "bg-blue-100",
+  },
   rejected: { label: "Từ chối", color: "text-red-700", bgColor: "bg-red-100" },
-  received: { label: "Đã nhận hàng", color: "text-purple-700", bgColor: "bg-purple-100" },
-  completed: { label: "Hoàn thành", color: "text-green-700", bgColor: "bg-green-100" },
+  received: {
+    label: "Đã nhận hàng",
+    color: "text-purple-700",
+    bgColor: "bg-purple-100",
+  },
+  completed: {
+    label: "Hoàn thành",
+    color: "text-green-700",
+    bgColor: "bg-green-100",
+  },
 };
 
 export function ReturnDetail() {
@@ -61,7 +82,7 @@ export function ReturnDetail() {
   const [status, setStatus] = useState(returnRequest?.status || "pending");
   const [adminNote, setAdminNote] = useState(returnRequest?.admin_note || "");
   const [refundAmount, setRefundAmount] = useState(
-    returnRequest?.refund_amount?.toString() || ""
+    returnRequest?.refund_amount?.toString() || "",
   );
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
@@ -138,11 +159,17 @@ export function ReturnDetail() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/returns")}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/returns")}
+          >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Chi tiết trả hàng</h2>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Chi tiết trả hàng
+            </h2>
             <p className="text-gray-600">{returnNumber}</p>
           </div>
         </div>
@@ -163,7 +190,9 @@ export function ReturnDetail() {
                 <div>
                   <p className="text-sm text-gray-600">Mã đơn hàng</p>
                   <button
-                    onClick={() => navigate(`/orders/${returnRequest.order_id}`)}
+                    onClick={() =>
+                      navigate(`/orders/${returnRequest.order_id}`)
+                    }
                     className="font-medium text-blue-600 hover:underline"
                   >
                     {orderNumber}
@@ -171,7 +200,9 @@ export function ReturnDetail() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Ngày tạo</p>
-                  <p className="font-medium">{formatDate(returnRequest.created_at)}</p>
+                  <p className="font-medium">
+                    {formatDate(returnRequest.created_at)}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Trạng thái</p>
@@ -228,7 +259,9 @@ export function ReturnDetail() {
                             <p className="font-medium">
                               {item.order_item?.variant?.product?.name}
                             </p>
-                            <p className="text-sm text-gray-600">{item.order_item?.variant?.sku}</p>
+                            <p className="text-sm text-gray-600">
+                              {item.order_item?.variant?.sku}
+                            </p>
                             {item.order_item?.variant?.color && (
                               <p className="text-xs text-gray-500">
                                 Màu: {item.order_item.variant.color}
@@ -258,7 +291,7 @@ export function ReturnDetail() {
                       </TableCell>
                       <TableCell className="text-right font-medium">
                         {formatCurrency(
-                          (item.order_item?.unit_price || 0) * item.quantity
+                          (item.order_item?.unit_price || 0) * item.quantity,
                         )}
                       </TableCell>
                     </TableRow>
@@ -273,9 +306,10 @@ export function ReturnDetail() {
                     {formatCurrency(
                       returnRequest.items?.reduce(
                         (sum, item) =>
-                          sum + (item.order_item?.unit_price || 0) * item.quantity,
-                        0
-                      ) || 0
+                          sum +
+                          (item.order_item?.unit_price || 0) * item.quantity,
+                        0,
+                      ) || 0,
                     )}
                   </span>
                 </div>
@@ -440,9 +474,7 @@ export function ReturnDetail() {
                   <div className="flex gap-3">
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                        status === "rejected"
-                          ? "bg-red-100"
-                          : "bg-blue-100"
+                        status === "rejected" ? "bg-red-100" : "bg-blue-100"
                       }`}
                     >
                       {status === "rejected" ? (
@@ -527,8 +559,9 @@ export function ReturnDetail() {
             </div>
             <div className="p-4 bg-blue-50 rounded-lg">
               <p className="text-sm text-blue-700">
-                Sau khi chấp nhận, khách hàng sẽ được thông báo và có thể gửi hàng
-                trả lại. Số tiền sẽ được hoàn sau khi nhận và kiểm tra hàng.
+                Sau khi chấp nhận, khách hàng sẽ được thông báo và có thể gửi
+                hàng trả lại. Số tiền sẽ được hoàn sau khi nhận và kiểm tra
+                hàng.
               </p>
             </div>
           </div>
@@ -564,7 +597,10 @@ export function ReturnDetail() {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setRejectDialogOpen(false)}
+            >
               Hủy
             </Button>
             <Button variant="destructive" onClick={handleReject}>

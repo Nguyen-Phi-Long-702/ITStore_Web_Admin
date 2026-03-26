@@ -1,32 +1,51 @@
 import { useState, useEffect } from "react";
 import { Save, Upload } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Switch } from "../components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../components/ui/tabs";
 import { toast } from "sonner";
 import { useData } from "../contexts/DataContext";
 
 export function SystemConfig() {
   const { systemConfig, updateSystemConfig } = useData();
 
-  const [paymentConfig, setPaymentConfig] = useState(systemConfig.paymentConfig);
-  const [shippingConfig, setShippingConfig] = useState(systemConfig.shippingConfig);
+  const [paymentConfig, setPaymentConfig] = useState(
+    systemConfig.paymentConfig,
+  );
+  const [shippingConfig, setShippingConfig] = useState(
+    systemConfig.shippingConfig,
+  );
   const [bankInfo, setBankInfo] = useState(systemConfig.bankInfo);
   const [banners, setBanners] = useState(systemConfig.banners);
-  const [notificationTemplates, setNotificationTemplates] = useState(systemConfig.notificationTemplates);
+  const [notificationTemplates, setNotificationTemplates] = useState(
+    systemConfig.notificationTemplates,
+  );
   const [lastSyncedConfig, setLastSyncedConfig] = useState(systemConfig);
 
   useEffect(() => {
     const hasUnsavedChanges =
-      JSON.stringify(paymentConfig) !== JSON.stringify(lastSyncedConfig.paymentConfig) ||
-      JSON.stringify(shippingConfig) !== JSON.stringify(lastSyncedConfig.shippingConfig) ||
+      JSON.stringify(paymentConfig) !==
+        JSON.stringify(lastSyncedConfig.paymentConfig) ||
+      JSON.stringify(shippingConfig) !==
+        JSON.stringify(lastSyncedConfig.shippingConfig) ||
       JSON.stringify(bankInfo) !== JSON.stringify(lastSyncedConfig.bankInfo) ||
       JSON.stringify(banners) !== JSON.stringify(lastSyncedConfig.banners) ||
-      JSON.stringify(notificationTemplates) !== JSON.stringify(lastSyncedConfig.notificationTemplates);
+      JSON.stringify(notificationTemplates) !==
+        JSON.stringify(lastSyncedConfig.notificationTemplates);
 
     if (hasUnsavedChanges) {
       return;
@@ -204,7 +223,9 @@ export function SystemConfig() {
                 <Input
                   id="bankName"
                   value={bankInfo.bankName}
-                  onChange={(e) => setBankInfo({ ...bankInfo, bankName: e.target.value })}
+                  onChange={(e) =>
+                    setBankInfo({ ...bankInfo, bankName: e.target.value })
+                  }
                   placeholder="Tên ngân hàng"
                 />
               </div>
@@ -215,7 +236,12 @@ export function SystemConfig() {
                   <Input
                     id="accountNumber"
                     value={bankInfo.accountNumber}
-                    onChange={(e) => setBankInfo({ ...bankInfo, accountNumber: e.target.value })}
+                    onChange={(e) =>
+                      setBankInfo({
+                        ...bankInfo,
+                        accountNumber: e.target.value,
+                      })
+                    }
                     placeholder="Số tài khoản"
                   />
                 </div>
@@ -225,7 +251,9 @@ export function SystemConfig() {
                   <Input
                     id="accountName"
                     value={bankInfo.accountName}
-                    onChange={(e) => setBankInfo({ ...bankInfo, accountName: e.target.value })}
+                    onChange={(e) =>
+                      setBankInfo({ ...bankInfo, accountName: e.target.value })
+                    }
                     placeholder="Tên tài khoản"
                   />
                 </div>
@@ -249,7 +277,9 @@ export function SystemConfig() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="baseShippingFee">Phí vận chuyển cơ bản (VNĐ)</Label>
+                  <Label htmlFor="baseShippingFee">
+                    Phí vận chuyển cơ bản (VNĐ)
+                  </Label>
                   <Input
                     id="baseShippingFee"
                     type="number"
@@ -281,7 +311,9 @@ export function SystemConfig() {
                 </div>
 
                 <div>
-                  <Label htmlFor="distanceFeePerKm">Phí theo khoảng cách (VNĐ/km)</Label>
+                  <Label htmlFor="distanceFeePerKm">
+                    Phí theo khoảng cách (VNĐ/km)
+                  </Label>
                   <Input
                     id="distanceFeePerKm"
                     type="number"

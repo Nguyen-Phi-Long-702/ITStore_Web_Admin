@@ -35,7 +35,9 @@ export function ErrorBoundary() {
 
           <div className="space-y-2">
             {errorStatus && (
-              <h1 className="text-6xl font-bold text-gray-900">{errorStatus}</h1>
+              <h1 className="text-6xl font-bold text-gray-900">
+                {errorStatus}
+              </h1>
             )}
             <h2 className="text-2xl font-bold text-gray-900">
               Oops! Có lỗi xảy ra

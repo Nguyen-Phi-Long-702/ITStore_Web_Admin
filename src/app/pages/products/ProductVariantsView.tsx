@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { ArrowLeft, Edit, Package, AlertCircle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { Label } from "../../components/ui/label";
@@ -68,7 +73,7 @@ export function ProductVariantsView() {
     }
 
     toast.success(
-      `Đã ${stockChange > 0 ? "nhập" : "xuất"} ${Math.abs(stockChange)} sản phẩm`
+      `Đã ${stockChange > 0 ? "nhập" : "xuất"} ${Math.abs(stockChange)} sản phẩm`,
     );
     setStockDialogOpen(false);
 
@@ -85,7 +90,8 @@ export function ProductVariantsView() {
     return acc;
   }, {});
 
-  const totalStock = product.variants?.reduce((sum, v) => sum + v.stock, 0) || 0;
+  const totalStock =
+    product.variants?.reduce((sum, v) => sum + v.stock, 0) || 0;
   const totalValue =
     product.variants?.reduce((sum, v) => sum + v.stock * v.price, 0) || 0;
 
@@ -93,7 +99,11 @@ export function ProductVariantsView() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/products")}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/products")}
+          >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
@@ -112,7 +122,9 @@ export function ProductVariantsView() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold">{product.variants?.length || 0}</div>
+            <div className="text-2xl font-bold">
+              {product.variants?.length || 0}
+            </div>
             <p className="text-sm text-gray-600">Tổng biến thể</p>
           </CardContent>
         </Card>
@@ -161,7 +173,9 @@ export function ProductVariantsView() {
             <TableBody>
               {product.variants?.map((variant) => (
                 <TableRow key={variant.id}>
-                  <TableCell className="font-mono text-sm">{variant.sku}</TableCell>
+                  <TableCell className="font-mono text-sm">
+                    {variant.sku}
+                  </TableCell>
                   <TableCell>
                     {variant.color ? (
                       <span className="text-sm">{variant.color}</span>
@@ -184,8 +198,8 @@ export function ProductVariantsView() {
                         variant.stock < 10
                           ? "text-red-600"
                           : variant.stock < 20
-                          ? "text-yellow-600"
-                          : "text-gray-900"
+                            ? "text-yellow-600"
+                            : "text-gray-900"
                       }`}
                     >
                       {variant.stock}
@@ -193,9 +207,13 @@ export function ProductVariantsView() {
                   </TableCell>
                   <TableCell>
                     {variant.is_active ? (
-                      <Badge className="bg-green-100 text-green-700">Hoạt động</Badge>
+                      <Badge className="bg-green-100 text-green-700">
+                        Hoạt động
+                      </Badge>
                     ) : (
-                      <Badge className="bg-gray-100 text-gray-700">Tạm dừng</Badge>
+                      <Badge className="bg-gray-100 text-gray-700">
+                        Tạm dừng
+                      </Badge>
                     )}
                   </TableCell>
                   <TableCell className="text-right">
@@ -230,7 +248,9 @@ export function ProductVariantsView() {
                   <p className="font-medium">{product.name}</p>
                   <p className="text-sm text-gray-600">{selectedVariant.sku}</p>
                   {selectedVariant.color && (
-                    <p className="text-xs text-gray-500">Màu: {selectedVariant.color}</p>
+                    <p className="text-xs text-gray-500">
+                      Màu: {selectedVariant.color}
+                    </p>
                   )}
                   {selectedVariant.version && (
                     <p className="text-xs text-gray-500">
@@ -239,7 +259,9 @@ export function ProductVariantsView() {
                   )}
                 </div>
                 <div className="flex items-center justify-between mt-2 pt-2 border-t">
-                  <span className="text-sm text-gray-600">Tồn kho hiện tại:</span>
+                  <span className="text-sm text-gray-600">
+                    Tồn kho hiện tại:
+                  </span>
                   <span className="font-bold">{selectedVariant.stock}</span>
                 </div>
               </div>

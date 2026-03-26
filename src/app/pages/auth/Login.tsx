@@ -1,11 +1,15 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router";
-import { LogIn, Mail, Lock, AlertCircle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { LogIn, Mail, Lock } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
-import { Badge } from "../../components/ui/badge";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "sonner";
 
@@ -31,7 +35,7 @@ export function Login() {
 
     try {
       const success = await login(email.trim(), password);
-      
+
       if (success) {
         toast.success("Đăng nhập thành công!");
         navigate(from, { replace: true });
@@ -55,9 +59,7 @@ export function Login() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Hệ thống quản trị
           </h1>
-          <p className="text-gray-600">
-            Quản lý linh kiện điện tử
-          </p>
+          <p className="text-gray-600">Quản lý linh kiện điện tử</p>
         </div>
 
         <Card className="shadow-xl">
@@ -109,11 +111,7 @@ export function Login() {
                 </div>
               </div>
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading}
-              >
+              <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? (
                   <>
                     <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
@@ -127,34 +125,6 @@ export function Login() {
                 )}
               </Button>
             </form>
-
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="flex items-start gap-2 mb-3">
-                <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-semibold text-blue-900 mb-1">
-                    Tài khoản demo
-                  </p>
-                  <p className="text-xs text-blue-700 mb-2">
-                    Sử dụng tài khoản sau để đăng nhập:
-                  </p>
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                <div className="bg-white p-3 rounded border border-blue-100">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm font-semibold text-gray-900">Admin</p>
-                    <Badge className="bg-red-100 text-red-700 text-xs">
-                      Full quyền
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-gray-600 font-mono">
-                    👤 admin@domain.com / 🔑 your-password
-                  </p>
-                </div>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>

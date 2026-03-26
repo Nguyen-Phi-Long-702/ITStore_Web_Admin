@@ -1,7 +1,20 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useParams } from "react-router";
-import { ArrowLeft, Save, Plus, Trash2, ImagePlus, Star, X } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import {
+  ArrowLeft,
+  Save,
+  Plus,
+  Trash2,
+  ImagePlus,
+  Star,
+  X,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -21,7 +34,12 @@ const MAX_PRODUCT_IMAGES = 8;
 const API_BASE_URL = "http://localhost:3000";
 const ACCESS_TOKEN_STORAGE_KEY = "auth_access_token";
 
-type ImageEntry = { id?: number; url: string; is_primary: boolean; imageFile?: File };
+type ImageEntry = {
+  id?: number;
+  url: string;
+  is_primary: boolean;
+  imageFile?: File;
+};
 
 type VariantFormData = {
   id?: number;
@@ -56,11 +74,16 @@ export function ProductForm() {
   } = useData();
   const isEdit = !!id;
 
-  const existingProduct = isEdit ? products.find((p) => p.id.toString() === id) : null;
+  const existingProduct = isEdit
+    ? products.find((p) => p.id.toString() === id)
+    : null;
 
   const autoProductCode = useMemo(() => {
     const maxCode = products.reduce((max, product) => {
-      const match = typeof product.product_code === "string" ? product.product_code.match(/^PRD-(\d+)$/i) : null;
+      const match =
+        typeof product.product_code === "string"
+          ? product.product_code.match(/^PRD-(\d+)$/i)
+          : null;
       if (!match) {
         return max;
       }
@@ -86,12 +109,24 @@ export function ProductForm() {
 
   const [images, setImages] = useState<ImageEntry[]>([]);
   const [isFormDirty, setIsFormDirty] = useState(false);
-  const [hydratedProductId, setHydratedProductId] = useState<number | null>(null);
+  const [hydratedProductId, setHydratedProductId] = useState<number | null>(
+    null,
+  );
   const [fallbackDescription, setFallbackDescription] = useState("");
   const requestingDescriptionProductIdRef = useRef<number | null>(null);
 
   const [variants, setVariants] = useState<VariantFormData[]>([
-    { sku: "", version: "", color: "", price: "", compare_at_price: "", stock: "", is_active: true, imageUrl: "", imageFile: undefined },
+    {
+      sku: "",
+      version: "",
+      color: "",
+      price: "",
+      compare_at_price: "",
+      stock: "",
+      is_active: true,
+      imageUrl: "",
+      imageFile: undefined,
+    },
   ]);
 
   useEffect(() => {
@@ -151,7 +186,10 @@ export function ProductForm() {
 
         for (const [key, value] of Object.entries(record)) {
           const normalizedKey = key.trim().toLowerCase();
-          if (!normalizedKey.includes("desc") && !normalizedKey.includes("description")) {
+          if (
+            !normalizedKey.includes("desc") &&
+            !normalizedKey.includes("description")
+          ) {
             continue;
           }
 
@@ -163,7 +201,10 @@ export function ProductForm() {
         return "";
       };
 
-      const walk = (value: unknown, visit: (node: Record<string, unknown>) => string): string => {
+      const walk = (
+        value: unknown,
+        visit: (node: Record<string, unknown>) => string,
+      ): string => {
         if (Array.isArray(value)) {
           for (const item of value) {
             const result = walk(item, visit);
@@ -238,7 +279,14 @@ export function ProductForm() {
         return directDescription;
       }
 
-      const nestedCandidates = [root.data, root.result, root.payload, root.item, root.items, root.rows];
+      const nestedCandidates = [
+        root.data,
+        root.result,
+        root.payload,
+        root.item,
+        root.items,
+        root.rows,
+      ];
       for (const nested of nestedCandidates) {
         if (Array.isArray(nested)) {
           const nestedDescription = extractDescription(nested);
@@ -305,8 +353,7 @@ export function ProductForm() {
             found = true;
             return;
           }
-        } catch {
-        }
+        } catch {}
       }
 
       if (!cancelled && !found) {
@@ -327,7 +374,8 @@ export function ProductForm() {
     }
 
     const resolvedDescription =
-      typeof existingProduct.description === "string" && existingProduct.description.trim().length > 0
+      typeof existingProduct.description === "string" &&
+      existingProduct.description.trim().length > 0
         ? existingProduct.description
         : fallbackDescription;
 
@@ -360,25 +408,39 @@ export function ProductForm() {
     }
 
     if (existingProduct) {
-      const normalizedProductSku = (existingProduct.sku || "").trim().toLowerCase();
+      const normalizedProductSku = (existingProduct.sku || "")
+        .trim()
+        .toLowerCase();
       const skuMatchedVariants = normalizedProductSku
         ? productVariants.filter(
-            (variant) => variant.sku.trim().toLowerCase() === normalizedProductSku,
+            (variant) =>
+              variant.sku.trim().toLowerCase() === normalizedProductSku,
           )
         : [];
       const existingVariants =
         existingProduct.variants && existingProduct.variants.length > 0
           ? existingProduct.variants
-          : productVariants.filter((variant) => variant.product_id === existingProduct.id).length > 0
-            ? productVariants.filter((variant) => variant.product_id === existingProduct.id)
+          : productVariants.filter(
+                (variant) => variant.product_id === existingProduct.id,
+              ).length > 0
+            ? productVariants.filter(
+                (variant) => variant.product_id === existingProduct.id,
+              )
             : skuMatchedVariants;
 
-      const currentVariantIds = new Set(variants.filter((variant) => variant.id).map((variant) => variant.id));
-      const incomingVariantIds = new Set(existingVariants.map((variant) => variant.id));
+      const currentVariantIds = new Set(
+        variants.filter((variant) => variant.id).map((variant) => variant.id),
+      );
+      const incomingVariantIds = new Set(
+        existingVariants.map((variant) => variant.id),
+      );
       const variantsOutOfSync =
         incomingVariantIds.size !== currentVariantIds.size ||
-        Array.from(incomingVariantIds).some((variantId) => !currentVariantIds.has(variantId));
-      const shouldHydrate = hydratedProductId !== existingProduct.id || variantsOutOfSync;
+        Array.from(incomingVariantIds).some(
+          (variantId) => !currentVariantIds.has(variantId),
+        );
+      const shouldHydrate =
+        hydratedProductId !== existingProduct.id || variantsOutOfSync;
 
       if (!shouldHydrate) {
         return;
@@ -387,7 +449,9 @@ export function ProductForm() {
       if (existingVariants.length > 0) {
         setVariants(
           existingVariants.map((v) => {
-            const variantImg = productImages.find((img) => img.variant_id === v.id);
+            const variantImg = productImages.find(
+              (img) => img.variant_id === v.id,
+            );
             return {
               id: v.id,
               sku: v.sku,
@@ -399,7 +463,7 @@ export function ProductForm() {
               is_active: v.is_active,
               imageUrl: variantImg?.image_url || "",
             };
-          })
+          }),
         );
       } else {
         setVariants([
@@ -418,14 +482,28 @@ export function ProductForm() {
       }
 
       const existingProductImages = productImages
-        .filter((img) => img.product_id === existingProduct.id && !img.variant_id)
+        .filter(
+          (img) => img.product_id === existingProduct.id && !img.variant_id,
+        )
         .sort((a, b) => a.sort_order - b.sort_order)
-        .map((img) => ({ id: img.id, url: img.image_url, is_primary: img.is_primary }));
+        .map((img) => ({
+          id: img.id,
+          url: img.image_url,
+          is_primary: img.is_primary,
+        }));
 
       setImages(existingProductImages);
       setHydratedProductId(existingProduct.id);
     }
-  }, [existingProduct, productImages, productVariants, variants, hydratedProductId, isEdit, isFormDirty]);
+  }, [
+    existingProduct,
+    productImages,
+    productVariants,
+    variants,
+    hydratedProductId,
+    isEdit,
+    isFormDirty,
+  ]);
 
   const handleAddImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || images.length >= MAX_PRODUCT_IMAGES) return;
@@ -433,7 +511,10 @@ export function ProductForm() {
     if (!file) return;
     setIsFormDirty(true);
     const url = URL.createObjectURL(file);
-    setImages((prev) => [...prev, { url, is_primary: prev.length === 0, imageFile: file }]);
+    setImages((prev) => [
+      ...prev,
+      { url, is_primary: prev.length === 0, imageFile: file },
+    ]);
     e.target.value = "";
   };
 
@@ -450,10 +531,15 @@ export function ProductForm() {
 
   const handleSetPrimary = (index: number) => {
     setIsFormDirty(true);
-    setImages((prev) => prev.map((img, i) => ({ ...img, is_primary: i === index })));
+    setImages((prev) =>
+      prev.map((img, i) => ({ ...img, is_primary: i === index })),
+    );
   };
 
-  const handleVariantImageChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVariantImageChange = (
+    index: number,
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     if (!e.target.files?.[0]) return;
     setIsFormDirty(true);
     const file = e.target.files[0];
@@ -471,7 +557,9 @@ export function ProductForm() {
       return;
     }
 
-    const selectedCategory = categories.find((c) => c.name === formData.category);
+    const selectedCategory = categories.find(
+      (c) => c.name === formData.category,
+    );
     const selectedBrand = brands.find((b) => b.name === formData.brand);
 
     if (!selectedCategory) {
@@ -487,28 +575,36 @@ export function ProductForm() {
     const hasVariantInput = (variant: VariantFormData) =>
       Boolean(
         variant.sku ||
-          variant.price ||
-          variant.stock ||
-          variant.version ||
-          variant.color ||
-          variant.compare_at_price ||
-          variant.imageFile ||
-          variant.imageUrl
+        variant.price ||
+        variant.stock ||
+        variant.version ||
+        variant.color ||
+        variant.compare_at_price ||
+        variant.imageFile ||
+        variant.imageUrl,
       );
 
-    const variantsForEdit = variants.filter((variant) => variant.id || hasVariantInput(variant));
+    const variantsForEdit = variants.filter(
+      (variant) => variant.id || hasVariantInput(variant),
+    );
 
     const existingVariantsForEdit =
       isEdit && existingProduct
         ? (() => {
-            const normalizedProductSku = (existingProduct.sku || "").trim().toLowerCase();
+            const normalizedProductSku = (existingProduct.sku || "")
+              .trim()
+              .toLowerCase();
             const skuMatchedVariants = normalizedProductSku
               ? productVariants.filter(
-                  (variant) => variant.sku.trim().toLowerCase() === normalizedProductSku,
+                  (variant) =>
+                    variant.sku.trim().toLowerCase() === normalizedProductSku,
                 )
               : [];
 
-            if (existingProduct.variants && existingProduct.variants.length > 0) {
+            if (
+              existingProduct.variants &&
+              existingProduct.variants.length > 0
+            ) {
               return existingProduct.variants;
             }
 
@@ -538,9 +634,14 @@ export function ProductForm() {
                 existingVariant.sku.trim().toLowerCase() === normalizedSku,
             );
             const matchedBySkuCandidates = productVariants.filter(
-              (existingVariant) => existingVariant.sku.trim().toLowerCase() === normalizedSku,
+              (existingVariant) =>
+                existingVariant.sku.trim().toLowerCase() === normalizedSku,
             );
-            const matchedVariant = matchedVariantByProduct || (matchedBySkuCandidates.length === 1 ? matchedBySkuCandidates[0] : undefined);
+            const matchedVariant =
+              matchedVariantByProduct ||
+              (matchedBySkuCandidates.length === 1
+                ? matchedBySkuCandidates[0]
+                : undefined);
 
             if (!matchedVariant) {
               return variant;
@@ -553,8 +654,12 @@ export function ProductForm() {
           })
         : variantsForEdit;
 
-    const unresolvedVariants = variantsForEditResolved.filter((variant) => !variant.id);
-    const existingVariantIdSet = new Set(existingVariantsForEdit.map((variant) => variant.id));
+    const unresolvedVariants = variantsForEditResolved.filter(
+      (variant) => !variant.id,
+    );
+    const existingVariantIdSet = new Set(
+      existingVariantsForEdit.map((variant) => variant.id),
+    );
     const currentVariantIdSet = new Set(
       variantsForEditResolved
         .filter((variant) => variant.id)
@@ -576,7 +681,9 @@ export function ProductForm() {
       }
 
       if (unresolvedVariants.some((variant) => !variant.imageFile)) {
-        toast.error("Không thể cập nhật vì biến thể này chưa tồn tại ở backend và backend yêu cầu ảnh khi tạo mới");
+        toast.error(
+          "Không thể cập nhật vì biến thể này chưa tồn tại ở backend và backend yêu cầu ảnh khi tạo mới",
+        );
         return;
       }
     }
@@ -594,7 +701,11 @@ export function ProductForm() {
         });
 
         if (removedVariantIds.length > 0) {
-          await Promise.all(removedVariantIds.map((variantId) => deleteProductVariant(variantId)));
+          await Promise.all(
+            removedVariantIds.map((variantId) =>
+              deleteProductVariant(variantId),
+            ),
+          );
         }
 
         await Promise.all(
@@ -604,7 +715,9 @@ export function ProductForm() {
               version: v.version || undefined,
               color: v.color || undefined,
               price: parseFloat(v.price),
-              compare_at_price: v.compare_at_price ? parseFloat(v.compare_at_price) : undefined,
+              compare_at_price: v.compare_at_price
+                ? parseFloat(v.compare_at_price)
+                : undefined,
               stock: parseInt(v.stock),
               is_active: v.is_active,
             };
@@ -616,24 +729,34 @@ export function ProductForm() {
               ...variantData,
               variant_image_file: v.imageFile,
             });
-          })
+          }),
         );
 
         const existingImages = productImages
-          .filter((img) => img.product_id === existingProduct.id && !img.variant_id)
+          .filter(
+            (img) => img.product_id === existingProduct.id && !img.variant_id,
+          )
           .sort((a, b) => a.sort_order - b.sort_order);
 
         const existingImageIdSet = new Set(existingImages.map((img) => img.id));
-        const currentImageIdSet = new Set(images.filter((img) => img.id).map((img) => img.id as number));
-        const removedImageIds = Array.from(existingImageIdSet).filter((imageId) => !currentImageIdSet.has(imageId));
+        const currentImageIdSet = new Set(
+          images.filter((img) => img.id).map((img) => img.id as number),
+        );
+        const removedImageIds = Array.from(existingImageIdSet).filter(
+          (imageId) => !currentImageIdSet.has(imageId),
+        );
 
         if (removedImageIds.length > 0) {
-          await Promise.all(removedImageIds.map((imageId) => deleteProductImage(imageId)));
+          await Promise.all(
+            removedImageIds.map((imageId) => deleteProductImage(imageId)),
+          );
         }
 
         const existingImageEntries = images.filter((img) => img.id);
 
-        const newImageEntries = images.filter((img) => !img.id && img.imageFile);
+        const newImageEntries = images.filter(
+          (img) => !img.id && img.imageFile,
+        );
         if (newImageEntries.length > 0) {
           await Promise.all(
             newImageEntries.map((img, index) =>
@@ -649,7 +772,9 @@ export function ProductForm() {
           );
         }
 
-        const primaryExistingImageId = images.find((img) => img.is_primary && img.id)?.id;
+        const primaryExistingImageId = images.find(
+          (img) => img.is_primary && img.id,
+        )?.id;
         if (primaryExistingImageId) {
           await setPrimaryProductImage(primaryExistingImageId);
         }
@@ -673,12 +798,14 @@ export function ProductForm() {
               version: v.version || undefined,
               color: v.color || undefined,
               price: parseFloat(v.price),
-              compare_at_price: v.compare_at_price ? parseFloat(v.compare_at_price) : undefined,
+              compare_at_price: v.compare_at_price
+                ? parseFloat(v.compare_at_price)
+                : undefined,
               stock: parseInt(v.stock),
               is_active: v.is_active,
               variant_image_file: v.imageFile,
-            })
-          )
+            }),
+          ),
         );
 
         await Promise.all(
@@ -690,8 +817,8 @@ export function ProductForm() {
               is_primary: img.is_primary,
               sort_order: i,
               image_file: img.imageFile,
-            })
-          )
+            }),
+          ),
         );
 
         toast.success("Thêm sản phẩm mới thành công");
@@ -699,10 +826,12 @@ export function ProductForm() {
 
       navigate("/products");
     } catch (error) {
-
-      const message = error instanceof Error ? error.message : "Không thể lưu sản phẩm";
+      const message =
+        error instanceof Error ? error.message : "Không thể lưu sản phẩm";
       if (message.toLowerCase().includes("cloud_name")) {
-        toast.error("Backend chưa cấu hình Cloudinary nên chưa thể lưu biến thể có ảnh");
+        toast.error(
+          "Backend chưa cấu hình Cloudinary nên chưa thể lưu biến thể có ảnh",
+        );
       } else {
         toast.error(message);
       }
@@ -718,7 +847,17 @@ export function ProductForm() {
     setIsFormDirty(true);
     setVariants([
       ...variants,
-      { sku: "", version: "", color: "", price: "", compare_at_price: "", stock: "", is_active: true, imageUrl: "", imageFile: undefined },
+      {
+        sku: "",
+        version: "",
+        color: "",
+        price: "",
+        compare_at_price: "",
+        stock: "",
+        is_active: true,
+        imageUrl: "",
+        imageFile: undefined,
+      },
     ]);
   };
 
@@ -731,7 +870,11 @@ export function ProductForm() {
     setVariants(variants.filter((_, i) => i !== index));
   };
 
-  const updateVariant = (index: number, field: string, value: string | boolean | File | undefined) => {
+  const updateVariant = (
+    index: number,
+    field: string,
+    value: string | boolean | File | undefined,
+  ) => {
     setIsFormDirty(true);
     setVariants((prev) => {
       const next = [...prev];
@@ -743,7 +886,11 @@ export function ProductForm() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/products")}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate("/products")}
+        >
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
@@ -751,7 +898,9 @@ export function ProductForm() {
             {isEdit ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm mới"}
           </h2>
           <p className="text-gray-600">
-            {isEdit ? "Cập nhật thông tin sản phẩm" : "Thêm sản phẩm mới vào hệ thống"}
+            {isEdit
+              ? "Cập nhật thông tin sản phẩm"
+              : "Thêm sản phẩm mới vào hệ thống"}
           </p>
         </div>
       </div>
@@ -819,7 +968,9 @@ export function ProductForm() {
                     <Textarea
                       id="description"
                       value={formData.description}
-                      onChange={(e) => handleChange("description", e.target.value)}
+                      onChange={(e) =>
+                        handleChange("description", e.target.value)
+                      }
                       placeholder="Mô tả chi tiết sản phẩm..."
                       rows={4}
                     />
@@ -833,15 +984,23 @@ export function ProductForm() {
                 <div className="flex items-center justify-between">
                   <CardTitle>Hình ảnh sản phẩm</CardTitle>
                   <span className="text-sm text-gray-500">
-                    {images.length}/{MAX_PRODUCT_IMAGES} ảnh · Nhấn ★ để đặt ảnh đại diện
+                    {images.length}/{MAX_PRODUCT_IMAGES} ảnh · Nhấn ★ để đặt ảnh
+                    đại diện
                   </span>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-4 gap-3">
                   {images.map((img, index) => (
-                    <div key={index} className="relative group aspect-square rounded-lg overflow-hidden border">
-                      <img src={img.url} alt="" className="w-full h-full object-cover" />
+                    <div
+                      key={index}
+                      className="relative group aspect-square rounded-lg overflow-hidden border"
+                    >
+                      <img
+                        src={img.url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                         <button
                           type="button"
@@ -849,7 +1008,10 @@ export function ProductForm() {
                           className="p-1 rounded-full text-white hover:scale-110 transition-transform"
                           title="Đặt làm ảnh đại diện"
                         >
-                          <Star className="h-4 w-4" fill={img.is_primary ? "currentColor" : "none"} />
+                          <Star
+                            className="h-4 w-4"
+                            fill={img.is_primary ? "currentColor" : "none"}
+                          />
                         </button>
                         <button
                           type="button"
@@ -870,8 +1032,15 @@ export function ProductForm() {
                   {images.length < MAX_PRODUCT_IMAGES && (
                     <label className="aspect-square flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition-colors">
                       <ImagePlus className="h-6 w-6 text-gray-400" />
-                      <span className="text-xs text-gray-400 mt-1">Thêm ảnh</span>
-                      <input type="file" accept="image/*" className="hidden" onChange={handleAddImage} />
+                      <span className="text-xs text-gray-400 mt-1">
+                        Thêm ảnh
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleAddImage}
+                      />
                     </label>
                   )}
                 </div>
@@ -882,7 +1051,12 @@ export function ProductForm() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Biến thể sản phẩm (Màu sắc, Phiên bản)</CardTitle>
-                  <Button type="button" variant="outline" size="sm" onClick={addVariant}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addVariant}
+                  >
                     <Plus className="h-4 w-4 mr-2" />
                     Thêm biến thể
                   </Button>
@@ -890,7 +1064,10 @@ export function ProductForm() {
               </CardHeader>
               <CardContent className="space-y-6">
                 {variants.map((variant, index) => (
-                  <div key={index} className="p-4 border rounded-lg space-y-4 relative">
+                  <div
+                    key={index}
+                    className="p-4 border rounded-lg space-y-4 relative"
+                  >
                     {variants.length > 1 && (
                       <Button
                         type="button"
@@ -907,7 +1084,9 @@ export function ProductForm() {
                         <Label>SKU *</Label>
                         <Input
                           value={variant.sku}
-                          onChange={(e) => updateVariant(index, "sku", e.target.value)}
+                          onChange={(e) =>
+                            updateVariant(index, "sku", e.target.value)
+                          }
                           placeholder="Nhập SKU"
                           required
                         />
@@ -916,7 +1095,9 @@ export function ProductForm() {
                         <Label>Phiên bản</Label>
                         <Input
                           value={variant.version}
-                          onChange={(e) => updateVariant(index, "version", e.target.value)}
+                          onChange={(e) =>
+                            updateVariant(index, "version", e.target.value)
+                          }
                           placeholder="Nhập phiên bản"
                         />
                       </div>
@@ -924,7 +1105,9 @@ export function ProductForm() {
                         <Label>Màu sắc</Label>
                         <Input
                           value={variant.color}
-                          onChange={(e) => updateVariant(index, "color", e.target.value)}
+                          onChange={(e) =>
+                            updateVariant(index, "color", e.target.value)
+                          }
                           placeholder="Nhập màu sắc"
                         />
                       </div>
@@ -933,7 +1116,9 @@ export function ProductForm() {
                         <Input
                           type="number"
                           value={variant.price}
-                          onChange={(e) => updateVariant(index, "price", e.target.value)}
+                          onChange={(e) =>
+                            updateVariant(index, "price", e.target.value)
+                          }
                           placeholder="Nhập giá bán"
                           required
                         />
@@ -943,7 +1128,13 @@ export function ProductForm() {
                         <Input
                           type="number"
                           value={variant.compare_at_price}
-                          onChange={(e) => updateVariant(index, "compare_at_price", e.target.value)}
+                          onChange={(e) =>
+                            updateVariant(
+                              index,
+                              "compare_at_price",
+                              e.target.value,
+                            )
+                          }
                           placeholder="Nhập giá gốc"
                         />
                       </div>
@@ -952,7 +1143,9 @@ export function ProductForm() {
                         <Input
                           type="number"
                           value={variant.stock}
-                          onChange={(e) => updateVariant(index, "stock", e.target.value)}
+                          onChange={(e) =>
+                            updateVariant(index, "stock", e.target.value)
+                          }
                           placeholder="Nhập số lượng"
                           required
                         />
@@ -962,7 +1155,11 @@ export function ProductForm() {
                         <div className="flex items-center gap-3 mt-1">
                           {variant.imageUrl ? (
                             <div className="relative w-20 h-20 rounded-lg overflow-hidden border group shrink-0">
-                              <img src={variant.imageUrl} alt="" className="w-full h-full object-cover" />
+                              <img
+                                src={variant.imageUrl}
+                                alt=""
+                                className="w-full h-full object-cover"
+                              />
                               <button
                                 type="button"
                                 onClick={() => {
@@ -981,11 +1178,15 @@ export function ProductForm() {
                                 type="file"
                                 accept="image/*"
                                 className="hidden"
-                                onChange={(e) => handleVariantImageChange(index, e)}
+                                onChange={(e) =>
+                                  handleVariantImageChange(index, e)
+                                }
                               />
                             </label>
                           )}
-                          <p className="text-xs text-gray-500">1 ảnh đại diện cho biến thể này</p>
+                          <p className="text-xs text-gray-500">
+                            1 ảnh đại diện cho biến thể này
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -1011,7 +1212,9 @@ export function ProductForm() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">Đang kinh doanh</SelectItem>
-                    <SelectItem value="discontinued">Ngừng kinh doanh</SelectItem>
+                    <SelectItem value="discontinued">
+                      Ngừng kinh doanh
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </CardContent>
@@ -1022,7 +1225,12 @@ export function ProductForm() {
                 <Save className="h-4 w-4 mr-2" />
                 {isEdit ? "Cập nhật sản phẩm" : "Thêm sản phẩm"}
               </Button>
-              <Button type="button" variant="outline" className="w-full" onClick={() => navigate("/products")}>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => navigate("/products")}
+              >
                 Hủy
               </Button>
             </div>

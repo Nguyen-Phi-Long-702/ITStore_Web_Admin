@@ -1,4 +1,9 @@
-import { OrderStatus, ProductStatus, PaymentStatus, PaymentMethod } from "../types";
+import {
+  OrderStatus,
+  ProductStatus,
+  PaymentStatus,
+  PaymentMethod,
+} from "../types";
 
 export const orderStatusConfig: Record<
   OrderStatus,
@@ -89,7 +94,6 @@ export const paymentMethodLabels: Record<PaymentMethod, string> = {
   bank_transfer: "Chuyển khoản ngân hàng",
 };
 
-
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
@@ -114,4 +118,3 @@ export function formatDateOnly(date: string): string {
     day: "2-digit",
   });
 }
-

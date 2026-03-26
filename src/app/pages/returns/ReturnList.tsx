@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Filter, ArrowUpDown, Eye } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Badge } from "../../components/ui/badge";
@@ -28,11 +33,27 @@ const returnStatusConfig: Record<
   ReturnStatus,
   { label: string; color: string; bgColor: string }
 > = {
-  pending: { label: "Chờ duyệt", color: "text-yellow-700", bgColor: "bg-yellow-100" },
-  approved: { label: "Đã chấp nhận", color: "text-blue-700", bgColor: "bg-blue-100" },
+  pending: {
+    label: "Chờ duyệt",
+    color: "text-yellow-700",
+    bgColor: "bg-yellow-100",
+  },
+  approved: {
+    label: "Đã chấp nhận",
+    color: "text-blue-700",
+    bgColor: "bg-blue-100",
+  },
   rejected: { label: "Từ chối", color: "text-red-700", bgColor: "bg-red-100" },
-  received: { label: "Đã nhận hàng", color: "text-purple-700", bgColor: "bg-purple-100" },
-  completed: { label: "Hoàn thành", color: "text-green-700", bgColor: "bg-green-100" },
+  received: {
+    label: "Đã nhận hàng",
+    color: "text-purple-700",
+    bgColor: "bg-purple-100",
+  },
+  completed: {
+    label: "Hoàn thành",
+    color: "text-green-700",
+    bgColor: "bg-green-100",
+  },
 };
 
 export function ReturnList() {
@@ -44,12 +65,16 @@ export function ReturnList() {
 
   let filteredReturns = returnRequests.filter((returnRequest) => {
     const returnCode = `YC${returnRequest.id.toString().padStart(6, "0")}`;
-    const orderCode = returnRequest.order_id ? `DH${returnRequest.order_id.toString().padStart(6, "0")}` : "";
-    
+    const orderCode = returnRequest.order_id
+      ? `DH${returnRequest.order_id.toString().padStart(6, "0")}`
+      : "";
+
     const matchesSearch =
       returnCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
       orderCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      returnRequest.user?.full_name.toLowerCase().includes(searchTerm.toLowerCase());
+      returnRequest.user?.full_name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
 
     const matchesStatus =
       statusFilter === "all" || returnRequest.status === statusFilter;
@@ -59,7 +84,9 @@ export function ReturnList() {
 
   filteredReturns.sort((a, b) => {
     if (sortBy === "date") {
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      return (
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
     } else {
       return (b.refund_amount || 0) - (a.refund_amount || 0);
     }
@@ -88,19 +115,25 @@ export function ReturnList() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
+            <div className="text-2xl font-bold text-yellow-600">
+              {stats.pending}
+            </div>
             <p className="text-sm text-gray-600">Chờ duyệt</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-blue-600">{stats.approved}</div>
+            <div className="text-2xl font-bold text-blue-600">
+              {stats.approved}
+            </div>
             <p className="text-sm text-gray-600">Đã chấp nhận</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-green-600">{stats.completed}</div>
+            <div className="text-2xl font-bold text-green-600">
+              {stats.completed}
+            </div>
             <p className="text-sm text-gray-600">Hoàn thành</p>
           </CardContent>
         </Card>
@@ -132,7 +165,10 @@ export function ReturnList() {
                 <SelectItem value="completed">Hoàn thành</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={sortBy} onValueChange={(v) => setSortBy(v as "date" | "amount")}>
+            <Select
+              value={sortBy}
+              onValueChange={(v) => setSortBy(v as "date" | "amount")}
+            >
               <SelectTrigger className="md:w-48">
                 <ArrowUpDown className="h-4 w-4 mr-2" />
                 <SelectValue />
@@ -161,7 +197,10 @@ export function ReturnList() {
               <TableBody>
                 {filteredReturns.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                    <TableCell
+                      colSpan={8}
+                      className="text-center py-8 text-gray-500"
+                    >
                       Không tìm thấy yêu cầu trả hàng nào
                     </TableCell>
                   </TableRow>
@@ -173,7 +212,9 @@ export function ReturnList() {
                       </TableCell>
                       <TableCell>
                         <button
-                          onClick={() => navigate(`/orders/${returnRequest.order_id}`)}
+                          onClick={() =>
+                            navigate(`/orders/${returnRequest.order_id}`)
+                          }
                           className="text-blue-600 hover:underline"
                         >
                           DH{returnRequest.order_id.toString().padStart(6, "0")}
@@ -184,13 +225,16 @@ export function ReturnList() {
                         <div className="space-y-1">
                           <p className="truncate">{returnRequest.reason}</p>
                           <div className="flex items-center gap-2 text-xs text-gray-500">
-                            <span>{returnRequest.items?.length || 0} sản phẩm</span>
-                            {returnRequest.images && returnRequest.images.length > 0 && (
-                              <>
-                                <span>•</span>
-                                <span>{returnRequest.images.length} ảnh</span>
-                              </>
-                            )}
+                            <span>
+                              {returnRequest.items?.length || 0} sản phẩm
+                            </span>
+                            {returnRequest.images &&
+                              returnRequest.images.length > 0 && (
+                                <>
+                                  <span>•</span>
+                                  <span>{returnRequest.images.length} ảnh</span>
+                                </>
+                              )}
                           </div>
                         </div>
                       </TableCell>
@@ -208,12 +252,16 @@ export function ReturnList() {
                           {returnStatusConfig[returnRequest.status].label}
                         </Badge>
                       </TableCell>
-                      <TableCell>{formatDate(returnRequest.created_at)}</TableCell>
+                      <TableCell>
+                        {formatDate(returnRequest.created_at)}
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => navigate(`/returns/${returnRequest.id}`)}
+                          onClick={() =>
+                            navigate(`/returns/${returnRequest.id}`)
+                          }
                         >
                           <Eye className="h-4 w-4 mr-1" />
                           Chi tiết

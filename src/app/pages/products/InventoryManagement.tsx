@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { ArrowLeft, Plus, AlertTriangle, Package, Eye } from "lucide-react";
 import { useNavigate, Link } from "react-router";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import {
@@ -46,9 +51,7 @@ export function InventoryManagement() {
   const [note, setNote] = useState("");
 
   const lowStockProducts = products.filter(
-    (p) =>
-      p.variants &&
-      p.variants.some((v) => v.stock > 0 && v.stock < 10)
+    (p) => p.variants && p.variants.some((v) => v.stock > 0 && v.stock < 10),
   );
 
   const handleStockIn = (product: Product) => {
@@ -71,21 +74,21 @@ export function InventoryManagement() {
     }
 
     const variant = selectedProduct?.variants?.find(
-      (v) => v.id.toString() === selectedVariant
+      (v) => v.id.toString() === selectedVariant,
     );
-    
+
     if (variant) {
       updateProductVariant(variant.id, {
         stock: variant.stock + quantity,
       });
-      
+
       toast.success(
         `Đã nhập ${quantity} ${selectedProduct?.name}${
           variant?.color ? ` - ${variant.color}` : ""
-        }${variant?.version ? ` - ${variant.version}` : ""} vào kho`
+        }${variant?.version ? ` - ${variant.version}` : ""} vào kho`,
       );
     }
-    
+
     setStockInDialogOpen(false);
     setSelectedProduct(null);
     setSelectedVariant("");
@@ -96,7 +99,11 @@ export function InventoryManagement() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/products")}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate("/products")}
+        >
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">
@@ -119,16 +126,13 @@ export function InventoryManagement() {
             <div className="space-y-3">
               {lowStockProducts.map((product) => {
                 const lowStockVariants = product.variants?.filter(
-                  (v) => v.stock > 0 && v.stock < 10
+                  (v) => v.stock > 0 && v.stock < 10,
                 );
                 const totalStock = product.variants
                   ? product.variants.reduce((sum, v) => sum + v.stock, 0)
                   : 0;
                 return (
-                  <div
-                    key={product.id}
-                    className="bg-white p-3 rounded-lg"
-                  >
+                  <div key={product.id} className="bg-white p-3 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
@@ -211,16 +215,25 @@ export function InventoryManagement() {
 
                 return variants.map((variant, variantIndex) => {
                   const isFirstVariant = variantIndex === 0;
-                  const stockStatus = variant.stock < 10 ? 'low' : variant.stock < 20 ? 'medium' : 'ok';
+                  const stockStatus =
+                    variant.stock < 10
+                      ? "low"
+                      : variant.stock < 20
+                        ? "medium"
+                        : "ok";
 
                   return (
                     <TableRow key={`${product.id}-${variant.id}`}>
                       {isFirstVariant && (
-                        <TableCell rowSpan={variants.length} className="font-medium text-blue-600">
-                          {product.product_code || `SP${product.id.toString().padStart(6, "0")}`}
+                        <TableCell
+                          rowSpan={variants.length}
+                          className="font-medium text-blue-600"
+                        >
+                          {product.product_code ||
+                            `SP${product.id.toString().padStart(6, "0")}`}
                         </TableCell>
                       )}
-                      
+
                       {isFirstVariant && (
                         <TableCell rowSpan={variants.length}>
                           <div className="flex items-center gap-3">
@@ -288,7 +301,9 @@ export function InventoryManagement() {
                                 className="h-6 w-6 object-contain"
                               />
                             ) : null}
-                            <span className="text-sm">{product.brand?.name || "-"}</span>
+                            <span className="text-sm">
+                              {product.brand?.name || "-"}
+                            </span>
                           </div>
                         </TableCell>
                       )}
@@ -298,26 +313,29 @@ export function InventoryManagement() {
                           <p className="font-semibold text-blue-600">
                             {formatCurrency(variant.price)}
                           </p>
-                          {variant.compare_at_price && variant.compare_at_price > variant.price && (
-                            <p className="text-xs text-gray-400 line-through">
-                              {formatCurrency(variant.compare_at_price)}
-                            </p>
-                          )}
+                          {variant.compare_at_price &&
+                            variant.compare_at_price > variant.price && (
+                              <p className="text-xs text-gray-400 line-through">
+                                {formatCurrency(variant.compare_at_price)}
+                              </p>
+                            )}
                         </div>
                       </TableCell>
 
                       <TableCell className="text-right">
                         <div>
-                          <p className={`font-bold ${
-                            stockStatus === 'low' ? 'text-red-600' :
-                            stockStatus === 'medium' ? 'text-yellow-600' :
-                            'text-green-600'
-                          }`}>
+                          <p
+                            className={`font-bold ${
+                              stockStatus === "low"
+                                ? "text-red-600"
+                                : stockStatus === "medium"
+                                  ? "text-yellow-600"
+                                  : "text-green-600"
+                            }`}
+                          >
                             {variant.stock}
                           </p>
-                          <p className="text-xs text-gray-500">
-                            Tối thiểu: 10
-                          </p>
+                          <p className="text-xs text-gray-500">Tối thiểu: 10</p>
                         </div>
                       </TableCell>
 
@@ -394,7 +412,10 @@ export function InventoryManagement() {
                   <p className="text-sm text-gray-600">
                     Tổng tồn kho hiện tại:{" "}
                     {selectedProduct.variants
-                      ? selectedProduct.variants.reduce((sum, v) => sum + v.stock, 0)
+                      ? selectedProduct.variants.reduce(
+                          (sum, v) => sum + v.stock,
+                          0,
+                        )
                       : 0}
                   </p>
                 </div>
@@ -402,13 +423,19 @@ export function InventoryManagement() {
 
               <div>
                 <Label htmlFor="variant">Chọn biến thể *</Label>
-                <Select value={selectedVariant} onValueChange={setSelectedVariant}>
+                <Select
+                  value={selectedVariant}
+                  onValueChange={setSelectedVariant}
+                >
                   <SelectTrigger id="variant">
                     <SelectValue placeholder="Chọn biến thể để nhập hàng" />
                   </SelectTrigger>
                   <SelectContent>
                     {selectedProduct.variants?.map((variant) => (
-                      <SelectItem key={variant.id} value={variant.id.toString()}>
+                      <SelectItem
+                        key={variant.id}
+                        value={variant.id.toString()}
+                      >
                         <div className="flex items-center gap-2">
                           {variant.color_hex && (
                             <div
@@ -456,15 +483,17 @@ export function InventoryManagement() {
                 <div className="p-3 bg-blue-50 rounded-lg">
                   {(() => {
                     const variant = selectedProduct.variants?.find(
-                      (v) => v.id.toString() === selectedVariant
+                      (v) => v.id.toString() === selectedVariant,
                     );
                     return (
                       <div className="space-y-1">
                         <p className="text-sm text-blue-700">
-                          Tồn kho sau khi nhập: {(variant?.stock || 0) + quantity}
+                          Tồn kho sau khi nhập:{" "}
+                          {(variant?.stock || 0) + quantity}
                         </p>
                         <p className="text-sm text-blue-700">
-                          Giá trị nhập: {formatCurrency((variant?.price || 0) * quantity)}
+                          Giá trị nhập:{" "}
+                          {formatCurrency((variant?.price || 0) * quantity)}
                         </p>
                       </div>
                     );

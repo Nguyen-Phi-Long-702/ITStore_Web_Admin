@@ -1,4 +1,3 @@
-
 export type UserRole = "customer" | "admin";
 
 export type OrderStatus =
@@ -17,11 +16,20 @@ export type PaymentStatus = "unpaid" | "paid" | "refunded";
 
 export type PaymentMethod = "cod" | "momo" | "bank_transfer";
 
-export type PaymentGatewayStatus = "pending" | "success" | "failed" | "refunded";
+export type PaymentGatewayStatus =
+  | "pending"
+  | "success"
+  | "failed"
+  | "refunded";
 
 export type DiscountType = "percent" | "fixed";
 
-export type ReturnStatus = "pending" | "approved" | "rejected" | "received" | "completed";
+export type ReturnStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "received"
+  | "completed";
 
 export type ReturnCondition = "good" | "damaged" | "wrong_item";
 
@@ -270,27 +278,27 @@ export interface SystemConfig {
     momoEnabled: boolean;
     vnpayEnabled: boolean;
   };
-  
+
   shippingConfig: {
     baseShippingFee: number;
     freeShippingThreshold: number;
     distanceFeePerKm: number;
     urgentShippingFee: number;
   };
-  
+
   bankInfo: {
     bankName: string;
     accountNumber: string;
     accountName: string;
   };
-  
+
   banners: Array<{
     id: string;
     title: string;
     url: string;
     active: boolean;
   }>;
-  
+
   notificationTemplates: {
     orderNotification: string;
     lowStockNotification: string;

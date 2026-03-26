@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import { Plus, Search, Edit, Trash2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Badge } from "../../components/ui/badge";
@@ -22,7 +27,7 @@ export function PromotionList() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredCoupons = coupons.filter((coupon) =>
-    coupon.code.toLowerCase().includes(searchTerm.toLowerCase())
+    coupon.code.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const handleDelete = (id: number, code: string) => {
@@ -32,11 +37,13 @@ export function PromotionList() {
     }
   };
 
-  const isExpired = (promotion: typeof coupons[0]) => {
-    return !!(promotion.expires_at && new Date(promotion.expires_at) < new Date());
+  const isExpired = (promotion: (typeof coupons)[0]) => {
+    return !!(
+      promotion.expires_at && new Date(promotion.expires_at) < new Date()
+    );
   };
 
-  const isOutOfUses = (promotion: typeof coupons[0]) => {
+  const isOutOfUses = (promotion: (typeof coupons)[0]) => {
     return !!(
       promotion.max_uses !== undefined &&
       promotion.max_uses !== null &&
@@ -45,13 +52,15 @@ export function PromotionList() {
     );
   };
 
-  const getStatusBadge = (promotion: typeof coupons[0]) => {
+  const getStatusBadge = (promotion: (typeof coupons)[0]) => {
     if (isExpired(promotion)) {
       return <Badge className="bg-rose-100 text-rose-700">Đã hết hạn</Badge>;
     }
 
     if (isOutOfUses(promotion)) {
-      return <Badge className="bg-orange-100 text-orange-700">Đã hết lượt</Badge>;
+      return (
+        <Badge className="bg-orange-100 text-orange-700">Đã hết lượt</Badge>
+      );
     }
 
     if (!promotion.is_active) {
@@ -61,14 +70,14 @@ export function PromotionList() {
     return <Badge className="bg-emerald-100 text-emerald-700">Đang chạy</Badge>;
   };
 
-  const getStatusOrder = (promotion: typeof coupons[0]) => {
+  const getStatusOrder = (promotion: (typeof coupons)[0]) => {
     if (isExpired(promotion)) return 3;
     if (isOutOfUses(promotion)) return 2;
     if (!promotion.is_active) return 1;
     return 0;
   };
 
-  const isActuallyActive = (promotion: typeof coupons[0]) => {
+  const isActuallyActive = (promotion: (typeof coupons)[0]) => {
     if (isExpired(promotion)) return false;
     if (isOutOfUses(promotion)) return false;
     if (!promotion.is_active) return false;
@@ -136,7 +145,7 @@ export function PromotionList() {
                       (c.max_uses && c.max_uses > 0
                         ? Math.max(0, c.max_uses - (c.used_count || 0))
                         : 0),
-                    0
+                    0,
                   )}
               </p>
               <p className="text-sm text-gray-600 mt-1">Còn khả dụng</p>
@@ -186,7 +195,9 @@ export function PromotionList() {
                     <p className="font-medium font-mono">{promotion.code}</p>
                   </TableCell>
                   <TableCell>
-                    {promotion.discount_type === "percent" ? "Phần trăm" : "Cố định"}
+                    {promotion.discount_type === "percent"
+                      ? "Phần trăm"
+                      : "Cố định"}
                   </TableCell>
                   <TableCell className="font-medium">
                     {promotion.discount_type === "percent"
@@ -194,14 +205,15 @@ export function PromotionList() {
                       : formatCurrency(promotion.discount_value)}
                   </TableCell>
                   <TableCell>
-                    {promotion.min_order_value 
-                      ? formatCurrency(promotion.min_order_value) 
+                    {promotion.min_order_value
+                      ? formatCurrency(promotion.min_order_value)
                       : "-"}
                   </TableCell>
                   <TableCell>
                     <div>
                       <p className="font-medium">
-                        {promotion.used_count || 0} / {promotion.max_uses || "∞"}
+                        {promotion.used_count || 0} /{" "}
+                        {promotion.max_uses || "∞"}
                       </p>
                       {promotion.max_uses && (
                         <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
@@ -212,8 +224,10 @@ export function PromotionList() {
                                 100,
                                 Math.max(
                                   0,
-                                  ((promotion.used_count || 0) / promotion.max_uses) * 100
-                                )
+                                  ((promotion.used_count || 0) /
+                                    promotion.max_uses) *
+                                    100,
+                                ),
                               )}%`,
                             }}
                           />
@@ -222,13 +236,11 @@ export function PromotionList() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {promotion.expires_at 
+                    {promotion.expires_at
                       ? formatDateOnly(promotion.expires_at)
                       : "Không giới hạn"}
                   </TableCell>
-                  <TableCell>
-                    {getStatusBadge(promotion)}
-                  </TableCell>
+                  <TableCell>{getStatusBadge(promotion)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Link to={`/promotions/edit/${promotion.id}`}>
@@ -239,7 +251,9 @@ export function PromotionList() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleDelete(promotion.id, promotion.code)}
+                        onClick={() =>
+                          handleDelete(promotion.id, promotion.code)
+                        }
                       >
                         <Trash2 className="h-4 w-4 text-red-600" />
                       </Button>

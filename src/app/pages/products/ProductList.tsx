@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import { Plus, Search, Edit, Trash2, Package, Eye } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Badge } from "../../components/ui/badge";
@@ -37,7 +42,8 @@ import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "sonner";
 
 export function ProductList() {
-  const { products, productVariants, deleteProduct, productFetchError } = useData();
+  const { products, productVariants, deleteProduct, productFetchError } =
+    useData();
   const { permissions } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -49,43 +55,56 @@ export function ProductList() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const categories = Array.from(
-    new Set(products.map((p) => p.category?.name).filter(Boolean))
+    new Set(products.map((p) => p.category?.name).filter(Boolean)),
   );
 
   const colors = Array.from(
     new Set(
-      products.flatMap((p) => 
-        p.variants?.map((v) => v.color).filter(Boolean) || []
-      )
-    )
+      products.flatMap(
+        (p) => p.variants?.map((v) => v.color).filter(Boolean) || [],
+      ),
+    ),
   );
 
   const versions = Array.from(
     new Set(
-      products.flatMap((p) => 
-        p.variants?.map((v) => v.version).filter(Boolean) || []
-      )
-    )
+      products.flatMap(
+        (p) => p.variants?.map((v) => v.version).filter(Boolean) || [],
+      ),
+    ),
   );
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch =
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (product.product_code || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (product.product_code || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
       (product.sku || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (product.variants && product.variants.some(v => v.sku.toLowerCase().includes(searchTerm.toLowerCase())));
+      (product.variants &&
+        product.variants.some((v) =>
+          v.sku.toLowerCase().includes(searchTerm.toLowerCase()),
+        ));
     const matchesStatus =
       statusFilter === "all" || product.status === statusFilter;
     const matchesCategory =
       categoryFilter === "all" || product.category?.name === categoryFilter;
     const matchesColor =
-      colorFilter === "all" || 
-      (product.variants && product.variants.some(v => v.color === colorFilter));
+      colorFilter === "all" ||
+      (product.variants &&
+        product.variants.some((v) => v.color === colorFilter));
     const matchesVersion =
-      versionFilter === "all" || 
-      (product.variants && product.variants.some(v => v.version === versionFilter));
+      versionFilter === "all" ||
+      (product.variants &&
+        product.variants.some((v) => v.version === versionFilter));
 
-    return matchesSearch && matchesStatus && matchesCategory && matchesColor && matchesVersion;
+    return (
+      matchesSearch &&
+      matchesStatus &&
+      matchesCategory &&
+      matchesColor &&
+      matchesVersion
+    );
   });
 
   const handleDelete = (product: Product) => {
@@ -95,9 +114,9 @@ export function ProductList() {
 
   const confirmDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    
+
     if (!productToDelete || isDeleting) return;
-    
+
     setIsDeleting(true);
     try {
       await deleteProduct(productToDelete.id);
@@ -105,7 +124,10 @@ export function ProductList() {
       setProductToDelete(null);
       toast.success("Sản phẩm đã được xóa thành công!");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Không thể xóa sản phẩm trên backend";
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Không thể xóa sản phẩm trên backend";
       toast.error(message);
     } finally {
       setIsDeleting(false);
@@ -117,9 +139,7 @@ export function ProductList() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Quản lý sản phẩm</h2>
-          <p className="text-gray-600">
-            Quản lý thông tin sản phẩm và tồn kho
-          </p>
+          <p className="text-gray-600">Quản lý thông tin sản phẩm và tồn kho</p>
         </div>
         <div className="flex gap-2">
           <Link to="/products/inventory">
@@ -236,9 +256,7 @@ export function ProductList() {
 
       <Card>
         <CardHeader>
-          <CardTitle>
-            Danh sách sản phẩm ({filteredProducts.length})
-          </CardTitle>
+          <CardTitle>Danh sách sản phẩm ({filteredProducts.length})</CardTitle>
           {productFetchError && (
             <p className="text-sm text-red-600">
               {productFetchError.toLowerCase().includes("cloud_name")
@@ -267,17 +285,29 @@ export function ProductList() {
             <TableBody>
               {filteredProducts.map((product) => {
                 const variants = product.variants || [];
-                const normalizedProductSku = (product.sku || "").trim().toLowerCase();
+                const normalizedProductSku = (product.sku || "")
+                  .trim()
+                  .toLowerCase();
                 const fallbackVariantBySku = normalizedProductSku
-                  ? productVariants.find((variant) => variant.sku.trim().toLowerCase() === normalizedProductSku)
+                  ? productVariants.find(
+                      (variant) =>
+                        variant.sku.trim().toLowerCase() ===
+                        normalizedProductSku,
+                    )
                   : undefined;
-                const effectiveVariantCount = variants.length > 0 ? variants.length : (fallbackVariantBySku || product.sku ? 1 : 0);
-                
+                const effectiveVariantCount =
+                  variants.length > 0
+                    ? variants.length
+                    : fallbackVariantBySku || product.sku
+                      ? 1
+                      : 0;
+
                 if (variants.length === 0) {
                   return (
                     <TableRow key={`${product.id}-no-variant`}>
                       <TableCell className="font-medium text-blue-600">
-                        {product.product_code || `SP${product.id.toString().padStart(6, "0")}`}
+                        {product.product_code ||
+                          `SP${product.id.toString().padStart(6, "0")}`}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
@@ -287,13 +317,19 @@ export function ProductList() {
                               alt={product.name}
                               className="w-12 h-12 object-cover rounded"
                               onError={(e) => {
-                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.style.display = "none";
                                 const parent = e.currentTarget.parentElement;
                                 if (parent) {
-                                  const fallback = document.createElement('div');
-                                  fallback.className = 'w-12 h-12 bg-gray-100 rounded flex items-center justify-center';
-                                  fallback.innerHTML = '<svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>';
-                                  parent.insertBefore(fallback, e.currentTarget);
+                                  const fallback =
+                                    document.createElement("div");
+                                  fallback.className =
+                                    "w-12 h-12 bg-gray-100 rounded flex items-center justify-center";
+                                  fallback.innerHTML =
+                                    '<svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>';
+                                  parent.insertBefore(
+                                    fallback,
+                                    e.currentTarget,
+                                  );
                                 }
                               }}
                             />
@@ -304,7 +340,9 @@ export function ProductList() {
                           )}
                           <div>
                             <p className="font-medium">{product.name}</p>
-                            <p className="text-sm text-gray-600">{effectiveVariantCount} biến thể</p>
+                            <p className="text-sm text-gray-600">
+                              {effectiveVariantCount} biến thể
+                            </p>
                           </div>
                         </div>
                       </TableCell>
@@ -314,11 +352,21 @@ export function ProductList() {
                       <TableCell>{product.category?.name || "-"}</TableCell>
                       <TableCell>{product.brand?.name || "-"}</TableCell>
                       <TableCell className="text-right">
-                        {fallbackVariantBySku ? formatCurrency(fallbackVariantBySku.price) : <span className="text-gray-400">-</span>}
+                        {fallbackVariantBySku ? (
+                          formatCurrency(fallbackVariantBySku.price)
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         {fallbackVariantBySku ? (
-                          <span className={fallbackVariantBySku.stock < 10 ? "text-red-600 font-semibold" : ""}>
+                          <span
+                            className={
+                              fallbackVariantBySku.stock < 10
+                                ? "text-red-600 font-semibold"
+                                : ""
+                            }
+                          >
                             {fallbackVariantBySku.stock}
                           </span>
                         ) : (
@@ -337,7 +385,11 @@ export function ProductList() {
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Link to={`/products/edit/${product.id}`}>
-                            <Button variant="ghost" size="icon" title="Chỉnh sửa">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Chỉnh sửa"
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
                           </Link>
@@ -358,16 +410,20 @@ export function ProductList() {
                 return variants.map((variant, index) => (
                   <TableRow key={`${product.id}-${variant.id}`}>
                     {index === 0 && (
-                      <TableCell 
-                        className="font-medium text-blue-600 align-top" 
+                      <TableCell
+                        className="font-medium text-blue-600 align-top"
                         rowSpan={variants.length}
                       >
-                        {product.product_code || `SP${product.id.toString().padStart(6, "0")}`}
+                        {product.product_code ||
+                          `SP${product.id.toString().padStart(6, "0")}`}
                       </TableCell>
                     )}
-                    
+
                     {index === 0 && (
-                      <TableCell rowSpan={variants.length} className="align-top">
+                      <TableCell
+                        rowSpan={variants.length}
+                        className="align-top"
+                      >
                         <div className="flex items-center gap-3">
                           {product.images && product.images.length > 0 ? (
                             <img
@@ -375,13 +431,19 @@ export function ProductList() {
                               alt={product.name}
                               className="w-12 h-12 object-cover rounded"
                               onError={(e) => {
-                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.style.display = "none";
                                 const parent = e.currentTarget.parentElement;
                                 if (parent) {
-                                  const fallback = document.createElement('div');
-                                  fallback.className = 'w-12 h-12 bg-gray-100 rounded flex items-center justify-center';
-                                  fallback.innerHTML = '<svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>';
-                                  parent.insertBefore(fallback, e.currentTarget);
+                                  const fallback =
+                                    document.createElement("div");
+                                  fallback.className =
+                                    "w-12 h-12 bg-gray-100 rounded flex items-center justify-center";
+                                  fallback.innerHTML =
+                                    '<svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>';
+                                  parent.insertBefore(
+                                    fallback,
+                                    e.currentTarget,
+                                  );
                                 }
                               }}
                             />
@@ -425,13 +487,19 @@ export function ProductList() {
                     </TableCell>
 
                     {index === 0 && (
-                      <TableCell rowSpan={variants.length} className="align-top">
+                      <TableCell
+                        rowSpan={variants.length}
+                        className="align-top"
+                      >
                         {product.category?.name || "-"}
                       </TableCell>
                     )}
 
                     {index === 0 && (
-                      <TableCell rowSpan={variants.length} className="align-top">
+                      <TableCell
+                        rowSpan={variants.length}
+                        className="align-top"
+                      >
                         {product.brand?.name || "-"}
                       </TableCell>
                     )}
@@ -441,13 +509,20 @@ export function ProductList() {
                     </TableCell>
 
                     <TableCell className="text-right">
-                      <span className={variant.stock < 10 ? "text-red-600 font-semibold" : ""}>
+                      <span
+                        className={
+                          variant.stock < 10 ? "text-red-600 font-semibold" : ""
+                        }
+                      >
                         {variant.stock}
                       </span>
                     </TableCell>
 
                     {index === 0 && (
-                      <TableCell rowSpan={variants.length} className="align-top">
+                      <TableCell
+                        rowSpan={variants.length}
+                        className="align-top"
+                      >
                         <Badge
                           className={`${
                             productStatusConfig[product.status].bgColor
@@ -459,16 +534,27 @@ export function ProductList() {
                     )}
 
                     {index === 0 && (
-                      <TableCell className="text-right align-top" rowSpan={variants.length}>
+                      <TableCell
+                        className="text-right align-top"
+                        rowSpan={variants.length}
+                      >
                         <div className="flex justify-end gap-2">
                           <Link to={`/products/variants/${product.id}`}>
-                            <Button variant="ghost" size="icon" title="Xem chi tiết biến thể">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Xem chi tiết biến thể"
+                            >
                               <Eye className="h-4 w-4" />
                             </Button>
                           </Link>
                           {permissions.canEditProduct && (
                             <Link to={`/products/edit/${product.id}`}>
-                              <Button variant="ghost" size="icon" title="Chỉnh sửa">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Chỉnh sửa"
+                              >
                                 <Edit className="h-4 w-4" />
                               </Button>
                             </Link>
@@ -499,8 +585,8 @@ export function ProductList() {
           <AlertDialogHeader>
             <AlertDialogTitle>Xác nhận xóa sản phẩm</AlertDialogTitle>
             <AlertDialogDescription>
-              Bạn có chắc chắn muốn xóa sản phẩm "{productToDelete?.name}"?
-              Hành động này không thể hoàn tác.
+              Bạn có chắc chắn muốn xóa sản phẩm "{productToDelete?.name}"? Hành
+              động này không thể hoàn tác.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

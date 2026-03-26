@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { Search, Plus, Edit, Trash2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -37,23 +42,30 @@ import { useAuth } from "../../contexts/AuthContext";
 import { generateSlug } from "../../utils/slugUtils";
 
 export function CategoryList() {
-  const { categories, products, addCategory, updateCategory, deleteCategory } = useData();
+  const { categories, products, addCategory, updateCategory, deleteCategory } =
+    useData();
   const { permissions } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+    null,
+  );
   const [formData, setFormData] = useState({
     name: "",
   });
 
   const getProductCount = (categoryId: number) => {
-    return products.filter((product) => product.category_id === categoryId).length;
+    return products.filter((product) => product.category_id === categoryId)
+      .length;
   };
 
-  const filteredCategories = categories.filter((category) =>
-    category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (category.category_code || "").toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredCategories = categories.filter(
+    (category) =>
+      category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (category.category_code || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()),
   );
 
   const handleAdd = () => {
@@ -110,7 +122,7 @@ export function CategoryList() {
       const productCount = getProductCount(selectedCategory.id);
       if (productCount > 0) {
         toast.error(
-          `Không thể xóa danh mục "${selectedCategory.name}" vì còn ${productCount} sản phẩm`
+          `Không thể xóa danh mục "${selectedCategory.name}" vì còn ${productCount} sản phẩm`,
         );
         setDeleteDialogOpen(false);
         setSelectedCategory(null);
@@ -182,7 +194,9 @@ export function CategoryList() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Danh sách danh mục ({filteredCategories.length})</CardTitle>
+          <CardTitle>
+            Danh sách danh mục ({filteredCategories.length})
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -198,7 +212,10 @@ export function CategoryList() {
             <TableBody>
               {filteredCategories.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                  <TableCell
+                    colSpan={5}
+                    className="text-center py-8 text-gray-500"
+                  >
                     Không tìm thấy danh mục nào
                   </TableCell>
                 </TableRow>
@@ -208,7 +225,8 @@ export function CategoryList() {
                   return (
                     <TableRow key={category.id}>
                       <TableCell className="font-medium text-blue-600">
-                        {category.category_code || `CAT${category.id.toString().padStart(6, "0")}`}
+                        {category.category_code ||
+                          `CAT${category.id.toString().padStart(6, "0")}`}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
@@ -230,7 +248,9 @@ export function CategoryList() {
                       <TableCell>
                         {Number.isNaN(new Date(category.created_at).getTime())
                           ? "-"
-                          : new Date(category.created_at).toLocaleDateString("vi-VN")}
+                          : new Date(category.created_at).toLocaleDateString(
+                              "vi-VN",
+                            )}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -286,7 +306,9 @@ export function CategoryList() {
                 id="name"
                 placeholder="Nhập tên danh mục"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
               />
             </div>
           </div>
@@ -309,8 +331,9 @@ export function CategoryList() {
               Bạn có chắc chắn muốn xóa danh mục "{selectedCategory?.name}"?
               {selectedCategory && getProductCount(selectedCategory.id) > 0 && (
                 <span className="block mt-2 text-red-600 font-semibold">
-                  Danh mục này còn {getProductCount(selectedCategory.id)} sản phẩm.
-                  Vui lòng chuyển sản phẩm sang danh mục khác trước khi xóa.
+                  Danh mục này còn {getProductCount(selectedCategory.id)} sản
+                  phẩm. Vui lòng chuyển sản phẩm sang danh mục khác trước khi
+                  xóa.
                 </span>
               )}
             </AlertDialogDescription>

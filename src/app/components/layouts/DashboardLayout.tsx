@@ -1,4 +1,10 @@
-import { Outlet, NavLink, useNavigate, Navigate, useLocation } from "react-router";
+import {
+  Outlet,
+  NavLink,
+  useNavigate,
+  Navigate,
+  useLocation,
+} from "react-router";
 import {
   LayoutDashboard,
   Package,
@@ -40,11 +46,13 @@ export function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const pendingOrderCount = orders.filter((order) =>
-    ["pending", "confirmed", "preparing", "packed", "shipping"].includes(order.order_status)
+    ["pending", "confirmed", "preparing", "packed", "shipping"].includes(
+      order.order_status,
+    ),
   ).length;
 
   const pendingReturnCount = returnRequests.filter((request) =>
-    ["pending", "approved", "received"].includes(request.status)
+    ["pending", "approved", "received"].includes(request.status),
   ).length;
 
   const formatNavBadge = (count: number) => {
@@ -84,12 +92,44 @@ export function DashboardLayout() {
     { name: "Sản phẩm", href: "/products", icon: Package, show: true },
     { name: "Thương hiệu", href: "/brands", icon: Tag, show: true },
     { name: "Danh mục", href: "/categories", icon: FolderOpen, show: true },
-    { name: "Đơn hàng", href: "/orders", icon: ShoppingCart, badge: orderBadge, show: permissions.canViewOrders },
-    { name: "Trả hàng", href: "/returns", icon: RotateCcw, badge: returnBadge, show: permissions.canAccessReturns },
-    { name: "Khách hàng", href: "/customers", icon: Users, show: permissions.canViewCustomers },
-    { name: "Khuyến mãi", href: "/promotions", icon: Percent, show: permissions.canAccessPromotions },
-    { name: "Báo cáo", href: "/reports", icon: BarChart3, show: permissions.canAccessReports },
-    { name: "Cấu hình", href: "/settings", icon: Settings, show: permissions.canAccessSettings },
+    {
+      name: "Đơn hàng",
+      href: "/orders",
+      icon: ShoppingCart,
+      badge: orderBadge,
+      show: permissions.canViewOrders,
+    },
+    {
+      name: "Trả hàng",
+      href: "/returns",
+      icon: RotateCcw,
+      badge: returnBadge,
+      show: permissions.canAccessReturns,
+    },
+    {
+      name: "Khách hàng",
+      href: "/customers",
+      icon: Users,
+      show: permissions.canViewCustomers,
+    },
+    {
+      name: "Khuyến mãi",
+      href: "/promotions",
+      icon: Percent,
+      show: permissions.canAccessPromotions,
+    },
+    {
+      name: "Báo cáo",
+      href: "/reports",
+      icon: BarChart3,
+      show: permissions.canAccessReports,
+    },
+    {
+      name: "Cấu hình",
+      href: "/settings",
+      icon: Settings,
+      show: permissions.canAccessSettings,
+    },
   ];
 
   return (
@@ -119,33 +159,34 @@ export function DashboardLayout() {
 
         <nav className="flex-1 overflow-y-auto py-4">
           <ul className="space-y-1 px-2">
-            {navigation.map((item) => (
-              item.show && (
-                <li key={item.name}>
-                  <NavLink
-                    to={item.href}
-                    end={item.href === "/"}
-                    className={({ isActive }) =>
-                      `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                        isActive
-                          ? "bg-blue-50 text-blue-700"
-                          : "text-gray-700 hover:bg-gray-100"
-                      }`
-                    }
-                  >
-                    <item.icon className="h-5 w-5 flex-shrink-0" />
-                    {sidebarOpen && (
-                      <>
-                        <span className="flex-1">{item.name}</span>
-                        {item.badge && (
-                          <Badge variant="destructive">{item.badge}</Badge>
-                        )}
-                      </>
-                    )}
-                  </NavLink>
-                </li>
-              )
-            ))}
+            {navigation.map(
+              (item) =>
+                item.show && (
+                  <li key={item.name}>
+                    <NavLink
+                      to={item.href}
+                      end={item.href === "/"}
+                      className={({ isActive }) =>
+                        `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                          isActive
+                            ? "bg-blue-50 text-blue-700"
+                            : "text-gray-700 hover:bg-gray-100"
+                        }`
+                      }
+                    >
+                      <item.icon className="h-5 w-5 flex-shrink-0" />
+                      {sidebarOpen && (
+                        <>
+                          <span className="flex-1">{item.name}</span>
+                          {item.badge && (
+                            <Badge variant="destructive">{item.badge}</Badge>
+                          )}
+                        </>
+                      )}
+                    </NavLink>
+                  </li>
+                ),
+            )}
           </ul>
         </nav>
       </aside>
@@ -183,7 +224,9 @@ export function DashboardLayout() {
                   )}
                   <div className="hidden md:block text-left">
                     <p className="text-sm font-medium">{user?.full_name}</p>
-                    <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+                    <p className="text-xs text-gray-500 capitalize">
+                      {user?.role}
+                    </p>
                   </div>
                   <ChevronDown className="h-4 w-4" />
                 </Button>
@@ -200,7 +243,9 @@ export function DashboardLayout() {
                   <User className="h-4 w-4 mr-2" />
                   Tài khoản
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/account?action=change-password")}>
+                <DropdownMenuItem
+                  onClick={() => navigate("/account?action=change-password")}
+                >
                   <Lock className="h-4 w-4 mr-2" />
                   Đổi mật khẩu
                 </DropdownMenuItem>
@@ -211,7 +256,10 @@ export function DashboardLayout() {
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
+                <DropdownMenuItem
+                  className="text-red-600"
+                  onClick={handleLogout}
+                >
                   <LogOut className="h-4 w-4 mr-2" />
                   Đăng xuất
                 </DropdownMenuItem>
