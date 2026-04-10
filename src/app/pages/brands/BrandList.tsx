@@ -195,7 +195,7 @@ export function BrandList() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-3xl font-bold text-blue-600">
+              <p className="text-3xl font-bold text-[#E0872B]">
                 {brands.length}
               </p>
               <p className="text-sm text-gray-600 mt-1">Tổng thương hiệu</p>
@@ -205,7 +205,7 @@ export function BrandList() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-3xl font-bold text-purple-600">
+              <p className="text-3xl font-bold text-[#E0872B]">
                 {products.length}
               </p>
               <p className="text-sm text-gray-600 mt-1">Tổng sản phẩm</p>
@@ -266,7 +266,7 @@ export function BrandList() {
                   const productCount = getProductCount(brand.id);
                   return (
                     <TableRow key={brand.id}>
-                      <TableCell className="font-medium text-blue-600">
+                      <TableCell className="font-medium text-[#E0872B]">
                         {brand.brand_code ||
                           `BRD${brand.id.toString().padStart(6, "0")}`}
                       </TableCell>
@@ -295,7 +295,7 @@ export function BrandList() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-blue-600">
+                          <span className="font-semibold text-[#E0872B]">
                             {productCount}
                           </span>
                           <span className="text-gray-500 text-sm">

@@ -233,16 +233,16 @@ export function Dashboard() {
       value: stats.totalOrders.toString(),
       change: stats.ordersChange,
       icon: ShoppingCart,
-      color: "text-blue-600",
-      bgColor: "bg-blue-100",
+      color: "text-[#E0872B]",
+      bgColor: "bg-[#FFE0B2]",
     },
     {
       title: "Khách hàng",
       value: stats.totalCustomers.toString(),
       change: stats.customersChange,
       icon: Users,
-      color: "text-purple-600",
-      bgColor: "bg-purple-100",
+      color: "text-[#E0872B]",
+      bgColor: "bg-[#FFE0B2]",
     },
     {
       title: "Chờ xử lý",
@@ -316,7 +316,7 @@ export function Dashboard() {
                   key="revenue-line"
                   type="monotone"
                   dataKey="revenue"
-                  stroke="#3b82f6"
+                  stroke="#E0872B"
                   strokeWidth={2}
                   name="Doanh thu"
                 />
@@ -380,7 +380,7 @@ export function Dashboard() {
                   <div className="flex-1">
                     <Link
                       to={`/orders/${order.id}`}
-                      className="font-medium hover:text-blue-600"
+                      className="font-medium hover:text-[#E0872B]"
                     >
                       DH{order.id.toString().padStart(6, "0")}
                     </Link>

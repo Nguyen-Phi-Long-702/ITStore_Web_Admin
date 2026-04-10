@@ -16,18 +16,18 @@ export const orderStatusConfig: Record<
   },
   confirmed: {
     label: "Đã xác nhận",
-    color: "text-blue-700",
-    bgColor: "bg-blue-100",
+    color: "text-[#E0872B]",
+    bgColor: "bg-[#FFE0B2]",
   },
   preparing: {
     label: "Đang chuẩn bị hàng",
-    color: "text-purple-700",
-    bgColor: "bg-purple-100",
+    color: "text-[#E0872B]",
+    bgColor: "bg-[#FFE0B2]",
   },
   packed: {
     label: "Đã đóng gói",
-    color: "text-indigo-700",
-    bgColor: "bg-indigo-100",
+    color: "text-[#E0872B]",
+    bgColor: "bg-[#FFE0B2]",
   },
   shipping: {
     label: "Đang giao hàng",
@@ -83,8 +83,8 @@ export const paymentStatusConfig: Record<
   },
   refunded: {
     label: "Đã hoàn tiền",
-    color: "text-blue-700",
-    bgColor: "bg-blue-100",
+    color: "text-[#E0872B]",
+    bgColor: "bg-[#FFE0B2]",
   },
 };
 

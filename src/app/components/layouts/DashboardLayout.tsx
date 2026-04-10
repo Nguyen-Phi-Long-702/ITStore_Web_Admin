@@ -70,7 +70,7 @@ export function DashboardLayout() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block h-12 w-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
+          <div className="inline-block h-12 w-12 border-4 border-[#E0872B] border-t-transparent rounded-full animate-spin mb-4" />
           <p className="text-gray-600">Đang tải...</p>
         </div>
       </div>
@@ -142,7 +142,7 @@ export function DashboardLayout() {
         <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
           {sidebarOpen && (
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
+              <div className="w-8 h-8 bg-[#E0872B] rounded-lg flex items-center justify-center text-white font-bold">
                 I
               </div>
               <span className="font-bold text-lg">IT Store</span>
@@ -169,7 +169,7 @@ export function DashboardLayout() {
                       className={({ isActive }) =>
                         `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                           isActive
-                            ? "bg-blue-50 text-blue-700"
+                            ? "bg-[#FFE0B2] text-[#E0872B]"
                             : "text-gray-700 hover:bg-gray-100"
                         }`
                       }

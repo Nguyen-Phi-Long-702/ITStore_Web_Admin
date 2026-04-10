@@ -96,11 +96,11 @@ export function OrderList() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Đang xử lý</p>
-                <p className="text-2xl font-bold text-blue-600">
+                <p className="text-2xl font-bold text-[#E0872B]">
                   {ordersByStatus.confirmed.length}
                 </p>
               </div>
-              <CheckCircle className="h-8 w-8 text-blue-600" />
+              <CheckCircle className="h-8 w-8 text-[#E0872B]" />
             </div>
           </CardContent>
         </Card>

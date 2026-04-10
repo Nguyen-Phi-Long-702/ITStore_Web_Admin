@@ -10521,7 +10521,7 @@ function xp() {
     }, []),
     Se.jsx("div", {
       className:
-        "size-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4",
+        "size-full flex items-center justify-center bg-gradient-to-br from-cam-50 to-cam-100 p-4",
       children: Se.jsxs(ip, {
         className: "w-full max-w-md shadow-lg",
         children: [
@@ -10537,7 +10537,7 @@ function xp() {
                     }),
                   s === "ready" &&
                     c === "success" &&
-                    Se.jsx(yp, { className: "w-16 h-16 text-green-500" }),
+                    Se.jsx(yp, { className: "w-16 h-16 text-cam-500" }),
                   s === "ready" &&
                     c === "expired" &&
                     Se.jsx(kp, { className: "w-16 h-16 text-red-500" }),

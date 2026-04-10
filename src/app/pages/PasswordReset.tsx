@@ -138,12 +138,12 @@ export function PasswordReset() {
   };
 
   return (
-    <div className="flex h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="flex h-screen items-center justify-center bg-gradient-to-br from-[#FFE0B2] to-[#FFE0B2] p-4">
       <div className="w-full max-w-md">
         <div className="rounded-2xl bg-white p-8 shadow-xl">
           <div className="mb-8 text-center">
-            <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100">
-              <KeyRound className="h-8 w-8 text-indigo-600" />
+            <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-[#FFE0B2]">
+              <KeyRound className="h-8 w-8 text-[#E0872B]" />
             </div>
             <h1 className="mb-2 text-gray-900">Đổi Mật Khẩu</h1>
             <p className="text-gray-600">
@@ -172,7 +172,7 @@ export function PasswordReset() {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     disabled={isLoading || !isTokenValid}
-                    className="w-full rounded-lg border border-gray-300 bg-gray-100 py-3 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="w-full rounded-lg border border-gray-300 bg-gray-100 py-3 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-[#E0872B] disabled:cursor-not-allowed disabled:opacity-50"
                     placeholder="Nhập mật khẩu mới"
                     required
                   />
@@ -190,7 +190,7 @@ export function PasswordReset() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     disabled={isLoading || !isTokenValid}
-                    className="w-full rounded-lg border border-gray-300 bg-gray-100 py-3 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="w-full rounded-lg border border-gray-300 bg-gray-100 py-3 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-[#E0872B] disabled:cursor-not-allowed disabled:opacity-50"
                     placeholder="Nhập lại mật khẩu"
                     required
                   />
@@ -200,7 +200,7 @@ export function PasswordReset() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 py-3 text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#E0872B] py-3 text-white transition-colors hover:bg-[#E0872B] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isLoading && <Loader2 className="h-5 w-5 animate-spin" />}
                 {isLoading ? "Đang xử lý..." : "Đổi mật khẩu"}
@@ -210,8 +210,8 @@ export function PasswordReset() {
 
           {isSuccess && (
             <div className="space-y-6 text-center">
-              <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
-                <CheckCircle2 className="h-12 w-12 text-green-600" />
+              <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-[#FFE0B2]">
+                <CheckCircle2 className="h-12 w-12 text-[#E0872B]" />
               </div>
 
               <div>

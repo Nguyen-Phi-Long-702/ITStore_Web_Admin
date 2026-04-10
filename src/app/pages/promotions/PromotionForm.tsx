@@ -302,24 +302,24 @@ export function PromotionForm() {
             </Card>
 
             {formData.discount_value > 0 && (
-              <Card className="bg-blue-50 border-blue-200">
+              <Card className="bg-[#FFE0B2] border-[#E0872B]">
                 <CardHeader>
-                  <CardTitle className="text-blue-900">Xem trước</CardTitle>
+                  <CardTitle className="text-[#E0872B]">Xem trước</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">
                   <div>
-                    <span className="text-blue-700">Mã:</span>{" "}
+                    <span className="text-[#E0872B]">Mã:</span>{" "}
                     <span className="font-mono font-bold">{formData.code}</span>
                   </div>
                   <div>
-                    <span className="text-blue-700">Giảm:</span>{" "}
+                    <span className="text-[#E0872B]">Giảm:</span>{" "}
                     {formData.discount_type === "percent"
                       ? `${formData.discount_value}%`
                       : `${formData.discount_value.toLocaleString("vi-VN")}đ`}
                   </div>
                   {formData.min_order_value && formData.min_order_value > 0 && (
                     <div>
-                      <span className="text-blue-700">Đơn tối thiểu:</span>{" "}
+                      <span className="text-[#E0872B]">Đơn tối thiểu:</span>{" "}
                       {formData.min_order_value.toLocaleString("vi-VN")}đ
                     </div>
                   )}

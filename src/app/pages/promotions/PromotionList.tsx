@@ -126,7 +126,7 @@ export function PromotionList() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-3xl font-bold text-blue-600">
+              <p className="text-3xl font-bold text-[#E0872B]">
                 {coupons.reduce((sum, c) => sum + (c.used_count || 0), 0)}
               </p>
               <p className="text-sm text-gray-600 mt-1">Lượt sử dụng</p>
@@ -136,7 +136,7 @@ export function PromotionList() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-3xl font-bold text-purple-600">
+              <p className="text-3xl font-bold text-[#E0872B]">
                 {coupons
                   .filter((c) => isActuallyActive(c))
                   .reduce(
@@ -218,7 +218,7 @@ export function PromotionList() {
                       {promotion.max_uses && (
                         <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
                           <div
-                            className="bg-blue-600 h-2 rounded-full"
+                            className="bg-[#E0872B] h-2 rounded-full"
                             style={{
                               width: `${Math.min(
                                 100,

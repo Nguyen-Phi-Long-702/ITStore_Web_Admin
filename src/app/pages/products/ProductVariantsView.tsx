@@ -130,7 +130,7 @@ export function ProductVariantsView() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-blue-600">{totalStock}</div>
+            <div className="text-2xl font-bold text-[#E0872B]">{totalStock}</div>
             <p className="text-sm text-gray-600">Tổng tồn kho</p>
           </CardContent>
         </Card>
@@ -294,7 +294,7 @@ export function ProductVariantsView() {
                   className={`p-3 rounded-lg ${
                     selectedVariant.stock + stockChange < 0
                       ? "bg-red-50"
-                      : "bg-blue-50"
+                      : "bg-[#FFE0B2]"
                   }`}
                 >
                   {selectedVariant.stock + stockChange < 0 ? (
@@ -305,7 +305,7 @@ export function ProductVariantsView() {
                       </p>
                     </div>
                   ) : (
-                    <p className="text-sm text-blue-700">
+                    <p className="text-sm text-[#E0872B]">
                       Tồn kho sau khi {stockChange > 0 ? "nhập" : "xuất"}:{" "}
                       <span className="font-bold">
                         {selectedVariant.stock + stockChange}

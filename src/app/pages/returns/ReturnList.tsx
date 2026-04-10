@@ -40,14 +40,14 @@ const returnStatusConfig: Record<
   },
   approved: {
     label: "Đã chấp nhận",
-    color: "text-blue-700",
-    bgColor: "bg-blue-100",
+    color: "text-[#E0872B]",
+    bgColor: "bg-[#FFE0B2]",
   },
   rejected: { label: "Từ chối", color: "text-red-700", bgColor: "bg-red-100" },
   received: {
     label: "Đã nhận hàng",
-    color: "text-purple-700",
-    bgColor: "bg-purple-100",
+    color: "text-[#E0872B]",
+    bgColor: "bg-[#FFE0B2]",
   },
   completed: {
     label: "Hoàn thành",
@@ -123,7 +123,7 @@ export function ReturnList() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-2xl font-bold text-[#E0872B]">
               {stats.approved}
             </div>
             <p className="text-sm text-gray-600">Đã chấp nhận</p>
@@ -207,7 +207,7 @@ export function ReturnList() {
                 ) : (
                   filteredReturns.map((returnRequest) => (
                     <TableRow key={returnRequest.id}>
-                      <TableCell className="font-medium text-blue-600">
+                      <TableCell className="font-medium text-[#E0872B]">
                         YC{returnRequest.id.toString().padStart(6, "0")}
                       </TableCell>
                       <TableCell>
@@ -215,7 +215,7 @@ export function ReturnList() {
                           onClick={() =>
                             navigate(`/orders/${returnRequest.order_id}`)
                           }
-                          className="text-blue-600 hover:underline"
+                          className="text-[#E0872B] hover:underline"
                         >
                           DH{returnRequest.order_id.toString().padStart(6, "0")}
                         </button>

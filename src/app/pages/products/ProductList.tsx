@@ -228,7 +228,7 @@ export function ProductList() {
             <div className="flex items-center gap-2 mt-4 pt-4 border-t">
               <span className="text-sm text-gray-600">Lọc theo:</span>
               {colorFilter !== "all" && (
-                <Badge variant="outline" className="bg-blue-50">
+                <Badge variant="outline" className="bg-[#FFE0B2]">
                   Màu: {colorFilter}
                   <button
                     onClick={() => setColorFilter("all")}
@@ -305,7 +305,7 @@ export function ProductList() {
                 if (variants.length === 0) {
                   return (
                     <TableRow key={`${product.id}-no-variant`}>
-                      <TableCell className="font-medium text-blue-600">
+                      <TableCell className="font-medium text-[#E0872B]">
                         {product.product_code ||
                           `SP${product.id.toString().padStart(6, "0")}`}
                       </TableCell>
@@ -411,7 +411,7 @@ export function ProductList() {
                   <TableRow key={`${product.id}-${variant.id}`}>
                     {index === 0 && (
                       <TableCell
-                        className="font-medium text-blue-600 align-top"
+                        className="font-medium text-[#E0872B] align-top"
                         rowSpan={variants.length}
                       >
                         {product.product_code ||

@@ -321,7 +321,7 @@ export function OrderDetail() {
                 )}
                 <div className="flex justify-between text-lg font-bold border-t pt-2">
                   <span>Tổng cộng:</span>
-                  <span className="text-blue-600">
+                  <span className="text-[#E0872B]">
                     {formatCurrency(order.total)}
                   </span>
                 </div>
@@ -535,8 +535,8 @@ export function OrderDetail() {
             <p className="text-sm text-gray-600">
               Xác nhận hoàn tiền {formatCurrency(order.total)} cho khách hàng?
             </p>
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-700">
+            <div className="p-4 bg-[#FFE0B2] rounded-lg">
+              <p className="text-sm text-[#E0872B]">
                 Số tiền sẽ được hoàn lại qua phương thức thanh toán:{" "}
                 {paymentMethodLabels[order.payment_method]}
               </p>

@@ -227,7 +227,7 @@ export function InventoryManagement() {
                       {isFirstVariant && (
                         <TableCell
                           rowSpan={variants.length}
-                          className="font-medium text-blue-600"
+                          className="font-medium text-[#E0872B]"
                         >
                           {product.product_code ||
                             `SP${product.id.toString().padStart(6, "0")}`}
@@ -310,7 +310,7 @@ export function InventoryManagement() {
 
                       <TableCell className="text-right">
                         <div>
-                          <p className="font-semibold text-blue-600">
+                          <p className="font-semibold text-[#E0872B]">
                             {formatCurrency(variant.price)}
                           </p>
                           {variant.compare_at_price &&
@@ -480,18 +480,18 @@ export function InventoryManagement() {
               </div>
 
               {quantity > 0 && selectedVariant && (
-                <div className="p-3 bg-blue-50 rounded-lg">
+                <div className="p-3 bg-[#FFE0B2] rounded-lg">
                   {(() => {
                     const variant = selectedProduct.variants?.find(
                       (v) => v.id.toString() === selectedVariant,
                     );
                     return (
                       <div className="space-y-1">
-                        <p className="text-sm text-blue-700">
+                        <p className="text-sm text-[#E0872B]">
                           Tồn kho sau khi nhập:{" "}
                           {(variant?.stock || 0) + quantity}
                         </p>
-                        <p className="text-sm text-blue-700">
+                        <p className="text-sm text-[#E0872B]">
                           Giá trị nhập:{" "}
                           {formatCurrency((variant?.price || 0) * quantity)}
                         </p>

@@ -159,7 +159,7 @@ export function CategoryList() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-3xl font-bold text-blue-600">
+              <p className="text-3xl font-bold text-[#E0872B]">
                 {categories.length}
               </p>
               <p className="text-sm text-gray-600 mt-1">Tổng danh mục</p>
@@ -169,7 +169,7 @@ export function CategoryList() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-3xl font-bold text-purple-600">
+              <p className="text-3xl font-bold text-[#E0872B]">
                 {products.length}
               </p>
               <p className="text-sm text-gray-600 mt-1">Tổng sản phẩm</p>
@@ -224,7 +224,7 @@ export function CategoryList() {
                   const productCount = getProductCount(category.id);
                   return (
                     <TableRow key={category.id}>
-                      <TableCell className="font-medium text-blue-600">
+                      <TableCell className="font-medium text-[#E0872B]">
                         {category.category_code ||
                           `CAT${category.id.toString().padStart(6, "0")}`}
                       </TableCell>
@@ -237,7 +237,7 @@ export function CategoryList() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-blue-600">
+                          <span className="font-semibold text-[#E0872B]">
                             {productCount}
                           </span>
                           <span className="text-gray-500 text-sm">

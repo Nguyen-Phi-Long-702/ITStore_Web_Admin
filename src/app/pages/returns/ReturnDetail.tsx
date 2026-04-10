@@ -57,14 +57,14 @@ const returnStatusConfig: Record<
   },
   approved: {
     label: "Đã chấp nhận",
-    color: "text-blue-700",
-    bgColor: "bg-blue-100",
+    color: "text-[#E0872B]",
+    bgColor: "bg-[#FFE0B2]",
   },
   rejected: { label: "Từ chối", color: "text-red-700", bgColor: "bg-red-100" },
   received: {
     label: "Đã nhận hàng",
-    color: "text-purple-700",
-    bgColor: "bg-purple-100",
+    color: "text-[#E0872B]",
+    bgColor: "bg-[#FFE0B2]",
   },
   completed: {
     label: "Hoàn thành",
@@ -193,7 +193,7 @@ export function ReturnDetail() {
                     onClick={() =>
                       navigate(`/orders/${returnRequest.order_id}`)
                     }
-                    className="font-medium text-blue-600 hover:underline"
+                    className="font-medium text-[#E0872B] hover:underline"
                   >
                     {orderNumber}
                   </button>
@@ -224,8 +224,8 @@ export function ReturnDetail() {
               {adminNote && (
                 <div>
                   <Label>Ghi chú của Admin</Label>
-                  <div className="mt-2 p-3 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-blue-700">{adminNote}</p>
+                  <div className="mt-2 p-3 bg-[#FFE0B2] rounded-lg">
+                    <p className="text-sm text-[#E0872B]">{adminNote}</p>
                   </div>
                 </div>
               )}
@@ -330,7 +330,7 @@ export function ReturnDetail() {
                   {returnRequest.images.map((image) => (
                     <div
                       key={image.id}
-                      className="relative group cursor-pointer overflow-hidden rounded-lg border-2 border-gray-200 hover:border-blue-500 transition-colors"
+                      className="relative group cursor-pointer overflow-hidden rounded-lg border-2 border-gray-200 hover:border-[#E0872B] transition-colors"
                       onClick={() => handleImagePreview(image.image_url)}
                     >
                       <img
@@ -474,13 +474,13 @@ export function ReturnDetail() {
                   <div className="flex gap-3">
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                        status === "rejected" ? "bg-red-100" : "bg-blue-100"
+                        status === "rejected" ? "bg-red-100" : "bg-[#FFE0B2]"
                       }`}
                     >
                       {status === "rejected" ? (
                         <XCircle className="h-4 w-4 text-red-600" />
                       ) : (
-                        <CheckCircle className="h-4 w-4 text-blue-600" />
+                        <CheckCircle className="h-4 w-4 text-[#E0872B]" />
                       )}
                     </div>
                     <div>
@@ -495,8 +495,8 @@ export function ReturnDetail() {
                 )}
                 {status === "received" && (
                   <div className="flex gap-3">
-                    <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-                      <Package className="h-4 w-4 text-purple-600" />
+                    <div className="w-8 h-8 rounded-full bg-[#FFE0B2] flex items-center justify-center flex-shrink-0">
+                      <Package className="h-4 w-4 text-[#E0872B]" />
                     </div>
                     <div>
                       <p className="font-medium text-sm">Đã nhận hàng</p>
@@ -557,8 +557,8 @@ export function ReturnDetail() {
                 rows={3}
               />
             </div>
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-700">
+            <div className="p-4 bg-[#FFE0B2] rounded-lg">
+              <p className="text-sm text-[#E0872B]">
                 Sau khi chấp nhận, khách hàng sẽ được thông báo và có thể gửi
                 hàng trả lại. Số tiền sẽ được hoàn sau khi nhận và kiểm tra
                 hàng.

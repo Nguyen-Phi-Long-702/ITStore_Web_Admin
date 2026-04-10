@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useSearchParams } from "react-router";
+import type { Address } from "../types";
 import {
   Card,
   CardContent,
@@ -25,7 +26,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../components/ui/dialog";
-import { Textarea } from "../components/ui/textarea";
 import {
   User,
   Mail,
@@ -43,12 +43,90 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+type AddressRecord = Pick<
+  Address,
+  | "id"
+  | "recipient"
+  | "phone_number"
+  | "province"
+  | "district"
+  | "ward"
+  | "street"
+  | "is_default"
+>;
+
+const API_BASE_URL = "http://localhost:3000";
+const ACCESS_TOKEN_STORAGE_KEY = "auth_access_token";
+
+function getAuthHeaders(headers?: HeadersInit): HeadersInit {
+  const rawToken = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+  const token = rawToken?.trim();
+
+  if (!token || token === "undefined" || token === "null") {
+    if (rawToken) {
+      localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+    }
+    return headers ?? {};
+  }
+
+  return {
+    ...(headers ?? {}),
+    Authorization: `Bearer ${token}`,
+  };
+}
+
+function formatAddress(address: AddressRecord | null): string {
+  if (!address) {
+    return "Chưa cập nhật";
+  }
+
+  const parts = [address.street, address.ward, address.district, address.province]
+    .map((value) => value?.trim())
+    .filter((value): value is string => Boolean(value));
+
+  return parts.length > 0 ? parts.join(", ") : "Chưa cập nhật";
+}
+
+function normalizeAddressList(payload: unknown): AddressRecord[] {
+  if (Array.isArray(payload)) {
+    return payload as AddressRecord[];
+  }
+
+  if (payload && typeof payload === "object") {
+    const envelope = payload as {
+      data?: unknown;
+      items?: unknown;
+      result?: unknown;
+      payload?: unknown;
+    };
+
+    const candidates = [
+      envelope.data,
+      envelope.items,
+      envelope.result,
+      envelope.payload,
+    ];
+
+    for (const candidate of candidates) {
+      if (Array.isArray(candidate)) {
+        return candidate as AddressRecord[];
+      }
+    }
+  }
+
+  return [];
+}
+
 function AccountContent() {
   const { user, updateUser, changePassword } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isEditing, setIsEditing] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [defaultAddress, setDefaultAddress] = useState<AddressRecord | null>(
+    null,
+  );
+  const [isAddressLoading, setIsAddressLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [showOldPassword, setShowOldPassword] = useState(false);
@@ -64,11 +142,67 @@ function AccountContent() {
 
   const [formData, setFormData] = useState({
     full_name: user?.full_name || "",
-    phone: user?.phone || "",
+    phone: user?.phone || user?.phone_number || "",
     date_of_birth: user?.date_of_birth || "",
     gender: user?.gender || "other",
-    address: user?.address || "",
   });
+
+  useEffect(() => {
+    if (!user?.id) {
+      setDefaultAddress(null);
+      return;
+    }
+
+    let active = true;
+
+    const fetchDefaultAddress = async () => {
+      setIsAddressLoading(true);
+
+      const endpoints = ["/api/users/me/addresses", "/users/me/addresses"];
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            method: "GET",
+            credentials: "include",
+            headers: getAuthHeaders(),
+          });
+
+          if (!response.ok) {
+            continue;
+          }
+
+          const payload = (await response.json().catch(() => null)) as unknown;
+          const addresses = normalizeAddressList(payload);
+          const nextAddress =
+            addresses.find((address) => address.is_default) ??
+            addresses[0] ??
+            null;
+
+          if (active) {
+            setDefaultAddress(nextAddress);
+          }
+          return;
+        } catch {
+          continue;
+        }
+      }
+
+      if (active) {
+        setDefaultAddress(null);
+      }
+    };
+
+    fetchDefaultAddress().finally(() => {
+      if (active) {
+        setIsAddressLoading(false);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     const action = searchParams.get("action");
@@ -99,10 +233,9 @@ function AccountContent() {
   const handleCancel = () => {
     setFormData({
       full_name: user?.full_name || "",
-      phone: user?.phone || "",
+      phone: user?.phone || user?.phone_number || "",
       date_of_birth: user?.date_of_birth || "",
       gender: user?.gender || "other",
-      address: user?.address || "",
     });
     setIsEditing(false);
   };
@@ -206,8 +339,8 @@ function AccountContent() {
 
   const getRoleBadgeColor = (role: string) => {
     return role === "admin"
-      ? "bg-purple-100 text-purple-800"
-      : "bg-blue-100 text-blue-800";
+      ? "bg-[#FFE0B2] text-[#E0872B]"
+      : "bg-[#FFE0B2] text-[#E0872B]";
   };
 
   const getRoleLabel = (role: string) => {
@@ -224,6 +357,10 @@ function AccountContent() {
         return "Khác";
     }
   };
+
+  const displayAddress = defaultAddress
+    ? formatAddress(defaultAddress)
+    : user.address || "Chưa cập nhật";
 
   return (
     <div className="space-y-6">
@@ -384,7 +521,7 @@ function AccountContent() {
                   />
                 ) : (
                   <p className="text-gray-900 font-medium py-2">
-                    {user.phone || "Chưa cập nhật"}
+                    {user.phone || user.phone_number || "Chưa cập nhật"}
                   </p>
                 )}
               </div>
@@ -450,20 +587,16 @@ function AccountContent() {
                   <MapPin className="h-4 w-4 inline mr-2" />
                   Địa chỉ
                 </Label>
-                {isEditing ? (
-                  <Textarea
-                    id="address"
-                    value={formData.address}
-                    onChange={(e) =>
-                      setFormData({ ...formData, address: e.target.value })
-                    }
-                    rows={3}
-                  />
-                ) : (
-                  <p className="text-gray-900 font-medium py-2">
-                    {user.address || "Chưa cập nhật"}
+                <div className="rounded-lg border bg-gray-50 px-3 py-3 min-h-[88px]">
+                  <p className="text-gray-900 font-medium leading-6">
+                    {isAddressLoading ? "Đang tải..." : displayAddress}
                   </p>
-                )}
+                  {defaultAddress && (
+                    <p className="mt-2 text-xs text-gray-500">
+                      {defaultAddress.recipient} · {defaultAddress.phone_number}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>

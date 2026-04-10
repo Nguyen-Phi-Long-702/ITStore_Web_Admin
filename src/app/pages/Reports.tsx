@@ -237,7 +237,7 @@ export function Reports() {
         value: filteredOrders.filter(
           (order) => order.order_status === "shipping",
         ).length,
-        color: "#3b82f6",
+        color: "#E0872B",
         id: "status-shipping",
       },
       {
@@ -442,18 +442,18 @@ export function Reports() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Đơn hàng</p>
-                <p className="text-2xl font-bold text-blue-600">
+                <p className="text-2xl font-bold text-[#E0872B]">
                   {reportData.totalOrders}
                 </p>
                 <div className="flex items-center gap-1 mt-1">
-                  <TrendingUp className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm text-blue-600">
+                  <TrendingUp className="h-4 w-4 text-[#E0872B]" />
+                  <span className="text-sm text-[#E0872B]">
                     {growth.orders > 0 ? "+" : ""}
                     {growth.orders}%
                   </span>
                 </div>
               </div>
-              <Package className="h-8 w-8 text-blue-600" />
+              <Package className="h-8 w-8 text-[#E0872B]" />
             </div>
           </CardContent>
         </Card>
@@ -463,18 +463,18 @@ export function Reports() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Giá trị TB/Đơn</p>
-                <p className="text-2xl font-bold text-purple-600">
+                <p className="text-2xl font-bold text-[#E0872B]">
                   {formatCurrency(reportData.avgOrderValue)}
                 </p>
                 <div className="flex items-center gap-1 mt-1">
-                  <TrendingUp className="h-4 w-4 text-purple-600" />
-                  <span className="text-sm text-purple-600">
+                  <TrendingUp className="h-4 w-4 text-[#E0872B]" />
+                  <span className="text-sm text-[#E0872B]">
                     {growth.avgOrderValue > 0 ? "+" : ""}
                     {growth.avgOrderValue}%
                   </span>
                 </div>
               </div>
-              <DollarSign className="h-8 w-8 text-purple-600" />
+              <DollarSign className="h-8 w-8 text-[#E0872B]" />
             </div>
           </CardContent>
         </Card>
@@ -520,7 +520,7 @@ export function Reports() {
                 <Line
                   type="monotone"
                   dataKey="revenue"
-                  stroke="#3b82f6"
+                  stroke="#E0872B"
                   strokeWidth={2}
                   name="Doanh thu"
                   key="line-1"
@@ -662,7 +662,7 @@ export function Reports() {
                             ? "bg-gray-100 text-gray-700"
                             : index === 2
                               ? "bg-orange-100 text-orange-700"
-                              : "bg-blue-100 text-blue-700"
+                              : "bg-[#FFE0B2] text-[#E0872B]"
                       }`}
                     >
                       {index + 1}

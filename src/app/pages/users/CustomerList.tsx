@@ -95,7 +95,7 @@ export function CustomerList() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-3xl font-bold text-blue-600">
+              <p className="text-3xl font-bold text-[#E0872B]">
                 {customers.length}
               </p>
               <p className="text-sm text-gray-600 mt-1">Tổng khách hàng</p>
@@ -162,7 +162,7 @@ export function CustomerList() {
             <TableBody>
               {filteredCustomers.map((customer) => (
                 <TableRow key={customer.id}>
-                  <TableCell className="font-medium text-blue-600">
+                  <TableCell className="font-medium text-[#E0872B]">
                     {customer.customer_code ||
                       `KH${customer.id.toString().padStart(6, "0")}`}
                   </TableCell>
@@ -179,16 +179,16 @@ export function CustomerList() {
                             if (parent) {
                               const fallback = document.createElement("div");
                               fallback.className =
-                                "w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center";
+                                "w-10 h-10 rounded-full bg-[#FFE0B2] flex items-center justify-center";
                               fallback.innerHTML =
-                                '<svg class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>';
+                                '<svg class="h-5 w-5 text-[#E0872B]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>';
                               parent.insertBefore(fallback, e.currentTarget);
                             }
                           }}
                         />
                       ) : (
-                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                          <User className="h-5 w-5 text-blue-600" />
+                        <div className="w-10 h-10 rounded-full bg-[#FFE0B2] flex items-center justify-center">
+                          <User className="h-5 w-5 text-[#E0872B]" />
                         </div>
                       )}
                       <div>
