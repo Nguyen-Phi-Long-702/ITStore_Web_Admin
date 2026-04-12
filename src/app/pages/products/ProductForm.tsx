@@ -34,6 +34,12 @@ const MAX_PRODUCT_IMAGES = 8;
 const API_BASE_URL = "http://localhost:3000";
 const ACCESS_TOKEN_STORAGE_KEY = "auth_access_token";
 
+function buildRequestUrl(endpoint: string): string {
+  return endpoint.startsWith("/__webadmin/")
+    ? endpoint
+    : `${API_BASE_URL}${endpoint}`;
+}
+
 type ImageEntry = {
   id?: number;
   url: string;
@@ -330,9 +336,7 @@ export function ProductForm() {
 
       for (const endpoint of endpoints) {
         try {
-          const requestUrl = endpoint.startsWith("/__webadmin/")
-            ? endpoint
-            : `${API_BASE_URL}${endpoint}`;
+          const requestUrl = buildRequestUrl(endpoint);
 
           const response = await fetch(requestUrl, {
             method: "GET",

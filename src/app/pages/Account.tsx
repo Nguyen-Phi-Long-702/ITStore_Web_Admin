@@ -58,6 +58,10 @@ type AddressRecord = Pick<
 const API_BASE_URL = "http://localhost:3000";
 const ACCESS_TOKEN_STORAGE_KEY = "auth_access_token";
 
+function buildApiUrl(endpoint: string): string {
+  return `${API_BASE_URL}${endpoint}`;
+}
+
 function getAuthHeaders(headers?: HeadersInit): HeadersInit {
   const rawToken = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
   const token = rawToken?.trim();
@@ -162,7 +166,7 @@ function AccountContent() {
 
       for (const endpoint of endpoints) {
         try {
-          const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+          const response = await fetch(buildApiUrl(endpoint), {
             method: "GET",
             credentials: "include",
             headers: getAuthHeaders(),

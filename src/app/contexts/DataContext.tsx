@@ -115,6 +115,8 @@ const ACCESS_TOKEN_STORAGE_KEY = "auth_access_token";
 const PRODUCTS_CACHE_KEY = "data_cache_products";
 const BRANDS_CACHE_KEY = "data_cache_brands";
 const CATEGORIES_CACHE_KEY = "data_cache_categories";
+const UPDATE_METHODS = ["PATCH", "PUT"] as const;
+const STATUS_METHODS = ["PATCH", "PUT", "POST"] as const;
 
 const RESOURCE_PATHS: Record<string, string[]> = {
   products: ["/api/admin/products", "/api/products", "/__webadmin/db/products"],
@@ -125,6 +127,7 @@ const RESOURCE_PATHS: Record<string, string[]> = {
     "/api/categories",
     "/categories",
   ],
+  categoriesWrite: ["/api/admin/categories", "/api/categories", "/categories"],
   brands: ["/__webadmin/db/brands", "/api/brands"],
   brandsWrite: ["/api/admin/brands"],
   customers: ["/api/admin/users", "/customers", "/users?role=customer"],
@@ -387,6 +390,159 @@ function toApiProductStatus(status: unknown): string | undefined {
   }
 
   return undefined;
+}
+
+function mergeBestError(bestError: string | null, currentError: string): string {
+  if (!bestError || bestError === "HTTP 404") {
+    return currentError;
+  }
+
+  return bestError;
+}
+
+async function parseHttpError(response: Response): Promise<string> {
+  try {
+    const payload = (await response.json()) as Record<string, unknown>;
+    if (typeof payload?.message === "string" && payload.message.length > 0) {
+      return payload.message;
+    }
+  } catch {}
+
+  return `HTTP ${response.status}`;
+}
+
+function buildDescriptionPayloadCandidates(
+  payload: Record<string, unknown>,
+  hasDescription: boolean,
+  description: unknown,
+): Array<Record<string, unknown>> {
+  const candidates: Array<Record<string, unknown>> = [payload];
+  if (!hasDescription) {
+    return candidates;
+  }
+
+  const descriptionAliases = [
+    "product_description",
+    "productDescription",
+    "short_description",
+    "shortDescription",
+    "product_desc",
+  ];
+
+  for (const alias of descriptionAliases) {
+    candidates.push({
+      ...payload,
+      [alias]: description,
+    });
+  }
+
+  return candidates;
+}
+
+function buildActiveStatePayloadCandidates(
+  basePayload: Record<string, unknown>,
+  isActive: boolean,
+): Array<Record<string, unknown>> {
+  const statusValue = isActive ? "active" : "inactive";
+  return [
+    {
+      ...basePayload,
+      is_active: isActive,
+    },
+    {
+      ...basePayload,
+      active: isActive,
+    },
+    {
+      ...basePayload,
+      isActive: isActive,
+    },
+    {
+      ...basePayload,
+      status: statusValue,
+    },
+  ];
+}
+
+function normalizeComparableText(value: unknown): string {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  return value.trim().toLowerCase();
+}
+
+async function fetchNormalizedCategories(): Promise<Category[]> {
+  const categoriesData = await fetchFirstAvailable<Category[]>(
+    RESOURCE_PATHS.categories,
+    [],
+  );
+
+  return flattenCategoryTree(categoriesData);
+}
+
+async function ensureCategoryCreatedPersisted(
+  beforeCategoryIds: Set<number>,
+  expectedName: string,
+  expectedSlug: string,
+  createdRecord: Category | null,
+): Promise<void> {
+  const categoriesData = await fetchNormalizedCategories();
+  const expectedNameKey = normalizeComparableText(expectedName);
+  const expectedSlugKey = normalizeComparableText(expectedSlug);
+  const createdId = Number(createdRecord?.id);
+
+  const persisted = categoriesData.some((category) => {
+    if (!Number.isNaN(createdId) && category.id === createdId) {
+      return true;
+    }
+
+    const isNewCategory = !beforeCategoryIds.has(category.id);
+    if (!isNewCategory) {
+      return false;
+    }
+
+    return (
+      normalizeComparableText(category.slug) === expectedSlugKey ||
+      normalizeComparableText(category.name) === expectedNameKey
+    );
+  });
+
+  if (!persisted) {
+    throw new Error("Backend chưa lưu danh mục");
+  }
+}
+
+async function ensureCategoryUpdatedPersisted(
+  categoryId: number,
+  updates: Partial<Category>,
+): Promise<void> {
+  if (!Object.prototype.hasOwnProperty.call(updates, "name") &&
+      !Object.prototype.hasOwnProperty.call(updates, "slug")) {
+    return;
+  }
+
+  const categoriesData = await fetchNormalizedCategories();
+  const updatedCategory = categoriesData.find((item) => item.id === categoryId);
+  if (!updatedCategory) {
+    throw new Error("Không tìm thấy danh mục sau khi cập nhật");
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(updates, "name") &&
+    normalizeComparableText(updatedCategory.name) !==
+      normalizeComparableText(updates.name)
+  ) {
+    throw new Error("Backend chưa lưu tên danh mục mới");
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(updates, "slug") &&
+    normalizeComparableText(updatedCategory.slug) !==
+      normalizeComparableText(updates.slug)
+  ) {
+    throw new Error("Backend chưa lưu slug danh mục mới");
+  }
 }
 
 function normalizeProducts(input: unknown): Product[] {
@@ -737,14 +893,10 @@ async function fetchFirstAvailableDetailed<T>(
             };
           }
 
-          if (!bestError || bestError === `HTTP 404`) {
-            bestError = currentError;
-          }
+          bestError = mergeBestError(bestError, currentError);
         } catch {
           const currentError = `HTTP ${response.status}`;
-          if (!bestError || bestError === `HTTP 404`) {
-            bestError = currentError;
-          }
+          bestError = mergeBestError(bestError, currentError);
         }
         continue;
       }
@@ -832,9 +984,7 @@ async function createRecordWithResponse<T>(
           }
 
           const currentError = message || `HTTP ${response.status}`;
-          if (!bestError || bestError === "HTTP 404") {
-            bestError = currentError;
-          }
+          bestError = mergeBestError(bestError, currentError);
         } catch {
           if (response.status === 401 || response.status === 403) {
             return {
@@ -845,9 +995,7 @@ async function createRecordWithResponse<T>(
           }
 
           const currentError = `HTTP ${response.status}`;
-          if (!bestError || bestError === "HTTP 404") {
-            bestError = currentError;
-          }
+          bestError = mergeBestError(bestError, currentError);
         }
         continue;
       }
@@ -1042,20 +1190,8 @@ async function uploadProductImageFile(
           return { ok: true, data: null, error: null };
         }
 
-        try {
-          const payload = (await response.json()) as Record<string, unknown>;
-          const message =
-            typeof payload?.message === "string" ? payload.message : null;
-          if (message) {
-            bestError = message;
-          } else if (!bestError) {
-            bestError = `HTTP ${response.status}`;
-          }
-        } catch {
-          if (!bestError) {
-            bestError = `HTTP ${response.status}`;
-          }
-        }
+        const currentError = await parseHttpError(response);
+        bestError = mergeBestError(bestError, currentError);
       } catch {
         bestError = "Không thể kết nối backend";
       }
@@ -1076,7 +1212,7 @@ async function markProductImageAsPrimary(id: number): Promise<boolean> {
   ];
 
   for (const endpoint of endpoints) {
-    for (const method of ["PATCH", "PUT"] as const) {
+    for (const method of UPDATE_METHODS) {
       try {
         const response = await fetchWithTimeout(buildRequestUrl(endpoint), {
           method,
@@ -1135,7 +1271,7 @@ async function updateRecordWithResponse(
 ): Promise<FetchResult<null>> {
   let bestError: string | null = null;
 
-  for (const method of ["PATCH", "PUT"] as const) {
+  for (const method of UPDATE_METHODS) {
     for (const path of paths) {
       try {
         const response = await fetchWithTimeout(
@@ -1165,9 +1301,7 @@ async function updateRecordWithResponse(
           }
 
           const currentError = message || `HTTP ${response.status}`;
-          if (!bestError || bestError === "HTTP 404") {
-            bestError = currentError;
-          }
+          bestError = mergeBestError(bestError, currentError);
         } catch {
           if (response.status === 401 || response.status === 403) {
             return {
@@ -1178,9 +1312,7 @@ async function updateRecordWithResponse(
           }
 
           const currentError = `HTTP ${response.status}`;
-          if (!bestError || bestError === "HTTP 404") {
-            bestError = currentError;
-          }
+          bestError = mergeBestError(bestError, currentError);
         }
       } catch {
         bestError = "Không thể kết nối backend";
@@ -1669,31 +1801,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       ...(product.status ? { status: toApiProductStatus(product.status) } : {}),
     };
 
-    const payloadCandidates: Array<Record<string, unknown>> = [
+    const payloadCandidates = buildDescriptionPayloadCandidates(
       payload as Record<string, unknown>,
-    ];
-    if (Object.prototype.hasOwnProperty.call(product, "description")) {
-      payloadCandidates.push({
-        ...payload,
-        product_description: product.description,
-      } as Record<string, unknown>);
-      payloadCandidates.push({
-        ...payload,
-        productDescription: product.description,
-      } as Record<string, unknown>);
-      payloadCandidates.push({
-        ...payload,
-        short_description: product.description,
-      } as Record<string, unknown>);
-      payloadCandidates.push({
-        ...payload,
-        shortDescription: product.description,
-      } as Record<string, unknown>);
-      payloadCandidates.push({
-        ...payload,
-        product_desc: product.description,
-      } as Record<string, unknown>);
-    }
+      Object.prototype.hasOwnProperty.call(product, "description"),
+      product.description,
+    );
 
     let createdResult: FetchResult<Product | null> | null = null;
     for (const payloadCandidate of payloadCandidates) {
@@ -1759,32 +1871,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       ? toApiProductStatus(updates.status)
       : undefined;
 
-    const payloadCandidates: Array<Record<string, unknown>> = [
+    const payloadCandidates = buildDescriptionPayloadCandidates(
       payload as Record<string, unknown>,
-    ];
-
-    if (Object.prototype.hasOwnProperty.call(updates, "description")) {
-      payloadCandidates.push({
-        ...payload,
-        product_description: updates.description,
-      } as Record<string, unknown>);
-      payloadCandidates.push({
-        ...payload,
-        productDescription: updates.description,
-      } as Record<string, unknown>);
-      payloadCandidates.push({
-        ...payload,
-        short_description: updates.description,
-      } as Record<string, unknown>);
-      payloadCandidates.push({
-        ...payload,
-        shortDescription: updates.description,
-      } as Record<string, unknown>);
-      payloadCandidates.push({
-        ...payload,
-        product_desc: updates.description,
-      } as Record<string, unknown>);
-    }
+      Object.prototype.hasOwnProperty.call(updates, "description"),
+      updates.description,
+    );
 
     if (expectedStatus) {
       payloadCandidates.push({
@@ -1857,7 +1948,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         { is_active: expectedStatus === "active" },
       ];
 
-      for (const method of ["PATCH", "PUT", "POST"] as const) {
+      for (const method of STATUS_METHODS) {
         for (const endpoint of statusEndpoints) {
           for (const statusPayload of statusPayloads) {
             try {
@@ -1871,18 +1962,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
               );
 
               if (!response.ok) {
-                const payloadData = (await response
-                  .json()
-                  .catch(() => null)) as Record<string, unknown> | null;
-                const message =
-                  payloadData && typeof payloadData.message === "string"
-                    ? payloadData.message
-                    : null;
-                if (message) {
-                  lastError = message;
-                } else {
-                  lastError = `HTTP ${response.status}`;
-                }
+                lastError = await parseHttpError(response);
                 continue;
               }
 
@@ -1947,7 +2027,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
       for (const endpoint of softDeleteStatusEndpoints) {
         for (const payload of softDeleteStatusPayloads) {
-          for (const method of ["PATCH", "PUT", "POST"] as const) {
+          for (const method of STATUS_METHODS) {
             try {
               const response = await fetchWithTimeout(
                 buildRequestUrl(endpoint),
@@ -1964,24 +2044,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                 await loadBackendData();
                 return;
               }
-
-              try {
-                const payloadData = (await response.json()) as Record<
-                  string,
-                  unknown
-                >;
-                const message =
-                  typeof payloadData?.message === "string"
-                    ? payloadData.message
-                    : null;
-                if (message) {
-                  lastError = message;
-                } else {
-                  lastError = `HTTP ${response.status}`;
-                }
-              } catch {
-                lastError = `HTTP ${response.status}`;
-              }
+              lastError = await parseHttpError(response);
             } catch {
               lastError = "Không thể kết nối backend";
             }
@@ -2001,7 +2064,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
       for (const path of softDeletePaths) {
         for (const payload of softDeletePayloads) {
-          for (const method of ["PATCH", "PUT"] as const) {
+          for (const method of UPDATE_METHODS) {
             try {
               const response = await fetchWithTimeout(
                 buildRequestUrl(`${path}/${id}`),
@@ -2018,24 +2081,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
                 await loadBackendData();
                 return;
               }
-
-              try {
-                const payloadData = (await response.json()) as Record<
-                  string,
-                  unknown
-                >;
-                const message =
-                  typeof payloadData?.message === "string"
-                    ? payloadData.message
-                    : null;
-                if (message) {
-                  lastError = message;
-                } else {
-                  lastError = `HTTP ${response.status}`;
-                }
-              } catch {
-                lastError = `HTTP ${response.status}`;
-              }
+              lastError = await parseHttpError(response);
             } catch {
               lastError = "Không thể kết nối backend";
             }
@@ -2053,13 +2099,30 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addCategory = async (category: Omit<Category, "id" | "created_at">) => {
+    const beforeCategoryIds = new Set(categories.map((item) => item.id));
     const payload = {
       ...category,
       slug: category.slug || generateSlug(category.name),
       created_at: new Date().toISOString(),
     };
-    await syncAfterMutation(() =>
-      createRecord(RESOURCE_PATHS.categories, payload),
+
+    const createdResult = await createRecordWithResponse<Category>(
+      RESOURCE_PATHS.categoriesWrite,
+      payload,
+    );
+
+    if (!createdResult.ok) {
+      throw new Error(
+        createdResult.error || "Không thể cập nhật dữ liệu lên backend",
+      );
+    }
+
+    await loadBackendData();
+    await ensureCategoryCreatedPersisted(
+      beforeCategoryIds,
+      payload.name,
+      payload.slug,
+      createdResult.data,
     );
   };
 
@@ -2071,12 +2134,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         : {}),
     };
     await syncAfterMutation(() =>
-      updateRecord(RESOURCE_PATHS.categories, id, payload),
+      updateRecord(RESOURCE_PATHS.categoriesWrite, id, payload),
     );
+    await ensureCategoryUpdatedPersisted(id, payload);
   };
 
   const deleteCategory = async (id: number) => {
-    await syncAfterMutation(() => deleteRecord(RESOURCE_PATHS.categories, id));
+    await syncAfterMutation(() =>
+      deleteRecord(RESOURCE_PATHS.categoriesWrite, id),
+    );
   };
 
   const addBrand = async (
@@ -2116,23 +2182,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (hasIsActiveField && typeof isActiveValue === "boolean") {
-      const statusValue = isActiveValue ? "active" : "inactive";
-      payloadCandidates.push({
-        ...restUpdates,
-        is_active: isActiveValue,
-      } as Record<string, unknown>);
-      payloadCandidates.push({
-        ...restUpdates,
-        active: isActiveValue,
-      } as Record<string, unknown>);
-      payloadCandidates.push({
-        ...restUpdates,
-        isActive: isActiveValue,
-      } as Record<string, unknown>);
-      payloadCandidates.push({ ...restUpdates, status: statusValue } as Record<
-        string,
-        unknown
-      >);
+      payloadCandidates.push(
+        ...buildActiveStatePayloadCandidates(
+          restUpdates as Record<string, unknown>,
+          isActiveValue,
+        ),
+      );
     }
 
     if (payloadCandidates.length === 0) {
@@ -2167,7 +2222,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         `/customers/${id}/status`,
       ];
 
-      for (const method of ["PATCH", "PUT", "POST"] as const) {
+      for (const method of STATUS_METHODS) {
         for (const endpoint of statusEndpoints) {
           for (const payload of payloadCandidates) {
             try {

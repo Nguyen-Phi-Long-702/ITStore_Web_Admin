@@ -78,6 +78,12 @@ const AUTH_STORAGE_KEY = "auth_user";
 const ACCESS_TOKEN_STORAGE_KEY = "auth_access_token";
 const REFRESH_TOKEN_STORAGE_KEY = "auth_refresh_token";
 const API_BASE_URL = "http://localhost:3000";
+const PASSWORD_ENDPOINT_METHODS = ["POST", "PATCH", "PUT"] as const;
+const PASSWORD_PROFILE_METHODS = ["PATCH", "PUT", "POST"] as const;
+
+function buildApiUrl(endpoint: string): string {
+  return `${API_BASE_URL}${endpoint}`;
+}
 
 function getAuthHeaders(headers?: HeadersInit): HeadersInit {
   const rawToken = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
@@ -239,7 +245,7 @@ async function fetchCurrentUser(userId?: number): Promise<User | null> {
 
   for (const endpoint of endpoints) {
     try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      const response = await fetch(buildApiUrl(endpoint), {
         method: "GET",
         credentials: "include",
         headers: getAuthHeaders(),
@@ -341,7 +347,7 @@ async function postAuth(
   body: Record<string, unknown>,
 ): Promise<any | null> {
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(buildApiUrl(endpoint), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -545,7 +551,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     for (const endpoint of endpoints) {
       try {
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        const response = await fetch(buildApiUrl(endpoint), {
           method: "POST",
           credentials: "include",
           headers: getAuthHeaders({
@@ -607,7 +613,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       for (const endpoint of avatarEndpoints) {
         try {
-          const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+          const response = await fetch(buildApiUrl(endpoint), {
             method: "PATCH",
             credentials: "include",
             headers: getAuthHeaders(),
@@ -656,8 +662,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       requestPayload.phone_number = normalizedNextPhone;
     }
 
-    if (Object.prototype.hasOwnProperty.call(updates, "setting")) {
-      requestPayload.setting = updates.setting ?? null;
+    const updatesRecord = updates as Record<string, unknown>;
+    if (Object.prototype.hasOwnProperty.call(updatesRecord, "setting")) {
+      requestPayload.setting = updatesRecord.setting ?? null;
     }
 
     if (Object.keys(requestPayload).length === 0) {
@@ -673,7 +680,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     for (const endpoint of endpoints) {
       for (const method of methods) {
         try {
-          const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+          const response = await fetch(buildApiUrl(endpoint), {
             method,
             credentials: "include",
             headers: getAuthHeaders({
@@ -793,9 +800,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       let allNotFound = true;
 
       for (const endpoint of dedicatedEndpoints) {
-        for (const method of ["POST", "PATCH", "PUT"] as const) {
+        for (const method of PASSWORD_ENDPOINT_METHODS) {
           for (const payload of dedicatedPayloads) {
-            const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            const response = await fetch(buildApiUrl(endpoint), {
               method,
               credentials: "include",
               headers: getAuthHeaders({
@@ -828,9 +835,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       for (const endpoint of fallbackProfileEndpoints) {
-        for (const method of ["PATCH", "PUT", "POST"] as const) {
+        for (const method of PASSWORD_PROFILE_METHODS) {
           for (const payload of fallbackPayloads) {
-            const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            const response = await fetch(buildApiUrl(endpoint), {
               method,
               credentials: "include",
               headers: getAuthHeaders({

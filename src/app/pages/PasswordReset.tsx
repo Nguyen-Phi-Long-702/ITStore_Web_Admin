@@ -6,6 +6,10 @@ const API_BASE_URL = "http://localhost:3000";
 const BLOCKED_MESSAGE =
   "Liên kết đã hết hạn. Vui lòng kiểm tra email mới nhất hoặc gửi lại yêu cầu.";
 
+function buildApiUrl(endpoint: string): string {
+  return `${API_BASE_URL}${endpoint}`;
+}
+
 export function PasswordReset() {
   const location = useLocation();
   const [isSuccess, setIsSuccess] = useState(false);
@@ -90,19 +94,16 @@ export function PasswordReset() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/auth/reset-password`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            token,
-            new_password: newPassword,
-          }),
-        }
-      );
+      const response = await fetch(buildApiUrl("/api/auth/reset-password"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token,
+          new_password: newPassword,
+        }),
+      });
 
       let data: { success?: boolean; message?: string } | null = null;
       try {

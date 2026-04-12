@@ -15,7 +15,7 @@ function resolveDatabaseUrl() {
     path.resolve(__dirname, "../../pc-hardware-ecommerce-app-server/.env"),
     path.resolve(process.cwd(), "../pc-hardware-ecommerce-app-server/.env"),
     path.resolve(process.cwd(), "../../pc-hardware-ecommerce-app-server/.env"),
-  ];
+  ].filter((value, index, source) => source.indexOf(value) === index);
 
   for (const envPath of candidatePaths) {
     if (!fs.existsSync(envPath)) {
@@ -45,6 +45,20 @@ function resolveDatabaseUrl() {
 
 function webadminDbPlugin() {
   let pool: Pool | null = null;
+  const queryByPath: Record<string, string> = {
+    "/__webadmin/db/categories":
+      'SELECT id, name, slug, parent_id, created_at FROM "Categories" ORDER BY id DESC',
+    "/__webadmin/db/brands":
+      'SELECT id, name, logo_url, created_at FROM "Brands" ORDER BY id DESC',
+    "/__webadmin/db/products":
+      'SELECT id, sku, name, slug, description, category_id, brand_id, specifications, status, created_at, updated_at FROM "Products" ORDER BY id DESC',
+    "/__webadmin/db/product-variants":
+      'SELECT id, product_id, sku, version, color, color_hex, price, compare_at_price, stock, is_active, created_at, updated_at FROM "ProductVariants" ORDER BY id DESC',
+    "/__webadmin/db/product-images":
+      'SELECT id, product_id, variant_id, image_url, is_primary, sort_order FROM "ProductImages" ORDER BY id DESC',
+    "/__webadmin/db/coupons":
+      'SELECT id, code, discount_type, discount_value, min_order_value, max_uses, used_count, expires_at, is_active, created_at FROM "Coupons" ORDER BY id DESC',
+  };
 
   return {
     name: "webadmin-db-fallback",
@@ -67,37 +81,12 @@ function webadminDbPlugin() {
           pool = new Pool({ connectionString: dbUrl });
         }
 
-        let query = "";
-        switch (url) {
-          case "/__webadmin/db/categories":
-            query =
-              'SELECT id, name, slug, parent_id, created_at FROM "Categories" ORDER BY id DESC';
-            break;
-          case "/__webadmin/db/brands":
-            query =
-              'SELECT id, name, logo_url, created_at FROM "Brands" ORDER BY id DESC';
-            break;
-          case "/__webadmin/db/products":
-            query =
-              'SELECT id, sku, name, slug, description, category_id, brand_id, specifications, status, created_at, updated_at FROM "Products" ORDER BY id DESC';
-            break;
-          case "/__webadmin/db/product-variants":
-            query =
-              'SELECT id, product_id, sku, version, color, color_hex, price, compare_at_price, stock, is_active, created_at, updated_at FROM "ProductVariants" ORDER BY id DESC';
-            break;
-          case "/__webadmin/db/product-images":
-            query =
-              'SELECT id, product_id, variant_id, image_url, is_primary, sort_order FROM "ProductImages" ORDER BY id DESC';
-            break;
-          case "/__webadmin/db/coupons":
-            query =
-              'SELECT id, code, discount_type, discount_value, min_order_value, max_uses, used_count, expires_at, is_active, created_at FROM "Coupons" ORDER BY id DESC';
-            break;
-          default:
-            res.statusCode = 404;
-            res.setHeader("Content-Type", "application/json");
-            res.end(JSON.stringify({ message: "Not found" }));
-            return;
+        const query = queryByPath[url];
+        if (!query) {
+          res.statusCode = 404;
+          res.setHeader("Content-Type", "application/json");
+          res.end(JSON.stringify({ message: "Not found" }));
+          return;
         }
 
         try {
