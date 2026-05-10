@@ -6,6 +6,7 @@ import {
   Customer,
   Order,
   OrderItem,
+  ReturnItem,
   Coupon,
   ProductVariant,
   ProductImage,
@@ -20,6 +21,7 @@ import { orderService } from "../services/orderService";
 import { customerService } from "../services/customerService";
 import { couponService } from "../services/couponService";
 import { returnService } from "../services/returnService";
+import type { ReturnRequestUpdate } from "../services/returnService";
 import { systemService } from "../services/systemService";
 
 interface DataContextType {
@@ -77,7 +79,7 @@ interface DataContextType {
   updateStockMovement: (id: number, updates: Partial<StockMovement>) => Promise<void>;
   deleteStockMovement: (id: number) => Promise<void>;
 
-  updateReturnRequest: (id: number, updates: Partial<ReturnRequest>) => Promise<void>;
+  updateReturnRequest: (id: number, updates: ReturnRequestUpdate) => Promise<void>;
   updateSystemConfig: (updates: Partial<SystemConfig>) => Promise<void>;
 }
 
@@ -112,6 +114,61 @@ const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
     shipmentNotification: "Đơn hàng [ORDER_NUMBER] đang được giao bởi [SHIPPER_NAME]",
   },
 };
+
+function normalizeReturnRequests(
+  requests: ReturnRequest[],
+  orderItems: OrderItem[],
+  productVariants: ProductVariant[],
+): ReturnRequest[] {
+  return requests.map((request) => {
+    const rawItems =
+      (request as ReturnRequest & { return_items?: ReturnItem[] }).items ??
+      (request as ReturnRequest & { return_items?: ReturnItem[] }).return_items ??
+      [];
+    const requestOrderItems =
+      (request.order as Order | undefined)?.items ??
+      ((request.order as Order & { order_items?: OrderItem[] } | undefined)
+        ?.order_items ??
+        []);
+
+    const items = rawItems.map((item) => {
+      const embeddedOrderItem = item.order_item;
+      const matchedRequestOrderItem = requestOrderItems.find(
+        (orderItemEntry) => String(orderItemEntry.id) === String(item.order_item_id),
+      );
+      const matchedGlobalOrderItem = orderItems.find(
+        (orderItemEntry) => String(orderItemEntry.id) === String(item.order_item_id),
+      );
+      const orderItem =
+        embeddedOrderItem ?? matchedRequestOrderItem ?? matchedGlobalOrderItem;
+      const matchedVariant =
+        orderItem?.variant_id == null
+          ? undefined
+          : productVariants.find(
+              (variantEntry) =>
+                String(variantEntry.id) === String(orderItem.variant_id),
+            );
+      const variant =
+        orderItem?.variant ??
+        (orderItem as OrderItem & { product_variant?: ProductVariant })?.product_variant ??
+        matchedVariant;
+
+      return {
+        ...item,
+        condition:
+          item.condition ??
+          (item as ReturnItem & { return_condition?: ReturnItem["condition"] })
+            .return_condition,
+        order_item: orderItem ? { ...orderItem, variant } : item.order_item,
+      };
+    });
+
+    return {
+      ...request,
+      items,
+    };
+  });
+}
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const [rawProducts, setRawProducts] = useState<Product[]>([]);
@@ -158,6 +215,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       configRes,
     ] = results;
 
+    let loadedVariants: ProductVariant[] = [];
+
     if (productsRes.status === "fulfilled") {
       const loadedProducts = productsRes.value;
       setRawProducts(loadedProducts);
@@ -168,8 +227,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       );
       const allVariants = variantResults
         .filter((r) => r.status === "fulfilled")
-        .flatMap((r) => (r as PromiseFulfilledResult<any>).value);
-      setProductVariants(allVariants);
+        .flatMap((r) => (r as PromiseFulfilledResult<ProductVariant[]>).value)
+        .map((variant) => ({
+          ...variant,
+          product: loadedProducts.find((product) => product.id === variant.product_id),
+        }));
+      loadedVariants = allVariants;
+      setProductVariants(loadedVariants);
     } else {
       setProductFetchError(productsRes.reason?.message ?? "Không thể tải sản phẩm");
     }
@@ -187,7 +251,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     if (couponsRes.status === "fulfilled") setCoupons(couponsRes.value);
     if (imagesRes.status === "fulfilled") setProductImages(imagesRes.value);
     if (stockRes.status === "fulfilled") setStockMovements(stockRes.value);
-    if (returnsRes.status === "fulfilled") setReturnRequests(returnsRes.value);
+    if (returnsRes.status === "fulfilled") {
+      setReturnRequests(
+        normalizeReturnRequests(
+          returnsRes.value,
+          itemsRes.status === "fulfilled" ? itemsRes.value : [],
+          loadedVariants,
+        ),
+      );
+    }
     if (configRes.status === "fulfilled" && configRes.value) setSystemConfig(configRes.value);
   }, []);
 
@@ -339,7 +411,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const deleteStockMovement = (id: number) =>
     withRefresh(() => productService.removeStockMovement(id));
 
-  const updateReturnRequest = (id: number, updates: Partial<ReturnRequest>) =>
+  const updateReturnRequest = (id: number, updates: ReturnRequestUpdate) =>
     withRefresh(() => returnService.update(id, updates));
 
   const updateSystemConfig = async (updates: Partial<SystemConfig>) => {

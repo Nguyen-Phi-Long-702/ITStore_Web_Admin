@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import {
   ArrowLeft,
@@ -41,10 +41,12 @@ import {
   TableRow,
 } from "../../components/ui/table";
 import { formatCurrency, formatDate } from "../../utils/statusUtils";
-import { ReturnStatus } from "../../types";
+import { Order, ReturnStatus } from "../../types";
 import { ReturnConditionBadge } from "../../components/returns/ReturnConditionBadge";
 import { toast } from "sonner";
 import { useData } from "../../contexts/DataContext";
+import { orderService } from "../../services/orderService";
+import { returnService } from "../../services/returnService";
 
 const returnStatusConfig: Record<
   ReturnStatus,
@@ -76,8 +78,100 @@ const returnStatusConfig: Record<
 export function ReturnDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { returnRequests, updateReturnRequest } = useData();
-  const returnRequest = returnRequests.find((r) => r.id.toString() === id);
+  const { returnRequests, updateReturnRequest, orderItems, productVariants, orders } = useData();
+  const listReturnRequest = returnRequests.find((r) => r.id.toString() === id);
+  const [returnRequest, setReturnRequest] = useState(listReturnRequest);
+  const [orderDetail, setOrderDetail] = useState<Order | undefined>(undefined);
+
+  useEffect(() => {
+    if (!id) return;
+
+    let isMounted = true;
+
+    const loadReturnDetail = async () => {
+      try {
+        const detail = await returnService.getDetail(parseInt(id, 10));
+        if (isMounted) {
+          setReturnRequest(detail);
+        }
+      } catch {
+        if (isMounted) {
+          setReturnRequest(listReturnRequest);
+        }
+      }
+    };
+
+    loadReturnDetail();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id, listReturnRequest]);
+
+  useEffect(() => {
+    const orderId = returnRequest?.order_id;
+    if (!orderId) return;
+
+    let isMounted = true;
+
+    const loadOrderDetail = async () => {
+      try {
+        const detail = await orderService.getDetail(orderId);
+        if (isMounted) {
+          setOrderDetail(detail);
+        }
+      } catch {
+        if (isMounted) {
+          setOrderDetail(undefined);
+        }
+      }
+    };
+
+    loadOrderDetail();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [returnRequest?.order_id]);
+
+  const resolvedOrder =
+    orderDetail ??
+    orders.find((order) => String(order.id) === String(returnRequest?.order_id)) ??
+    returnRequest?.order;
+  const resolvedOrderItems =
+    resolvedOrder?.items ??
+    ((resolvedOrder as typeof resolvedOrder & { order_items?: typeof orderItems })
+      ?.order_items ??
+      []);
+
+  const returnItems = (returnRequest?.items ?? returnRequest?.return_items ?? []).map((item) => {
+    const resolvedOrderItem =
+      item.order_item ??
+      resolvedOrderItems.find(
+        (orderItem) => String(orderItem.id) === String(item.order_item_id),
+      ) ??
+      orderItems.find(
+        (orderItem) => String(orderItem.id) === String(item.order_item_id),
+      );
+    const resolvedVariant =
+      resolvedOrderItem?.variant ??
+      (resolvedOrderItem as typeof resolvedOrderItem & { product_variant?: typeof productVariants[number] })
+        ?.product_variant ??
+      productVariants.find(
+        (variant) => String(variant.id) === String(resolvedOrderItem?.variant_id),
+      );
+
+    return {
+      ...item,
+      condition:
+        item.condition ??
+        (item as typeof item & { return_condition?: typeof item.condition })
+          .return_condition,
+      order_item: resolvedOrderItem
+        ? { ...resolvedOrderItem, variant: resolvedVariant }
+        : item.order_item,
+    };
+  });
 
   const [status, setStatus] = useState(returnRequest?.status || "pending");
   const [adminNote, setAdminNote] = useState(returnRequest?.admin_note || "");
@@ -293,8 +387,46 @@ export function ReturnDetail() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {returnRequest.items?.map((item) => (
+                  {returnItems.map((item) => (
                     <TableRow key={item.id}>
+                      {(() => {
+                        const orderItem =
+                          item.order_item ??
+                          resolvedOrderItems.find(
+                            (orderLine) =>
+                              String(orderLine.id) === String(item.order_item_id),
+                          );
+                        const variant =
+                          orderItem?.variant ??
+                          productVariants.find(
+                            (variantEntry) =>
+                              String(variantEntry.id) === String(orderItem?.variant_id),
+                          );
+                        const productName =
+                          item.name ?? variant?.product?.name ?? orderItem?.variant?.product?.name;
+                        const sku =
+                          item.variant?.sku ??
+                          item.variant?.version ??
+                          variant?.sku ??
+                          variant?.version ??
+                          orderItem?.variant?.sku ??
+                          orderItem?.variant?.version;
+                        const fallbackUnitPrice =
+                          (returnItems.length === 1 && returnRequest?.refund_amount)
+                            ? Number(returnRequest.refund_amount)
+                            : 0;
+                        const unitPrice = Number(
+                          orderItem?.unit_price ?? item.unit_price ?? fallbackUnitPrice ?? 0,
+                        );
+                        const returnQuantity = Number(item.quantity ?? orderItem?.quantity ?? 0);
+                        const orderQuantity = Number(orderItem?.quantity ?? returnQuantity);
+                        const condition =
+                          item.condition ??
+                          (item as typeof item & { return_condition?: typeof item.condition })
+                            ?.return_condition;
+
+                        return (
+                          <>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
@@ -302,43 +434,44 @@ export function ReturnDetail() {
                           </div>
                           <div>
                             <p className="font-medium">
-                              {item.order_item?.variant?.product?.name}
+                              {productName || "Sản phẩm không xác định"}
                             </p>
                             <p className="text-sm text-gray-600">
-                              {item.order_item?.variant?.sku}
+                              {sku || "-"}
                             </p>
-                            {item.order_item?.variant?.color && (
+                            {variant?.color && (
                               <p className="text-xs text-gray-500">
-                                Màu: {item.order_item.variant.color}
+                                Màu: {variant.color}
                               </p>
                             )}
-                            {item.order_item?.variant?.version && (
+                            {variant?.version && (
                               <p className="text-xs text-gray-500">
-                                Phiên bản: {item.order_item.variant.version}
+                                Phiên bản: {variant.version}
                               </p>
                             )}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        {formatCurrency(item.order_item?.unit_price || 0)}
+                        {formatCurrency(unitPrice)}
                       </TableCell>
                       <TableCell className="text-right">
                         <div>
-                          <p className="font-medium">{item.quantity}</p>
+                          <p className="font-medium">{returnQuantity}</p>
                           <p className="text-xs text-gray-500">
-                            / {item.order_item?.quantity}
+                            / {orderQuantity}
                           </p>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <ReturnConditionBadge condition={item.condition} />
+                        <ReturnConditionBadge condition={condition} />
                       </TableCell>
                       <TableCell className="text-right font-medium">
-                        {formatCurrency(
-                          (item.order_item?.unit_price || 0) * item.quantity,
-                        )}
+                        {formatCurrency(unitPrice * returnQuantity)}
                       </TableCell>
+                          </>
+                        );
+                      })()}
                     </TableRow>
                   ))}
                 </TableBody>
@@ -349,10 +482,24 @@ export function ReturnDetail() {
                   <span>Tổng giá trị trả hàng:</span>
                   <span className="text-red-600">
                     {formatCurrency(
-                      returnRequest.items?.reduce(
-                        (sum, item) =>
-                          sum +
-                          (item.order_item?.unit_price || 0) * item.quantity,
+                      returnItems.reduce(
+                        (sum, item) => {
+                          const orderItem =
+                            item.order_item ??
+                            resolvedOrderItems.find(
+                              (orderLine) =>
+                                String(orderLine.id) === String(item.order_item_id),
+                            );
+                          const fallbackUnitPrice =
+                            returnItems.length === 1 && returnRequest?.refund_amount
+                              ? Number(returnRequest.refund_amount)
+                              : 0;
+                          const unitPrice = Number(
+                            orderItem?.unit_price ?? item.unit_price ?? fallbackUnitPrice ?? 0,
+                          );
+                          const returnQuantity = Number(item.quantity ?? orderItem?.quantity ?? 0);
+                          return sum + unitPrice * returnQuantity;
+                        },
                         0,
                       ) || 0,
                     )}

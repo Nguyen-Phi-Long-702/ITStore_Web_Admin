@@ -142,7 +142,7 @@ export function OrderDetail() {
   };
 
   const handlePrint = () => {
-    toast.info("Chức năng in phiếu giao hàng");
+    window.print();
   };
 
   const orderTimeline = [
@@ -187,8 +187,20 @@ export function OrderDetail() {
     : "Chưa có địa chỉ";
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <>
+      <style>
+        {`
+          @media print {
+            @page { size: A6 portrait; margin: 3mm; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white; font-size: 11px; }
+            aside, header { display: none !important; }
+            main { overflow: visible !important; padding: 0 !important; }
+            #root, .h-screen, .flex-1 { height: auto !important; overflow: visible !important; display: block !important; }
+          }
+        `}
+      </style>
+      <div className="space-y-6 print:hidden">
+        <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -607,6 +619,108 @@ export function OrderDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+
+      {/* Print View Optimized for A6 */}
+      <div className="hidden print:block p-2 bg-white text-black font-sans max-w-[105mm] mx-auto text-xs">
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex-1 flex justify-start">
+            <div className="flex items-center gap-1">
+              <div className="w-8 h-8 bg-[#E0872B] rounded flex items-center justify-center text-white font-bold text-base">
+                I
+              </div>
+              <span className="font-bold text-base whitespace-nowrap">IT Store</span>
+            </div>
+          </div>
+          <div className="text-center flex-[2]">
+            <h1 className="text-lg font-bold uppercase mb-1 whitespace-nowrap">Phiếu Giao Hàng</h1>
+            <p className="text-[10px] text-gray-600">Mã đơn hàng: <span className="font-medium text-black">{orderNumber}</span></p>
+            <p className="text-[10px] text-gray-600">Ngày đặt: <span className="font-medium text-black">{formatDate(order.created_at)}</span></p>
+          </div>
+          <div className="flex-1"></div>
+        </div>
+        
+        <div className="mb-4 border-b border-dashed border-gray-300 pb-3">
+          <h2 className="font-bold text-sm mb-2 text-gray-800">Thông tin người nhận</h2>
+          <div className="space-y-1 text-[11px]">
+            <p className="flex"><span className="text-gray-600 w-16 flex-shrink-0">Khách hàng:</span> <span className="font-medium">{order.user?.full_name}</span></p>
+            <p className="flex"><span className="text-gray-600 w-16 flex-shrink-0">Địa chỉ:</span> <span className="font-medium">{shippingAddress}</span></p>
+            {order.note && <p className="flex"><span className="text-gray-600 w-16 flex-shrink-0">Ghi chú:</span> <span className="font-medium">{order.note}</span></p>}
+            <p className="flex"><span className="text-gray-600 w-16 flex-shrink-0">Thanh toán:</span> <span className="font-medium whitespace-nowrap">{paymentMethodLabels[order.payment_method]}</span></p>
+          </div>
+        </div>
+
+        <table className="w-full mb-4 border-collapse text-[10px]">
+          <thead>
+            <tr className="border-b border-gray-800">
+              <th className="text-left py-1 font-bold">Sản phẩm</th>
+              <th className="text-center py-1 font-bold w-6">SL</th>
+              <th className="text-right py-1 font-bold w-14">Đơn giá</th>
+              <th className="text-right py-1 font-bold w-16">Thành tiền</th>
+            </tr>
+          </thead>
+          <tbody>
+            {displayOrder?.items?.map((item) => (
+              <tr key={item.id} className="border-b border-dashed border-gray-200">
+                <td className="py-2 pr-2">
+                  <p className="font-medium text-gray-800 line-clamp-2">{item.variant?.product?.name}</p>
+                  <p className="text-[9px] text-gray-500 mt-0.5">SKU: {item.variant?.sku}</p>
+                </td>
+                <td className="text-center py-2 font-medium">{item.quantity}</td>
+                <td className="text-right py-2">{formatCurrency(item.unit_price)}</td>
+                <td className="text-right py-2 font-medium">{formatCurrency(item.subtotal)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <div className="flex justify-end pt-1 mb-4 text-[11px]">
+          <div className="w-2/3 space-y-1">
+            <div className="flex justify-between text-gray-600">
+              <span>Tạm tính:</span>
+              <span className="font-medium text-black">{formatCurrency(order.subtotal)}</span>
+            </div>
+            <div className="flex justify-between text-gray-600">
+              <span>Phí vận chuyển:</span>
+              <span className="font-medium text-black">{formatCurrency(order.shipping_fee)}</span>
+            </div>
+            {order.discount_amount > 0 && (
+              <div className="flex justify-between text-gray-600">
+                <span>Giảm giá:</span>
+                <span className="font-medium text-red-600">-{formatCurrency(order.discount_amount)}</span>
+              </div>
+            )}
+            <div className="flex justify-between font-bold text-[13px] border-t border-gray-800 pt-1.5 mt-1.5">
+              <span>Tổng cộng:</span>
+              <span>{formatCurrency(order.total)}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 flex gap-2">
+          <div className="w-1/2">
+            <div className="border border-gray-300 rounded p-2 h-full bg-gray-50">
+              <p className="font-bold text-gray-800 text-[10px] mb-1">Chỉ dẫn giao hàng:</p>
+              <ul className="text-[9px] text-gray-600 list-disc pl-3 space-y-0.5">
+                <li>Cho khách xem hàng và đồng kiểm.</li>
+                <li>Chuyển hoàn sau 3 lần phát.</li>
+                <li>Lưu kho tối đa 5 ngày.</li>
+                <li>Hàng dễ vỡ, xin nhẹ tay.</li>
+              </ul>
+            </div>
+          </div>
+          <div className="w-1/2">
+            <div className="border-2 border-dashed border-gray-400 rounded-lg p-2 flex flex-col items-center min-h-[90px]">
+              <p className="font-bold text-gray-800 text-[11px] uppercase mb-1 whitespace-nowrap">Chữ ký người nhận</p>
+              <p className="text-[8px] text-gray-500 mb-2 whitespace-nowrap">Xác nhận hàng nguyên vẹn, không móp/méo, bể vỡ</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="text-center mt-6 pt-2 border-t border-gray-200 text-[9px] text-gray-500 italic">
+          Cảm ơn quý khách đã mua sắm tại cửa hàng!
+        </div>
+      </div>
+    </>
   );
 }
