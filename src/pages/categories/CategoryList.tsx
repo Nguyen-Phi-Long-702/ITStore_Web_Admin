@@ -9,6 +9,14 @@ import {
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
+import { Textarea } from "../../components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
 import {
   Table,
   TableBody,
@@ -53,6 +61,8 @@ export function CategoryList() {
   );
   const [formData, setFormData] = useState({
     name: "",
+    description: "",
+    parent_id: undefined as number | undefined,
   });
 
   const getProductCount = (categoryId: number) => {
@@ -69,7 +79,7 @@ export function CategoryList() {
 
   const handleAdd = () => {
     setSelectedCategory(null);
-    setFormData({ name: "" });
+    setFormData({ name: "", description: "", parent_id: undefined });
     setDialogOpen(true);
   };
 
@@ -77,6 +87,8 @@ export function CategoryList() {
     setSelectedCategory(category);
     setFormData({
       name: category.name,
+      description: category.description || "",
+      parent_id: category.parent_id,
     });
     setDialogOpen(true);
   };
@@ -99,18 +111,22 @@ export function CategoryList() {
         await updateCategory(selectedCategory.id, {
           name: formData.name,
           slug: slug,
+          description: formData.description,
+          parent_id: formData.parent_id,
         });
         toast.success(`Đã cập nhật danh mục "${formData.name}"`);
       } else {
         await addCategory({
           name: formData.name,
           slug: slug,
+          description: formData.description,
+          parent_id: formData.parent_id,
         });
         toast.success(`Đã thêm danh mục "${formData.name}"`);
       }
 
       setDialogOpen(false);
-      setFormData({ name: "" });
+      setFormData({ name: "", description: "", parent_id: undefined });
     } catch {
       toast.error("Không thể lưu dữ liệu lên backend");
     }
@@ -300,6 +316,50 @@ export function CategoryList() {
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
+                }
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="parent_category">
+                Là danh mục con của (Không bắt buộc)
+              </Label>
+              <Select
+                value={formData.parent_id?.toString() || "none"}
+                onValueChange={(value) =>
+                  setFormData({
+                    ...formData,
+                    parent_id: value === "none" ? undefined : parseInt(value),
+                  })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn danh mục cha" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Không có danh mục cha</SelectItem>
+                  {categories
+                    .filter(c => c.id !== selectedCategory?.id)
+                    .map((c) => (
+                      <SelectItem key={c.id} value={c.id.toString()}>
+                        {c.name}
+                      </SelectItem>
+                    ))
+                  }
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="description">
+                Mô tả danh mục
+              </Label>
+              <Textarea
+                id="description"
+                placeholder="Nhập mô tả danh mục"
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
                 }
               />
             </div>

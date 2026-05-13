@@ -13,6 +13,7 @@ function flattenTree(nodes: unknown[]): Category[] {
         id: Number(node.id),
         name: String(node.name ?? ""),
         slug: String(node.slug ?? ""),
+        description: node.description ? String(node.description) : undefined,
         parent_id: node.parent_id != null ? Number(node.parent_id) : undefined,
         category_code: typeof node.category_code === "string" ? node.category_code : undefined,
         created_at: String(node.created_at ?? ""),

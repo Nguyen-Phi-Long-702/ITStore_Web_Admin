@@ -106,6 +106,7 @@ export function ProductForm() {
     brand: existingProduct?.brand?.name || "",
     status: existingProduct?.status || "available",
     description: existingProduct?.description || "",
+    specifications: typeof existingProduct?.specifications === "string" ? existingProduct.specifications : (existingProduct?.specifications ? JSON.stringify(existingProduct.specifications) : ""),
   });
 
   const [images, setImages] = useState<ImageEntry[]>([]);
@@ -136,7 +137,11 @@ export function ProductForm() {
     let cancelled = false;
     setIsLoadingDetail(true);
 
-    productService.getDetail(existingProduct.slug)
+    const loadDetail = isEdit && existingProduct 
+      ? productService.getAdminDetail(existingProduct.id, existingProduct.slug, existingProduct.status)
+      : productService.getDetail(existingProduct!.slug);
+
+    loadDetail
       .then((detail) => {
         if (cancelled) return;
 
@@ -146,6 +151,7 @@ export function ProductForm() {
           brand: detail.brand?.name || "",
           status: detail.status as ProductStatus,
           description: detail.description || "",
+          specifications: typeof detail.specifications === "string" ? detail.specifications : (detail.specifications ? JSON.stringify(detail.specifications) : ""),
         });
 
         if (detail.variants.length > 0) {
@@ -184,8 +190,43 @@ export function ProductForm() {
           category: existingProduct.category?.name || "",
           brand: existingProduct.brand?.name || "",
           status: existingProduct.status,
-          description: "",
+          description: existingProduct.description || "",
+          specifications: typeof existingProduct.specifications === "string" ? existingProduct.specifications : (existingProduct.specifications ? JSON.stringify(existingProduct.specifications) : ""),
         });
+
+        const prodVariants = productVariants.filter((v) => v.product_id === existingProduct.id);
+        if (prodVariants.length > 0) {
+          setVariants(
+            prodVariants.map((v) => {
+              const vImg = productImages.find((img) => img.variant_id === v.id);
+              return {
+                id: v.id,
+                sku: v.sku,
+                version: v.version || "",
+                color: v.color || "",
+                price: v.price.toString(),
+                compare_at_price: v.compare_at_price?.toString() || "",
+                stock: v.stock.toString(),
+                is_active: v.is_active !== false,
+                imageUrl: vImg ? vImg.image_url : "",
+                imageFile: undefined,
+              };
+            })
+          );
+        }
+
+        setImages(
+          productImages
+            .filter((img) => img.product_id === existingProduct.id && !img.variant_id)
+            .sort((a, b) => a.sort_order - b.sort_order)
+            .map((img) => ({
+              id: img.id,
+              url: img.image_url,
+              is_primary: img.is_primary,
+            }))
+        );
+
+        setHydratedProductId(existingProduct.id);
       })
       .finally(() => {
         if (!cancelled) setIsLoadingDetail(false);
@@ -380,6 +421,28 @@ export function ProductForm() {
       }
     }
 
+    const variantsToCheck = isEdit ? variantsForEditResolved : variants;
+    const skuSet = new Set<string>();
+    const versionColorSet = new Set<string>();
+
+    for (const v of variantsToCheck) {
+      const sku = (v.sku || "").trim().toLowerCase();
+      const version = (v.version || "").trim().toLowerCase();
+      const color = (v.color || "").trim().toLowerCase();
+      const versionColorKey = `${version}-${color}`;
+
+      if (skuSet.has(sku)) {
+        toast.error("Mã SKU của các biến thể không được trùng nhau");
+        return;
+      }
+      skuSet.add(sku);
+
+      if (versionColorSet.has(versionColorKey)) {
+        toast.error("Phiên bản và màu sắc của các biến thể không được trùng nhau");
+        return;
+      }
+      versionColorSet.add(versionColorKey);
+    }
 
     let createdProductId: number | null = null;
 
@@ -390,8 +453,7 @@ export function ProductForm() {
           category_id: selectedCategory.id,
           brand_id: selectedBrand.id,
           status: formData.status as ProductStatus,
-          description: formData.description,
-        });
+          description: formData.description,          specifications: formData.specifications,        });
 
         if (removedVariantIds.length > 0) {
           await Promise.all(
@@ -481,6 +543,7 @@ export function ProductForm() {
           brand_id: selectedBrand.id,
           status: formData.status as ProductStatus,
           description: formData.description,
+          specifications: formData.specifications,
         }).then((p) => p.id);
 
         await Promise.all(
@@ -657,6 +720,19 @@ export function ProductForm() {
                       }
                       placeholder="Mô tả chi tiết sản phẩm..."
                       rows={4}
+                    />
+                  </div>
+                  
+                  <div className="col-span-2">
+                    <Label htmlFor="specifications">Thông số kỹ thuật (Không bắt buộc)</Label>
+                    <Textarea
+                      id="specifications"
+                      value={formData.specifications}
+                      onChange={(e) =>
+                        handleChange("specifications", e.target.value)
+                      }
+                      placeholder="Nhập thông số kỹ thuật (vd: JSON hoặc văn bản)..."
+                      rows={3}
                     />
                   </div>
                 </div>
@@ -937,3 +1013,5 @@ export function ProductForm() {
     </div>
   );
 }
+
+

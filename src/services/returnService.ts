@@ -15,7 +15,7 @@ export const returnService = {
 
   async getDetail(id: number): Promise<ReturnRequest> {
     const res = await api.get(`/api/admin/return-requests/${id}`);
-    return (res.data as any).data || res.data as ReturnRequest;
+    return ((res as any).data as any)?.data || (res as any).data as ReturnRequest;
   },
 
   async update(id: number, data: ReturnRequestUpdate): Promise<void> {

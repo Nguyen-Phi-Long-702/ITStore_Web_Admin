@@ -297,7 +297,7 @@ export function Reports() {
         return;
       }
 
-      const items = detailedOrders[order.id]?.items || [];
+      const items = detailedOrders[order.id]?.items || (detailedOrders[order.id] as any)?.order_items || [];
       items.forEach((item) => {
         const variant = productVariants.find((v) => v.id === item.variant_id);
         const product = variant
@@ -346,7 +346,7 @@ export function Reports() {
           return;
         }
 
-        const items = detailedOrders[order.id]?.items || [];
+        const items = detailedOrders[order.id]?.items || (detailedOrders[order.id] as any)?.order_items || [];
         items.forEach((item) => {
           const variant = productVariants.find((v) => v.id === item.variant_id);
           if (!variant) {

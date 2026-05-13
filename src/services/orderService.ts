@@ -9,7 +9,8 @@ export const orderService = {
 
   async getDetail(id: number): Promise<Order> {
     const res = await api.get(`/api/admin/orders/${id}`);
-    return unwrapData<Order>(res);
+    const unwrapped = unwrapData<any>(res);
+    return unwrapped?.data || unwrapped;
   },
 
   async getItems(): Promise<OrderItem[]> {

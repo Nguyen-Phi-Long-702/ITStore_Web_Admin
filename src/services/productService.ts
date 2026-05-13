@@ -8,6 +8,7 @@ export type ProductDetail = {
   name: string;
   slug: string;
   description: string | null;
+  specifications?: any;
   status: string;
   category: { id: number; name: string; slug: string };
   brand: { id: number; name: string; logo_url: string | null };
@@ -36,6 +37,30 @@ export const productService = {
     return unwrapData<ProductDetail>(res);
   },
 
+  async getAdminDetail(id: number, slug: string, originalStatus: string): Promise<ProductDetail> {
+    try {
+      const res = await api.get(`/api/admin/products/${id}`);
+      const unwrapped = unwrapData<any>(res);
+      if (unwrapped && (unwrapped.data?.id || unwrapped.id)) {
+        return unwrapped?.data || unwrapped;
+      }
+      throw new Error("Fallback required");
+    } catch {
+      if (originalStatus === "available") {
+        return this.getDetail(slug);
+      }
+      await this.updateStatus(id, "available");
+      try {
+        const detail = await this.getDetail(slug);
+        await this.updateStatus(id, originalStatus);
+        return detail;
+      } catch (e) {
+        await this.updateStatus(id, originalStatus);
+        throw e;
+      }
+    }
+  },
+
   async create(
     data: Omit<Product, "id" | "created_at" | "updated_at" | "slug"> & { slug?: string },
   ): Promise<Product> {
@@ -45,6 +70,7 @@ export const productService = {
     form.append("category_id", String(data.category_id));
     form.append("brand_id", String(data.brand_id));
     if (data.description) form.append("description", data.description);
+    if (data.specifications) form.append("specifications", typeof data.specifications === "string" ? data.specifications : JSON.stringify(data.specifications));
     if (data.status) form.append("status", data.status);
     const slug = data.slug || generateSlug(data.name);
     form.append("slug", slug);

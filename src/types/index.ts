@@ -220,6 +220,7 @@ export interface ReturnRequest {
   order?: Order;
   user?: User;
   items?: ReturnItem[];
+  return_items?: ReturnItem[];
   images?: ReturnImage[];
 }
 
