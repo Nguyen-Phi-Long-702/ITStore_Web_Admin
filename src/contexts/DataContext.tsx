@@ -67,7 +67,7 @@ interface DataContextType {
   addProductVariant: (
     variant: Omit<ProductVariant, "id" | "created_at"> & { variant_image_file?: File },
   ) => Promise<void>;
-  updateProductVariant: (id: number, updates: Partial<ProductVariant>) => Promise<void>;
+  updateProductVariant: (id: number, updates: Partial<ProductVariant> & { variant_image_file?: File }) => Promise<void>;
   deleteProductVariant: (id: number) => Promise<void>;
 
   addProductImage: (image: Omit<ProductImage, "id"> & { image_file?: File }) => Promise<void>;
@@ -248,6 +248,24 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     if (customersRes.status === "fulfilled") setRawCustomers(customersRes.value);
     if (ordersRes.status === "fulfilled") setRawOrders(ordersRes.value);
     if (itemsRes.status === "fulfilled") setOrderItems(itemsRes.value);
+    if (ordersRes.status === "fulfilled" && itemsRes.status !== "fulfilled") {
+      try {
+        const detailResults = await Promise.allSettled(
+          ordersRes.value.map((o: Order) => orderService.getDetail(o.id)),
+        );
+        const enrichedOrders = ordersRes.value.map((o: Order, idx: number) => {
+          const dr = detailResults[idx] as PromiseSettledResult<any>;
+          if (dr && dr.status === "fulfilled" && dr.value) {
+            const detail = dr.value;
+            const itemsFromDetail = (detail as any).items ?? (detail as any).order_items ?? [];
+            return { ...o, ...(itemsFromDetail.length ? { items: itemsFromDetail } : {}) };
+          }
+          return o;
+        });
+        setRawOrders(enrichedOrders);
+      } catch (e) {
+      }
+    }
     if (couponsRes.status === "fulfilled") setCoupons(couponsRes.value);
     if (imagesRes.status === "fulfilled") setProductImages(imagesRes.value);
     if (stockRes.status === "fulfilled") setStockMovements(stockRes.value);
@@ -292,12 +310,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const orders: Order[] = useMemo(
     () =>
       rawOrders.map((o) => {
-        const items = (
-          o.items?.length ? o.items : orderItems.filter((i) => i.order_id === o.id)
-        ).map((item) => {
-          const variant = productVariants.find((v) => v.id === item.variant_id);
-          return { ...item, variant };
-        });
+        const rawItemsFromOrder =
+              (o as any).items ?? (o as any).order_items ?? (o as any).orderItems ?? [];
+        const itemsSource = (Array.isArray(rawItemsFromOrder) && rawItemsFromOrder.length)
+          ? rawItemsFromOrder
+          : orderItems.filter((i) => String(i.order_id) === String(o.id));
+
+        const items = itemsSource.map((item) => {
+              const variant = productVariants.find((v) => String(v.id) === String(item.variant_id));
+              return { ...item, variant };
+            });
         return {
           ...o,
           user: rawCustomers.find((c) => c.id === o.user_id) ?? o.user,
@@ -380,7 +402,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     data: Omit<ProductVariant, "id" | "created_at"> & { variant_image_file?: File },
   ) => withRefresh(() => productService.createVariant(data.product_id, data));
 
-  const updateProductVariant = (id: number, updates: Partial<ProductVariant>) =>
+  const updateProductVariant = (id: number, updates: Partial<ProductVariant> & { variant_image_file?: File }) =>
     withRefresh(() => productService.updateVariant(id, updates));
 
   const deleteProductVariant = (id: number) =>

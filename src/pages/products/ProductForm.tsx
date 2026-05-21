@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "../../components/ui/select";
 import { toast } from "sonner";
-import { ProductStatus } from "../../types";
+import { ProductStatus, ProductVariant } from "../../types";
 import { useData } from "../../contexts/DataContext";
 import { productService } from "../../services/productService";
 
@@ -39,6 +39,12 @@ function buildRequestUrl(endpoint: string): string {
   return endpoint.startsWith("/__webadmin/")
     ? endpoint
     : `${API_BASE_URL}${endpoint}`;
+}
+
+function buildImageUrl(url: string | null): string {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  return buildRequestUrl(url);
 }
 
 type ImageEntry = {
@@ -165,7 +171,7 @@ export function ProductForm() {
               compare_at_price: v.compare_at_price?.toString() || "",
               stock: v.stock.toString(),
               is_active: true,
-              imageUrl: v.variant_image || "",
+              imageUrl: buildImageUrl(v.variant_image),
               imageFile: undefined,
             }))
           );
@@ -208,7 +214,7 @@ export function ProductForm() {
                 compare_at_price: v.compare_at_price?.toString() || "",
                 stock: v.stock.toString(),
                 is_active: v.is_active !== false,
-                imageUrl: vImg ? vImg.image_url : "",
+                imageUrl: vImg ? buildImageUrl(vImg.image_url) : "",
                 imageFile: undefined,
               };
             })
@@ -465,7 +471,25 @@ export function ProductForm() {
 
         await Promise.all(
           variantsForEditResolved.map((v) => {
-            const variantData = {
+            if (v.id) {
+              const variantData: Partial<ProductVariant> & { variant_image_file?: File } = {
+                sku: v.sku,
+                version: v.version || undefined,
+                color: v.color || undefined,
+                price: parseFloat(v.price),
+                compare_at_price: v.compare_at_price
+                  ? parseFloat(v.compare_at_price)
+                  : undefined,
+                stock: parseInt(v.stock),
+                is_active: v.is_active,
+              };
+              if (v.imageFile) {
+                variantData.variant_image_file = v.imageFile;
+              }
+              return updateProductVariant(v.id, variantData);
+            }
+            return addProductVariant({
+              product_id: existingProduct.id,
               sku: v.sku,
               version: v.version || undefined,
               color: v.color || undefined,
@@ -475,13 +499,6 @@ export function ProductForm() {
                 : undefined,
               stock: parseInt(v.stock),
               is_active: v.is_active,
-            };
-            if (v.id) {
-              return updateProductVariant(v.id, variantData);
-            }
-            return addProductVariant({
-              product_id: existingProduct.id,
-              ...variantData,
               variant_image_file: v.imageFile,
             });
           }),

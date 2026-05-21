@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Search, User, XCircle, CheckCircle } from "lucide-react";
 import {
   Card,
@@ -33,13 +33,31 @@ import { toast } from "sonner";
 import { useData } from "../../contexts/DataContext";
 
 export function CustomerList() {
-  const { customers, updateCustomer } = useData();
+  const { customers, orders, updateCustomer } = useData();
   const [searchTerm, setSearchTerm] = useState("");
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     null,
   );
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  const customerStats = useMemo(() => {
+    const stats: Record<number, { totalOrders: number; totalSpent: number }> = {};
+    customers.forEach((c) => {
+      let totalOrders = 0;
+      let totalSpent = 0;
+      orders.forEach((o) => {
+        if (o.user_id === c.id || o.user?.id === c.id) {
+          if (o.payment_status === "paid" || o.order_status === "delivered") {
+            totalOrders++;
+            totalSpent += o.total;
+          }
+        }
+      });
+      stats[c.id] = { totalOrders, totalSpent };
+    });
+    return stats;
+  }, [customers, orders]);
 
   const filteredCustomers = customers.filter(
     (customer) =>
@@ -202,10 +220,10 @@ export function CustomerList() {
                   <TableCell>{customer.phone_number || "-"}</TableCell>
                   <TableCell>{customer.email}</TableCell>
                   <TableCell className="text-right">
-                    {customer.totalOrders ?? 0}
+                    {customerStats[customer.id]?.totalOrders || 0}
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    {formatCurrency(customer.totalSpent ?? 0)}
+                    {formatCurrency(customerStats[customer.id]?.totalSpent || 0)}
                   </TableCell>
                   <TableCell>
                     <Badge

@@ -2,7 +2,7 @@ import { api, unwrapList } from "../lib/api";
 import { ReturnRequest } from "../types";
 
 export type ReturnRequestUpdate =
-  | { status: "approved"; admin_note?: string; refund_amount: number }
+  | { status: "approved"; admin_note?: string }
   | { status: "rejected"; admin_note: string }
   | { status: "received" }
   | { status: "completed" };
@@ -22,7 +22,6 @@ export const returnService = {
     if (data.status === "approved") {
       await api.patch(`/api/admin/return-requests/${id}/approve`, {
         admin_note: data.admin_note,
-        refund_amount: data.refund_amount,
       });
       return;
     }
@@ -39,6 +38,6 @@ export const returnService = {
       return;
     }
 
-    await api.patch(`/api/admin/return-requests/${id}/complete`, {});
+    await api.patch(`/api/admin/return-requests/${id}/refund`, {});
   },
 };

@@ -186,7 +186,10 @@ export function Reports() {
             if (!isRevenueOrder(order.payment_status, order.order_status)) {
                 return;
             }
-            const items = detailedOrders[order.id]?.items || [];
+            let items = order.items || detailedOrders[order.id]?.items || detailedOrders[order.id]?.order_items || [];
+            if (!Array.isArray(items)) {
+                items = [];
+            }
             items.forEach((item) => {
                 const variant = productVariants.find((v) => v.id === item.variant_id);
                 const product = variant
@@ -225,7 +228,10 @@ export function Reports() {
                 if (!isRevenueOrder(order.payment_status, order.order_status)) {
                     return;
                 }
-                const items = detailedOrders[order.id]?.items || [];
+                let items = order.items || detailedOrders[order.id]?.items || detailedOrders[order.id]?.order_items || [];
+                if (!Array.isArray(items)) {
+                    items = [];
+                }
                 items.forEach((item) => {
                     const variant = productVariants.find((v) => v.id === item.variant_id);
                     if (!variant) {

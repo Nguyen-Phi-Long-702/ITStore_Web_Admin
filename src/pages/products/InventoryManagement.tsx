@@ -135,8 +135,16 @@ export function InventoryManagement() {
                   <div key={product.id} className="bg-white p-3 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
-                          <Package className="h-6 w-6 text-gray-400" />
+                        <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center overflow-hidden flex-shrink-0">
+                          {product.primary_image ? (
+                            <img 
+                              src={product.primary_image} 
+                              alt={product.name} 
+                              className="w-full h-full object-cover" 
+                            />
+                          ) : (
+                            <Package className="h-6 w-6 text-gray-400" />
+                          )}
                         </div>
                         <div>
                           <p className="font-medium">{product.name}</p>
@@ -237,8 +245,16 @@ export function InventoryManagement() {
                       {isFirstVariant && (
                         <TableCell rowSpan={variants.length}>
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gray-100 rounded flex items-center justify-center">
-                              <Package className="h-5 w-5 text-gray-400" />
+                            <div className="w-10 h-10 bg-gray-100 rounded flex items-center justify-center overflow-hidden flex-shrink-0">
+                              {product.primary_image ? (
+                                <img 
+                                  src={product.primary_image} 
+                                  alt={product.name} 
+                                  className="w-full h-full object-cover" 
+                                />
+                              ) : (
+                                <Package className="h-5 w-5 text-gray-400" />
+                              )}
                             </div>
                             <div>
                               <p className="font-medium">{product.name}</p>
@@ -401,8 +417,16 @@ export function InventoryManagement() {
           {selectedProduct && (
             <div className="space-y-4">
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center">
-                  <Package className="h-8 w-8 text-gray-400" />
+                <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {selectedProduct.primary_image ? (
+                    <img 
+                      src={selectedProduct.primary_image} 
+                      alt={selectedProduct.name} 
+                      className="w-full h-full object-cover" 
+                    />
+                  ) : (
+                    <Package className="h-8 w-8 text-gray-400" />
+                  )}
                 </div>
                 <div>
                   <p className="font-medium">{selectedProduct.name}</p>

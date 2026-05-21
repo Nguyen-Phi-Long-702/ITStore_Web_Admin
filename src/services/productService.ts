@@ -117,7 +117,7 @@ export const productService = {
     await api.postForm(`/api/admin/products/${productId}/variants`, form);
   },
 
-  async updateVariant(id: number, data: Partial<ProductVariant>): Promise<void> {
+  async updateVariant(id: number, data: Partial<ProductVariant> & { variant_image_file?: File }): Promise<void> {
     const form = new FormData();
     if (data.sku) form.append("sku", data.sku);
     if (data.price !== undefined) form.append("price", String(data.price));
@@ -127,6 +127,7 @@ export const productService = {
     if (data.color_hex) form.append("color_hex", data.color_hex);
     if (data.compare_at_price !== undefined)
       form.append("compare_at_price", String(data.compare_at_price));
+    if (data.variant_image_file) form.append("variant_image", data.variant_image_file);
     await api.putForm(`/api/admin/variants/${id}`, form);
   },
 

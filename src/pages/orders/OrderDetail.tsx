@@ -52,7 +52,7 @@ import { orderService } from "../../services/orderService";
 export function OrderDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { orders, returnRequests, updateOrder } = useData();
+  const { orders, returnRequests, updateOrder, products, productVariants } = useData();
   const order = orders.find((o) => o.id.toString() === id);
 
   const [detailOrder, setDetailOrder] = useState(order);
@@ -304,19 +304,30 @@ export function OrderDetail() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {displayOrder?.items?.map((item) => (
-                    <TableRow key={item.id}>
+                  {(Array.isArray(displayOrder?.items) ? displayOrder.items : (displayOrder as any)?.order_items || []).map((item: any) => {
+                    const variant = productVariants.find((v) => v.id === item.variant_id) || item.variant || item.product_variant;
+                    const product = item.product || products.find((p) => p.id === variant?.product_id) || variant?.product;
+                    return (
+                    <TableRow key={item.id || Math.random()}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
-                            <Package className="h-6 w-6 text-gray-400" />
+                          <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center overflow-hidden flex-shrink-0">
+                            {item.image_url ? (
+                              <img
+                                src={item.image_url}
+                                alt={product?.name || "Product image"}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Package className="h-6 w-6 text-gray-400" />
+                            )}
                           </div>
                           <div>
                             <p className="font-medium">
-                              {item.variant?.product?.name}
+                              {product?.name || `Sản phẩm chưa rõ`}
                             </p>
                             <p className="text-sm text-gray-600">
-                              {item.variant?.sku}
+                              {variant?.sku || `SKU: ${item.variant_id}`}
                             </p>
                           </div>
                         </div>
@@ -331,7 +342,7 @@ export function OrderDetail() {
                         {formatCurrency(item.subtotal)}
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )})}
                 </TableBody>
               </Table>
 
@@ -621,7 +632,7 @@ export function OrderDetail() {
       </Dialog>
       </div>
 
-      {/* Print View Optimized for A6 */}
+      {/* Trang in cỡ A6 */}
       <div className="hidden print:block p-2 bg-white text-black font-sans max-w-[105mm] mx-auto text-xs">
         <div className="flex justify-between items-center mb-4">
           <div className="flex-1 flex justify-start">
@@ -660,10 +671,10 @@ export function OrderDetail() {
             </tr>
           </thead>
           <tbody>
-            {displayOrder?.items?.map((item) => (
-              <tr key={item.id} className="border-b border-dashed border-gray-200">
+            {(Array.isArray(displayOrder?.items) ? displayOrder.items : (displayOrder as any)?.order_items || []).map((item: any) => (
+              <tr key={item.id || Math.random()} className="border-b border-dashed border-gray-200">
                 <td className="py-2 pr-2">
-                  <p className="font-medium text-gray-800 line-clamp-2">{item.variant?.product?.name}</p>
+                  <p className="font-medium text-gray-800 line-clamp-2">{item.product?.name || item.variant?.product?.name}</p>
                   <p className="text-[9px] text-gray-500 mt-0.5">SKU: {item.variant?.sku}</p>
                 </td>
                 <td className="text-center py-2 font-medium">{item.quantity}</td>

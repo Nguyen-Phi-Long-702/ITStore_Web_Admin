@@ -220,7 +220,7 @@ export function OrderList() {
                       {(order as any).item_count != null
                         ? `${(order as any).item_count} sản phẩm`
                         : order.items && order.items.length > 0
-                          ? `${order.items.length} sản phẩm`
+                          ? `${order.items.reduce((sum, it) => sum + (it.quantity || 0), 0)} sản phẩm`
                           : "-"}
                     </div>
                     </TableCell>

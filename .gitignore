@@ -8,7 +8,7 @@ build/
 .next/
 out/
 
-# Environment/Bảo mật (Cực kỳ quan trọng)
+# Environment/Bảo mật
 .env
 .env.local
 .env.development.local

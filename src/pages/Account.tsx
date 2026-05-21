@@ -12,13 +12,6 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../components/ui/select";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -147,8 +140,6 @@ function AccountContent() {
   const [formData, setFormData] = useState({
     full_name: user?.full_name || "",
     phone: user?.phone || user?.phone_number || "",
-    date_of_birth: user?.date_of_birth || "",
-    gender: user?.gender || "other",
   });
 
   useEffect(() => {
@@ -238,8 +229,6 @@ function AccountContent() {
     setFormData({
       full_name: user?.full_name || "",
       phone: user?.phone || user?.phone_number || "",
-      date_of_birth: user?.date_of_birth || "",
-      gender: user?.gender || "other",
     });
     setIsEditing(false);
   };
@@ -351,16 +340,6 @@ function AccountContent() {
     return role === "admin" ? "Quản trị viên" : "Nhân viên";
   };
 
-  const getGenderLabel = (gender: string) => {
-    switch (gender) {
-      case "male":
-        return "Nam";
-      case "female":
-        return "Nữ";
-      default:
-        return "Khác";
-    }
-  };
 
   const displayAddress = defaultAddress
     ? formatAddress(defaultAddress)
@@ -530,61 +509,7 @@ function AccountContent() {
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="date_of_birth">
-                  <Calendar className="h-4 w-4 inline mr-2" />
-                  Ngày sinh
-                </Label>
-                {isEditing ? (
-                  <Input
-                    id="date_of_birth"
-                    type="date"
-                    value={formData.date_of_birth}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        date_of_birth: e.target.value,
-                      })
-                    }
-                  />
-                ) : (
-                  <p className="text-gray-900 font-medium py-2">
-                    {user.date_of_birth
-                      ? new Date(user.date_of_birth).toLocaleDateString("vi-VN")
-                      : "Chưa cập nhật"}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="gender">
-                  <User className="h-4 w-4 inline mr-2" />
-                  Giới tính
-                </Label>
-                {isEditing ? (
-                  <Select
-                    value={formData.gender}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, gender: value as any })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="male">Nam</SelectItem>
-                      <SelectItem value="female">Nữ</SelectItem>
-                      <SelectItem value="other">Khác</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <p className="text-gray-900 font-medium py-2">
-                    {user.gender
-                      ? getGenderLabel(user.gender)
-                      : "Chưa cập nhật"}
-                  </p>
-                )}
-              </div>
+              {}
 
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="address">

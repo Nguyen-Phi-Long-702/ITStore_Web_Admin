@@ -175,9 +175,6 @@ export function ReturnDetail() {
 
   const [status, setStatus] = useState(returnRequest?.status || "pending");
   const [adminNote, setAdminNote] = useState(returnRequest?.admin_note || "");
-  const [refundAmount, setRefundAmount] = useState(
-    returnRequest?.refund_amount?.toString() || "",
-  );
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
@@ -200,16 +197,11 @@ export function ReturnDetail() {
   const orderNumber = `DH${returnRequest.order_id.toString().padStart(6, "0")}`;
 
   const handleApprove = async () => {
-    if (!refundAmount || parseFloat(refundAmount) <= 0) {
-      toast.error("Vui lòng nhập số tiền hoàn hợp lệ");
-      return;
-    }
     setIsSubmitting(true);
     try {
       await updateReturnRequest(returnRequest.id, {
         status: "approved",
         admin_note: adminNote,
-        refund_amount: parseFloat(refundAmount),
       });
       setStatus("approved");
       toast.success("Đã chấp nhận yêu cầu trả hàng");
@@ -429,25 +421,27 @@ export function ReturnDetail() {
                           <>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
-                            <Package className="h-6 w-6 text-gray-400" />
+                          <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center overflow-hidden flex-shrink-0">
+                            {item.variant?.image_url || variant?.image_url ? (
+                              <img
+                                src={item.variant?.image_url || variant?.image_url}
+                                alt={productName || "Sản phẩm"}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Package className="h-6 w-6 text-gray-400" />
+                            )}
                           </div>
                           <div>
                             <p className="font-medium">
                               {productName || "Sản phẩm không xác định"}
                             </p>
-                            <p className="text-sm text-gray-600">
-                              {sku || "-"}
-                            </p>
+                            <p className="text-sm text-gray-600">{sku || "-"}</p>
                             {variant?.color && (
-                              <p className="text-xs text-gray-500">
-                                Màu: {variant.color}
-                              </p>
+                              <p className="text-xs text-gray-500">Màu: {variant.color}</p>
                             )}
                             {variant?.version && (
-                              <p className="text-xs text-gray-500">
-                                Phiên bản: {variant.version}
-                              </p>
+                              <p className="text-xs text-gray-500">Phiên bản: {variant.version}</p>
                             )}
                           </div>
                         </div>
@@ -630,31 +624,6 @@ export function ReturnDetail() {
             </CardContent>
           </Card>
 
-          {status !== "rejected" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Số tiền hoàn trả</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <Label>Số tiền</Label>
-                  <Input
-                    type="number"
-                    value={refundAmount}
-                    onChange={(e) => setRefundAmount(e.target.value)}
-                    placeholder="Nhập số tiền hoàn trả"
-                    disabled={status !== "pending"}
-                  />
-                  {refundAmount && (
-                    <p className="text-sm text-gray-600">
-                      {formatCurrency(parseFloat(refundAmount))}
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           <Card>
             <CardHeader>
               <CardTitle>Lịch sử xử lý</CardTitle>
@@ -736,20 +705,6 @@ export function ReturnDetail() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label>Số tiền hoàn trả *</Label>
-              <Input
-                type="number"
-                value={refundAmount}
-                onChange={(e) => setRefundAmount(e.target.value)}
-                placeholder="Nhập số tiền hoàn trả"
-              />
-              {refundAmount && (
-                <p className="text-sm text-gray-600 mt-1">
-                  {formatCurrency(parseFloat(refundAmount))}
-                </p>
-              )}
-            </div>
             <div>
               <Label>Ghi chú (tùy chọn)</Label>
               <Textarea

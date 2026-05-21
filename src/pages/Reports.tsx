@@ -297,8 +297,11 @@ export function Reports() {
         return;
       }
 
-      const items = detailedOrders[order.id]?.items || (detailedOrders[order.id] as any)?.order_items || [];
-      items.forEach((item) => {
+      let items = order.items || detailedOrders[order.id]?.items || (detailedOrders[order.id] as any)?.order_items || [];
+      if (!Array.isArray(items)) {
+        items = [];
+      }
+      items.forEach((item: any) => {
         const variant = productVariants.find((v) => v.id === item.variant_id);
         const product = variant
           ? products.find((p) => p.id === variant.product_id)
@@ -346,8 +349,11 @@ export function Reports() {
           return;
         }
 
-        const items = detailedOrders[order.id]?.items || (detailedOrders[order.id] as any)?.order_items || [];
-        items.forEach((item) => {
+        let items = order.items || detailedOrders[order.id]?.items || (detailedOrders[order.id] as any)?.order_items || [];
+        if (!Array.isArray(items)) {
+          items = [];
+        }
+        items.forEach((item: any) => {
           const variant = productVariants.find((v) => v.id === item.variant_id);
           if (!variant) {
             return;
