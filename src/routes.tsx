@@ -13,6 +13,8 @@ import { OrderDetail } from "./pages/orders/OrderDetail";
 import { CustomerList } from "./pages/users/CustomerList";
 import { PromotionList } from "./pages/promotions/PromotionList";
 import { PromotionForm } from "./pages/promotions/PromotionForm";
+import { NotificationList } from "./pages/notifications/NotificationList";
+import { NotificationForm } from "./pages/notifications/NotificationForm";
 import { ReturnList } from "./pages/returns/ReturnList";
 import { ReturnDetail } from "./pages/returns/ReturnDetail";
 import { Reports } from "./pages/Reports";
@@ -76,6 +78,8 @@ export const router = createBrowserRouter([
             path: "promotions/edit/:id",
             Component: PromotionForm,
           },
+          { path: "notifications", Component: NotificationList },
+          { path: "notifications/new", Component: NotificationForm },
           { path: "returns", Component: ReturnList },
           { path: "returns/:id", Component: ReturnDetail },
           { path: "reports", Component: Reports },

@@ -118,6 +118,11 @@ export function DashboardLayout() {
       icon: Percent,
       show: permissions.canAccessPromotions,
     },
+    { name: "Thông báo", 
+      href: "/notifications", 
+      icon: Bell, 
+      show: true 
+    },
     {
       name: "Báo cáo",
       href: "/reports",

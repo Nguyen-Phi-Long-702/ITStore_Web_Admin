@@ -9,19 +9,82 @@ function getAuthHeaders(extra?: HeadersInit): HeadersInit {
   };
 }
 
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (token: string) => void; reject: (err: Error) => void }> = [];
+
+const processQueue = (error: Error | null, token: string | null = null) => {
+  failedQueue.forEach(prom => {
+    if (error) prom.reject(error);
+    else prom.resolve(token!);
+  });
+  failedQueue = [];
+};
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const res = await fetch(`${BASE_URL}${path}`, {
+    let res = await fetch(`${BASE_URL}${path}`, {
       credentials: "include",
       ...init,
       headers: getAuthHeaders(init?.headers),
       signal: controller.signal,
     });
 
+    if (res.status === 401 && !path.includes('/auth/login') && !path.includes('/auth/refresh')) {
+      const refreshToken = localStorage.getItem("auth_refresh_token");
+      if (refreshToken) {
+        if (!isRefreshing) {
+          isRefreshing = true;
+          fetch(`${BASE_URL}/api/auth/refresh`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refresh_token: refreshToken })
+          })
+            .then(async (refreshRes) => {
+              if (refreshRes.ok) {
+                const data = await refreshRes.json();
+                if (data.access_token) {
+                  localStorage.setItem("auth_access_token", data.access_token);
+                  processQueue(null, data.access_token);
+                } else {
+                  processQueue(new Error("Refresh failed"));
+                }
+              } else {
+                processQueue(new Error("Refresh failed"));
+              }
+            })
+            .catch((err) => processQueue(err))
+            .finally(() => {
+              isRefreshing = false;
+            });
+        }
+
+        try {
+          await new Promise<string>((resolve, reject) => {
+            failedQueue.push({ resolve, reject });
+          });
+          res = await fetch(`${BASE_URL}${path}`, {
+            credentials: "include",
+            ...init,
+            headers: getAuthHeaders(init?.headers),
+            signal: controller.signal,
+          });
+        } catch {
+        }
+      }
+    }
+
     if (!res.ok) {
+      if (res.status === 401) {
+        localStorage.removeItem("auth_access_token");
+        localStorage.removeItem("auth_refresh_token");
+        localStorage.removeItem("auth_user");
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
+      }
       const body = await res.json().catch(() => ({})) as Record<string, unknown>;
       throw new Error((body?.message as string) ?? `HTTP ${res.status}`);
     }

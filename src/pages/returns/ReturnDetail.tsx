@@ -144,7 +144,7 @@ export function ReturnDetail() {
       ?.order_items ??
       []);
 
-  const returnItems = (returnRequest?.items ?? returnRequest?.return_items ?? []).map((item) => {
+  const returnItems = (returnRequest?.items ?? returnRequest?.return_items ?? []).map((item: any) => {
     const resolvedOrderItem =
       item.order_item ??
       resolvedOrderItems.find(
