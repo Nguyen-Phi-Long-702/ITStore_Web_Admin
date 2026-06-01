@@ -20,6 +20,7 @@ import { ReturnDetail } from "./pages/returns/ReturnDetail";
 import { Reports } from "./pages/Reports";
 import { BrandList } from "./pages/brands/BrandList";
 import { CategoryList } from "./pages/categories/CategoryList";
+import { BannerList } from "./pages/banners/BannerList";
 import { Account } from "./pages/Account";
 
 export const router = createBrowserRouter([
@@ -51,6 +52,7 @@ export const router = createBrowserRouter([
           },
           { path: "brands", Component: BrandList },
           { path: "categories", Component: CategoryList },
+          { path: "banners", Component: BannerList },
           { path: "orders", Component: OrderList },
           { path: "orders/:id", Component: OrderDetail },
           { path: "customers", Component: CustomerList },

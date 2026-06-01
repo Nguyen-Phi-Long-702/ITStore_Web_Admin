@@ -20,6 +20,7 @@ import {
   RotateCcw,
   Tag,
   FolderOpen,
+  Image,
   User,
   Lock,
 } from "lucide-react";
@@ -92,6 +93,7 @@ export function DashboardLayout() {
     { name: "Sản phẩm", href: "/products", icon: Package, show: true },
     { name: "Thương hiệu", href: "/brands", icon: Tag, show: true },
     { name: "Danh mục", href: "/categories", icon: FolderOpen, show: true },
+    { name: "Banner", href: "/banners", icon: Image, show: true },
     {
       name: "Đơn hàng",
       href: "/orders",

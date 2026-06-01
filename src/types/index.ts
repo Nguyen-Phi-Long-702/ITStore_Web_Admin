@@ -312,3 +312,5 @@ export interface SystemConfig {
     shipmentNotification: string;
   };
 }
+
+export * from "./banner";
