@@ -23,6 +23,7 @@ import {
   Image,
   User,
   Lock,
+  CreditCard,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "../ui/button";
@@ -130,6 +131,12 @@ export function DashboardLayout() {
       href: "/reports",
       icon: BarChart3,
       show: permissions.canAccessReports,
+    },
+    {
+      name: "Thanh toán",
+      href: "/payments",
+      icon: CreditCard,
+      show: true,
     },
   ];
 

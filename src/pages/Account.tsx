@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useSearchParams } from "react-router";
 import type { Address } from "../types";
+import { api } from "../lib/api";
 import {
   Card,
   CardContent,
@@ -48,29 +49,7 @@ type AddressRecord = Pick<
   | "is_default"
 >;
 
-const API_BASE_URL = "http://localhost:3000";
-const ACCESS_TOKEN_STORAGE_KEY = "auth_access_token";
 
-function buildApiUrl(endpoint: string): string {
-  return `${API_BASE_URL}${endpoint}`;
-}
-
-function getAuthHeaders(headers?: HeadersInit): HeadersInit {
-  const rawToken = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
-  const token = rawToken?.trim();
-
-  if (!token || token === "undefined" || token === "null") {
-    if (rawToken) {
-      localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
-    }
-    return headers ?? {};
-  }
-
-  return {
-    ...(headers ?? {}),
-    Authorization: `Bearer ${token}`,
-  };
-}
 
 function formatAddress(address: AddressRecord | null): string {
   if (!address) {
@@ -153,38 +132,21 @@ function AccountContent() {
     const fetchDefaultAddress = async () => {
       setIsAddressLoading(true);
 
-      const endpoints = ["/api/users/me/addresses", "/users/me/addresses"];
+      try {
+        const payload = await api.get("/api/users/me/addresses");
+        const addresses = normalizeAddressList(payload);
+        const nextAddress =
+          addresses.find((address) => address.is_default) ??
+          addresses[0] ??
+          null;
 
-      for (const endpoint of endpoints) {
-        try {
-          const response = await fetch(buildApiUrl(endpoint), {
-            method: "GET",
-            credentials: "include",
-            headers: getAuthHeaders(),
-          });
-
-          if (!response.ok) {
-            continue;
-          }
-
-          const payload = (await response.json().catch(() => null)) as unknown;
-          const addresses = normalizeAddressList(payload);
-          const nextAddress =
-            addresses.find((address) => address.is_default) ??
-            addresses[0] ??
-            null;
-
-          if (active) {
-            setDefaultAddress(nextAddress);
-          }
-          return;
-        } catch {
-          continue;
+        if (active) {
+          setDefaultAddress(nextAddress);
         }
-      }
-
-      if (active) {
-        setDefaultAddress(null);
+      } catch {
+        if (active) {
+          setDefaultAddress(null);
+        }
       }
     };
 

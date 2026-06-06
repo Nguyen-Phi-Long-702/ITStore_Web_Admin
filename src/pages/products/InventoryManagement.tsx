@@ -43,7 +43,7 @@ import { useData } from "../../contexts/DataContext";
 
 export function InventoryManagement() {
   const navigate = useNavigate();
-  const { products, updateProductVariant } = useData();
+  const { products, addStockMovement } = useData();
   const [stockInDialogOpen, setStockInDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<string>("");
@@ -62,7 +62,7 @@ export function InventoryManagement() {
     setStockInDialogOpen(true);
   };
 
-  const confirmStockIn = () => {
+  const confirmStockIn = async () => {
     if (!quantity || quantity <= 0) {
       toast.error("Vui lòng nhập số lượng hợp lệ");
       return;
@@ -78,8 +78,10 @@ export function InventoryManagement() {
     );
 
     if (variant) {
-      updateProductVariant(variant.id, {
-        stock: variant.stock + quantity,
+      await addStockMovement({
+        variant_id: variant.id,
+        change_qty: quantity,
+        note: note.trim() || undefined,
       });
 
       toast.success(

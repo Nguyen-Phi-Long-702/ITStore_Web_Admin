@@ -3,6 +3,7 @@ import {
   ProductStatus,
   PaymentStatus,
   PaymentMethod,
+  PaymentGatewayStatus,
 } from "../types";
 
 export const orderStatusConfig: Record<
@@ -97,6 +98,32 @@ export const paymentMethodLabels: Record<PaymentMethod, string> = {
   cod: "Thanh toán khi nhận hàng (COD)",
   momo: "Ví MoMo",
   bank_transfer: "Chuyển khoản ngân hàng",
+};
+
+export const paymentGatewayStatusConfig: Record<
+  PaymentGatewayStatus,
+  { label: string; color: string; bgColor: string }
+> = {
+  pending: {
+    label: "Chờ xử lý",
+    color: "text-yellow-700",
+    bgColor: "bg-yellow-100",
+  },
+  success: {
+    label: "Thành công",
+    color: "text-green-700",
+    bgColor: "bg-green-100",
+  },
+  failed: {
+    label: "Thất bại",
+    color: "text-red-700",
+    bgColor: "bg-red-100",
+  },
+  refunded: {
+    label: "Đã hoàn tiền",
+    color: "text-[#E0872B]",
+    bgColor: "bg-[#FFE0B2]",
+  },
 };
 
 export function formatCurrency(amount: number): string {

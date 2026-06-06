@@ -189,6 +189,28 @@ export interface Payment {
   created_at: string;
 }
 
+export interface PaymentHistoryItem {
+  id: number;
+  order_id: number;
+  method: PaymentMethod;
+  amount: number;
+  transaction_id?: string;
+  gateway_response?: any;
+  payment_status: PaymentGatewayStatus;
+  paid_at?: string;
+  created_at: string;
+  order?: {
+    id: number;
+    total: number;
+    order_status: string;
+    user?: {
+      id: number;
+      full_name: string;
+      email: string;
+    };
+  };
+}
+
 export interface Coupon {
   id: number;
   code: string;

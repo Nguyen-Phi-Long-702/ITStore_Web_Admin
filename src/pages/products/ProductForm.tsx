@@ -30,21 +30,14 @@ import { toast } from "sonner";
 import { ProductStatus, ProductVariant } from "../../types";
 import { useData } from "../../contexts/DataContext";
 import { productService } from "../../services/productService";
+import { BASE_URL } from "../../lib/api";
 
 const MAX_PRODUCT_IMAGES = 8;
-const API_BASE_URL = "http://localhost:3000";
-const ACCESS_TOKEN_STORAGE_KEY = "auth_access_token";
-
-function buildRequestUrl(endpoint: string): string {
-  return endpoint.startsWith("/__webadmin/")
-    ? endpoint
-    : `${API_BASE_URL}${endpoint}`;
-}
 
 function buildImageUrl(url: string | null): string {
   if (!url) return "";
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  return buildRequestUrl(url);
+  return `${BASE_URL}${url}`;
 }
 
 type ImageEntry = {
@@ -116,6 +109,7 @@ export function ProductForm() {
   });
 
   const [images, setImages] = useState<ImageEntry[]>([]);
+  const [initialImageIds, setInitialImageIds] = useState<number[]>([]);
   const [isFormDirty, setIsFormDirty] = useState(false);
   const [hydratedProductId, setHydratedProductId] = useState<number | null>(
     null,
@@ -177,15 +171,15 @@ export function ProductForm() {
           );
         }
 
-        setImages(
-          detail.images
-            .sort((a, b) => a.sort_order - b.sort_order)
-            .map((img) => ({
-              id: img.id,
-              url: img.image_url,
-              is_primary: img.is_primary,
-            }))
-        );
+        const loadedImages = detail.images
+          .sort((a, b) => a.sort_order - b.sort_order)
+          .map((img) => ({
+            id: img.id,
+            url: img.image_url,
+            is_primary: img.is_primary,
+          }));
+        setImages(loadedImages);
+        setInitialImageIds(loadedImages.map((img) => img.id!));
 
         setHydratedProductId(existingProduct.id);
       })
@@ -221,16 +215,16 @@ export function ProductForm() {
           );
         }
 
-        setImages(
-          productImages
-            .filter((img) => img.product_id === existingProduct.id && !img.variant_id)
-            .sort((a, b) => a.sort_order - b.sort_order)
-            .map((img) => ({
-              id: img.id,
-              url: img.image_url,
-              is_primary: img.is_primary,
-            }))
-        );
+        const fallbackImages = productImages
+          .filter((img) => img.product_id === existingProduct.id && !img.variant_id)
+          .sort((a, b) => a.sort_order - b.sort_order)
+          .map((img) => ({
+            id: img.id,
+            url: img.image_url,
+            is_primary: img.is_primary,
+          }));
+        setImages(fallbackImages);
+        setInitialImageIds(fallbackImages.map((img) => img.id!));
 
         setHydratedProductId(existingProduct.id);
       })
@@ -504,17 +498,10 @@ export function ProductForm() {
           }),
         );
 
-        const existingImages = productImages
-          .filter(
-            (img) => img.product_id === existingProduct.id && !img.variant_id,
-          )
-          .sort((a, b) => a.sort_order - b.sort_order);
-
-        const existingImageIdSet = new Set(existingImages.map((img) => img.id));
         const currentImageIdSet = new Set(
           images.filter((img) => img.id).map((img) => img.id as number),
         );
-        const removedImageIds = Array.from(existingImageIdSet).filter(
+        const removedImageIds = initialImageIds.filter(
           (imageId) => !currentImageIdSet.has(imageId),
         );
 

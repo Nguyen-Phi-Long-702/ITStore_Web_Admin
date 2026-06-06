@@ -22,6 +22,7 @@ import { BrandList } from "./pages/brands/BrandList";
 import { CategoryList } from "./pages/categories/CategoryList";
 import { BannerList } from "./pages/banners/BannerList";
 import { Account } from "./pages/Account";
+import { PaymentList } from "./pages/payments/PaymentList";
 
 export const router = createBrowserRouter([
   {
@@ -68,6 +69,7 @@ export const router = createBrowserRouter([
           { path: "returns/:id", Component: ReturnDetail },
           { path: "reports", Component: Reports },
           { path: "account", Component: Account },
+          { path: "payments", Component: PaymentList },
         ],
       },
     ],

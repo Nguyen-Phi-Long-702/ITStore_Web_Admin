@@ -87,31 +87,28 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 
 const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
   paymentConfig: {
-    codEnabled: true,
-    bankTransferEnabled: true,
+    codEnabled: false,
+    bankTransferEnabled: false,
     creditCardEnabled: false,
-    momoEnabled: true,
+    momoEnabled: false,
     vnpayEnabled: false,
   },
   shippingConfig: {
-    baseShippingFee: 30000,
-    freeShippingThreshold: 500000,
-    distanceFeePerKm: 5000,
-    urgentShippingFee: 50000,
+    baseShippingFee: 0,
+    freeShippingThreshold: 0,
+    distanceFeePerKm: 0,
+    urgentShippingFee: 0,
   },
   bankInfo: {
-    bankName: "Ngân hàng TMCP Đầu tư và Phát triển Việt Nam (BIDV)",
-    accountNumber: "0123456789",
-    accountName: "CONG TY TNHH IT STORE",
+    bankName: "",
+    accountNumber: "",
+    accountName: "",
   },
-  banners: [
-    { id: "1", title: "Banner khuyến mãi tháng 2", url: "", active: true },
-    { id: "2", title: "Banner sản phẩm mới", url: "", active: true },
-  ],
+  banners: [],
   notificationTemplates: {
-    orderNotification: "Bạn có đơn hàng mới từ [CUSTOMER_NAME]",
-    lowStockNotification: "Sản phẩm [PRODUCT_NAME] sắp hết hàng (còn [QUANTITY])",
-    shipmentNotification: "Đơn hàng [ORDER_NUMBER] đang được giao bởi [SHIPPER_NAME]",
+    orderNotification: "",
+    lowStockNotification: "",
+    shipmentNotification: "",
   },
 };
 

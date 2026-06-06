@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:3000";
+export const BASE_URL = "http://localhost:3000";
 const TIMEOUT_MS = 30000;
 
 function getAuthHeaders(extra?: HeadersInit): HeadersInit {
