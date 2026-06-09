@@ -38,7 +38,6 @@ import {
 import { formatCurrency, productStatusConfig } from "../../utils/statusUtils";
 import { Product } from "../../types";
 import { useData } from "../../contexts/DataContext";
-import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "sonner";
 
 function ProductThumbnail({ src, alt }: { src?: string | null; alt: string }) {
@@ -74,7 +73,6 @@ function StatusBadge({ status }: { status: string }) {
 
 export function ProductList() {
   const { products, productFetchError, deleteProduct } = useData();
-  const { permissions } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -149,7 +147,7 @@ export function ProductList() {
           <p className="text-gray-600">Quản lý thông tin sản phẩm và tồn kho</p>
         </div>
         <div className="flex gap-2">
-          <Link to="/products/inventory">
+          <Link to="/products/stock">
             <Button variant="outline">
               <Package className="h-4 w-4 mr-2" />
               Quản lý kho
@@ -331,14 +329,11 @@ export function ProductList() {
                               <Eye className="h-4 w-4" />
                             </Button>
                           </Link>
-                          {permissions.canEditProduct && (
                             <Link to={`/products/edit/${product.id}`}>
                               <Button variant="ghost" size="icon" title="Chỉnh sửa">
                                 <Edit className="h-4 w-4" />
                               </Button>
                             </Link>
-                          )}
-                          {permissions.canDeleteProduct && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -347,7 +342,6 @@ export function ProductList() {
                             >
                               <Trash2 className="h-4 w-4 text-red-600" />
                             </Button>
-                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -433,14 +427,12 @@ export function ProductList() {
                               <Eye className="h-4 w-4" />
                             </Button>
                           </Link>
-                          {permissions.canEditProduct && (
+
                             <Link to={`/products/edit/${product.id}`}>
                               <Button variant="ghost" size="icon" title="Chỉnh sửa">
                                 <Edit className="h-4 w-4" />
                               </Button>
                             </Link>
-                          )}
-                          {permissions.canDeleteProduct && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -449,7 +441,6 @@ export function ProductList() {
                             >
                               <Trash2 className="h-4 w-4 text-red-600" />
                             </Button>
-                          )}
                         </div>
                       </TableCell>
                     )}

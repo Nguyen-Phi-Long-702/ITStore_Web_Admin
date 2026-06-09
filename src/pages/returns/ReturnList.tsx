@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { Filter, ArrowUpDown, Eye } from "lucide-react";
+import { Filter, ArrowUpDown, Eye, RotateCcw, Clock, Check, CheckCircle } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -108,32 +108,57 @@ export function ReturnList() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-sm text-gray-600">Tổng yêu cầu</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Tổng yêu cầu</p>
+                <p className="text-2xl font-bold">
+                  {stats.total}
+                </p>
+              </div>
+              <RotateCcw className="h-8 w-8 text-gray-600" />
+            </div>
           </CardContent>
         </Card>
+
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-yellow-600">
-              {stats.pending}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Chờ duyệt</p>
+                <p className="text-2xl font-bold text-yellow-600">
+                  {stats.pending}
+                </p>
+              </div>
+              <Clock className="h-8 w-8 text-yellow-600" />
             </div>
-            <p className="text-sm text-gray-600">Chờ duyệt</p>
           </CardContent>
         </Card>
+
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-[#E0872B]">
-              {stats.approved}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Đã chấp nhận</p>
+                <p className="text-2xl font-bold text-[#E0872B]">
+                  {stats.approved}
+                </p>
+              </div>
+              <Check className="h-8 w-8 text-[#E0872B]" />
             </div>
-            <p className="text-sm text-gray-600">Đã chấp nhận</p>
           </CardContent>
         </Card>
+
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-green-600">
-              {stats.completed}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Hoàn thành</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {stats.completed}
+                </p>
+              </div>
+              <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
-            <p className="text-sm text-gray-600">Hoàn thành</p>
           </CardContent>
         </Card>
       </div>

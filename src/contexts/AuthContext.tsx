@@ -16,41 +16,12 @@ interface User {
   created_at: string;
 }
 
-interface Permissions {
-  canAccessReports: boolean;
-  canAccessSettings: boolean;
-  canAccessPromotions: boolean;
-  canAccessReturns: boolean;
-  canCreateProduct: boolean;
-  canEditProduct: boolean;
-  canDeleteProduct: boolean;
-  canManageInventory: boolean;
-  canCreateCategory: boolean;
-  canEditCategory: boolean;
-  canDeleteCategory: boolean;
-  canCreateBrand: boolean;
-  canEditBrand: boolean;
-  canDeleteBrand: boolean;
-  canViewOrders: boolean;
-  canEditOrderStatus: boolean;
-  canCancelOrder: boolean;
-  canProcessRefund: boolean;
-  canViewCustomers: boolean;
-  canEditCustomer: boolean;
-  canDeleteCustomer: boolean;
-  canCreatePromotion: boolean;
-  canEditPromotion: boolean;
-  canDeletePromotion: boolean;
-}
-
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  permissions: Permissions;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   isLoading: boolean;
-  hasPermission: (permission: keyof Permissions) => boolean;
   updateUser: (
     updates: Partial<Omit<User, "id" | "username" | "role" | "created_at" | "email">>,
   ) => Promise<{ ok: boolean; message?: string }>;
@@ -65,60 +36,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const STORAGE_KEY = "auth_user";
 const TOKEN_KEY = "auth_access_token";
 const REFRESH_KEY = "auth_refresh_token";
-
-const ADMIN_PERMISSIONS: Permissions = {
-  canAccessReports: true,
-  canAccessSettings: true,
-  canAccessPromotions: true,
-  canAccessReturns: true,
-  canCreateProduct: true,
-  canEditProduct: true,
-  canDeleteProduct: true,
-  canManageInventory: true,
-  canCreateCategory: true,
-  canEditCategory: true,
-  canDeleteCategory: true,
-  canCreateBrand: true,
-  canEditBrand: true,
-  canDeleteBrand: true,
-  canViewOrders: true,
-  canEditOrderStatus: true,
-  canCancelOrder: true,
-  canProcessRefund: true,
-  canViewCustomers: true,
-  canEditCustomer: true,
-  canDeleteCustomer: true,
-  canCreatePromotion: true,
-  canEditPromotion: true,
-  canDeletePromotion: true,
-};
-
-const NO_PERMISSIONS: Permissions = {
-  canAccessReports: false,
-  canAccessSettings: false,
-  canAccessPromotions: false,
-  canAccessReturns: false,
-  canCreateProduct: false,
-  canEditProduct: false,
-  canDeleteProduct: false,
-  canManageInventory: false,
-  canCreateCategory: false,
-  canEditCategory: false,
-  canDeleteCategory: false,
-  canCreateBrand: false,
-  canEditBrand: false,
-  canDeleteBrand: false,
-  canViewOrders: false,
-  canEditOrderStatus: false,
-  canCancelOrder: false,
-  canProcessRefund: false,
-  canViewCustomers: false,
-  canEditCustomer: false,
-  canDeleteCustomer: false,
-  canCreatePromotion: false,
-  canEditPromotion: false,
-  canDeletePromotion: false,
-};
 
 function parseUser(raw: Record<string, unknown>): User {
   const email = String(raw.email ?? "");
@@ -141,8 +58,6 @@ function parseUser(raw: Record<string, unknown>): User {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  const permissions = user ? ADMIN_PERMISSIONS : NO_PERMISSIONS;
 
   useEffect(() => {
     const token = localStorage.getItem(TOKEN_KEY);
@@ -170,23 +85,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    try {
-      const res = await api.post<any>("/api/auth/login", { email, password });
-      const data = res?.data ?? res;
-      const raw = data?.user ?? data;
-      if (!raw?.id || !raw?.email) return false;
-      if (raw.role && raw.role !== "admin") return false;
+  try {
+    const res = await api.post<any>("/api/auth/login", { email, password });
+    const data = res?.data ?? res;
+    const raw = data?.user ?? data;
+    if (!raw?.id || !raw?.email) return false;
+    if (raw.role !== "admin") throw new Error("NO_PERMISSION");
 
-      const loggedUser = parseUser(raw);
-      setUser(loggedUser);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(loggedUser));
-      if (data?.access_token) localStorage.setItem(TOKEN_KEY, data.access_token);
-      if (data?.refresh_token) localStorage.setItem(REFRESH_KEY, data.refresh_token);
-      return true;
-    } catch {
-      return false;
+    const loggedUser = parseUser(raw);
+    setUser(loggedUser);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(loggedUser));
+    if (data?.access_token) localStorage.setItem(TOKEN_KEY, data.access_token);
+    if (data?.refresh_token) localStorage.setItem(REFRESH_KEY, data.refresh_token);
+    return true;
+  } catch (error) {
+    if (error instanceof Error && error.message === "NO_PERMISSION") {
+      throw error;
     }
-  };
+    return false;
+  }
+};
 
   const logout = async (): Promise<void> => {
     const refreshToken = localStorage.getItem(REFRESH_KEY);
@@ -198,8 +116,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(REFRESH_KEY);
   };
-
-  const hasPermission = (permission: keyof Permissions) => permissions[permission];
 
   const updateUser = async (
     updates: Partial<Omit<User, "id" | "username" | "role" | "created_at" | "email">>,
@@ -257,11 +173,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         isAuthenticated: !!user,
-        permissions,
         login,
         logout,
         isLoading,
-        hasPermission,
         updateUser,
         changePassword,
       }}

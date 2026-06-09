@@ -36,7 +36,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { Download, TrendingUp, Package, DollarSign, Users } from "lucide-react";
+import { Download, TrendingUp, Package, DollarSign, Users, ShoppingCart } from "lucide-react";
 import { formatCurrency } from "../utils/statusUtils";
 import { useData } from "../contexts/DataContext";
 import { orderService } from "../services/orderService";
@@ -493,7 +493,7 @@ export function Reports() {
                   </span>
                 </div>
               </div>
-              <Package className="h-8 w-8 text-[#E0872B]" />
+              <ShoppingCart className="h-8 w-8 text-[#E0872B]" />
             </div>
           </CardContent>
         </Card>
@@ -583,7 +583,6 @@ export function Reports() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={(entry) => `${entry.name}: ${entry.value}`}
                   outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
@@ -593,6 +592,11 @@ export function Reports() {
                   ))}
                 </Pie>
                 <Tooltip key="tooltip-pie" />
+                <Legend 
+                  layout="horizontal" 
+                  verticalAlign="bottom" 
+                  align="center" 
+                />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>

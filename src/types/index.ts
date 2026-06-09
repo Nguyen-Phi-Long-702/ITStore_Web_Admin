@@ -299,40 +299,17 @@ export interface StockMovement {
   admin?: User;
 }
 
-export interface SystemConfig {
-  paymentConfig: {
-    codEnabled: boolean;
-    bankTransferEnabled: boolean;
-    creditCardEnabled: boolean;
-    momoEnabled: boolean;
-    vnpayEnabled: boolean;
-  };
-
-  shippingConfig: {
-    baseShippingFee: number;
-    freeShippingThreshold: number;
-    distanceFeePerKm: number;
-    urgentShippingFee: number;
-  };
-
-  bankInfo: {
-    bankName: string;
-    accountNumber: string;
-    accountName: string;
-  };
-
-  banners: Array<{
-    id: string;
-    title: string;
-    url: string;
-    active: boolean;
-  }>;
-
-  notificationTemplates: {
-    orderNotification: string;
-    lowStockNotification: string;
-    shipmentNotification: string;
-  };
+export interface Banner {
+  id: number;
+  created_at: string;
+  end_date: string | null;
+  image_url: string;
+  is_active: boolean;
+  link_url: string | null;
+  sort_order: number;
 }
 
-export * from "./banner";
+export interface BannerFilter {
+  sort?: "asc" | "desc";
+  is_active?: boolean;
+}

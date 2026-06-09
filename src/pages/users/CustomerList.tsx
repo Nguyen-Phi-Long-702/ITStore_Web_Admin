@@ -1,5 +1,6 @@
+import { Link } from "react-router";
 import { useState, useMemo } from "react";
-import { Search, User, XCircle, CheckCircle } from "lucide-react";
+import { Search, User, XCircle, CheckCircle, Eye } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -112,31 +113,40 @@ export function CustomerList() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-3xl font-bold text-[#E0872B]">
-                {customers.length}
-              </p>
-              <p className="text-sm text-gray-600 mt-1">Tổng khách hàng</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Tổng khách hàng</p>
+                <p className="text-2xl font-bold text-[#E0872B]">
+                  {customers.length}
+                </p>
+              </div>
+              <User className="h-8 w-8 text-[#E0872B]" />
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-3xl font-bold text-green-600">
-                {customers.filter((c) => c.is_active).length}
-              </p>
-              <p className="text-sm text-gray-600 mt-1">Đang hoạt động</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Đang hoạt động</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {customers.filter((c) => c.is_active).length}
+                </p>
+              </div>
+              <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-3xl font-bold text-red-600">
-                {customers.filter((c) => !c.is_active).length}
-              </p>
-              <p className="text-sm text-gray-600 mt-1">Đã khóa</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Đã khóa</p>
+                <p className="text-2xl font-bold text-red-600">
+                  {customers.filter((c) => !c.is_active).length}
+                </p>
+              </div>
+              <XCircle className="h-8 w-8 text-red-600" />
             </div>
           </CardContent>
         </Card>
@@ -249,6 +259,12 @@ export function CustomerList() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
+                      <Link to={`/customers/${customer.id}`}>
+                        <Button variant="ghost" size="sm">
+                          <Eye className="h-4 w-4 mr-1" />
+                          Chi tiết
+                        </Button>
+                      </Link>
                       <Button
                         variant="ghost"
                         size="sm"

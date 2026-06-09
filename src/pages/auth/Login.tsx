@@ -43,7 +43,11 @@ export function Login() {
         toast.error("Email hoặc mật khẩu không đúng");
       }
     } catch (error) {
-      toast.error("Có lỗi xảy ra. Vui lòng thử lại!");
+      if (error instanceof Error && error.message === "NO_PERMISSION") {
+        toast.error("Tài khoản không có quyền truy cập hệ thống");
+      } else {
+        toast.error("Có lỗi xảy ra. Vui lòng thử lại!");
+      }
     } finally {
       setIsLoading(false);
     }

@@ -43,7 +43,7 @@ import { toast } from "sonner";
 export function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout, permissions, isAuthenticated, isLoading } = useAuth();
+  const { user, logout, isAuthenticated, isLoading } = useAuth();
   const { orders, returnRequests } = useData();
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -100,26 +100,26 @@ export function DashboardLayout() {
       href: "/orders",
       icon: ShoppingCart,
       badge: orderBadge,
-      show: permissions.canViewOrders,
+      show: true,
     },
     {
       name: "Trả hàng",
       href: "/returns",
       icon: RotateCcw,
       badge: returnBadge,
-      show: permissions.canAccessReturns,
+      show: true,
     },
     {
       name: "Khách hàng",
       href: "/customers",
       icon: Users,
-      show: permissions.canViewCustomers,
+      show: true,
     },
     {
       name: "Khuyến mãi",
-      href: "/promotions",
+      href: "/coupon",
       icon: Percent,
-      show: permissions.canAccessPromotions,
+      show: true,
     },
     { name: "Thông báo", 
       href: "/notifications", 
@@ -127,15 +127,15 @@ export function DashboardLayout() {
       show: true 
     },
     {
-      name: "Báo cáo",
-      href: "/reports",
-      icon: BarChart3,
-      show: permissions.canAccessReports,
-    },
-    {
       name: "Thanh toán",
       href: "/payments",
       icon: CreditCard,
+      show: true,
+    },
+    {
+      name: "Báo cáo",
+      href: "/reports",
+      icon: BarChart3,
       show: true,
     },
   ];

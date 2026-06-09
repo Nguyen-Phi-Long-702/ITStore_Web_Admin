@@ -311,7 +311,7 @@ function AccountContent() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Tài khoản của tôi</h1>
+          <h2 className="text-2xl font-bold text-gray-900">Tài khoản của tôi</h2>
           <p className="text-gray-600 mt-1">
             Quản lý thông tin cá nhân và tài khoản
           </p>
@@ -401,13 +401,6 @@ function AccountContent() {
 
             <div className="border-t pt-4 space-y-3">
               <div className="flex items-center text-sm">
-                <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                <span className="text-gray-600">Tham gia:</span>
-                <span className="ml-auto font-medium">
-                  {new Date(user.created_at).toLocaleDateString("vi-VN")}
-                </span>
-              </div>
-              <div className="flex items-center text-sm">
                 <User className="h-4 w-4 mr-2 text-gray-500" />
                 <span className="text-gray-600">ID:</span>
                 <span className="ml-auto font-medium">#{user.id}</span>
@@ -482,11 +475,6 @@ function AccountContent() {
                   <p className="text-gray-900 font-medium leading-6">
                     {isAddressLoading ? "Đang tải..." : displayAddress}
                   </p>
-                  {defaultAddress && (
-                    <p className="mt-2 text-xs text-gray-500">
-                      {defaultAddress.recipient} · {defaultAddress.phone_number}
-                    </p>
-                  )}
                 </div>
               </div>
             </div>

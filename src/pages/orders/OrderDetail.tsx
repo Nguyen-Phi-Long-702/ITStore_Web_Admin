@@ -10,6 +10,7 @@ import {
   CheckCircle,
   Truck,
   RotateCcw,
+  Clock,
 } from "lucide-react";
 import {
   Card,
@@ -57,11 +58,15 @@ export function OrderDetail() {
 
   const [detailOrder, setDetailOrder] = useState(order);
 
-  useEffect(() => {
+  const fetchDetail = () => {
     if (!id) return;
     orderService.getDetail(Number(id))
       .then((data) => setDetailOrder(data as any))
       .catch(() => {});
+  };
+
+  useEffect(() => {
+    fetchDetail();
   }, [id]);
 
   const displayOrder = detailOrder || order;
@@ -70,10 +75,7 @@ export function OrderDetail() {
     order?.order_status || "pending",
   );
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
-  const [refundDialogOpen, setRefundDialogOpen] = useState(false);
-  const [returnDialogOpen, setReturnDialogOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
-  const [returnReason, setReturnReason] = useState("");
 
   if (!order) {
     return (
@@ -94,6 +96,7 @@ export function OrderDetail() {
     try {
       await updateOrder(order.id, { order_status: newStatus });
       setOrderStatus(newStatus);
+      fetchDetail();
       toast.success(
         `Đã cập nhật trạng thái: ${orderStatusConfig[newStatus].label}`,
       );
@@ -114,6 +117,7 @@ export function OrderDetail() {
         cancel_reason: cancelReason.trim(),
       } as any);
       setOrderStatus("cancelled");
+      fetchDetail();
       toast.success("Đã hủy đơn hàng");
       setCancelDialogOpen(false);
       setCancelReason("");
@@ -121,24 +125,6 @@ export function OrderDetail() {
       const message = error instanceof Error ? error.message : "Không thể hủy đơn hàng";
       toast.error(message);
     }
-  };
-
-  const handleRefund = () => {
-    updateOrder(order.id, { payment_status: "refunded" });
-    toast.success(`Đã hoàn tiền ${formatCurrency(order.total)} cho khách hàng`);
-    setRefundDialogOpen(false);
-  };
-
-  const handleCreateReturnRequest = () => {
-    if (!returnReason.trim()) {
-      toast.error("Vui lòng nhập lý do trả hàng");
-      return;
-    }
-    toast.success("Đã tạo yêu cầu trả hàng");
-    setReturnDialogOpen(false);
-    setTimeout(() => {
-      navigate("/returns");
-    }, 1000);
   };
 
   const handlePrint = () => {
@@ -182,10 +168,9 @@ export function OrderDetail() {
     },
   ];
 
-  const shippingAddress = order.address
-    ? `${order.address.street}, ${order.address.ward}, ${order.address.district}, ${order.address.province}`
-    : "Chưa có địa chỉ";
-
+  const shippingAddress = displayOrder?.address
+  ? `${displayOrder.address.street}, ${displayOrder.address.ward}, ${displayOrder.address.district}, ${displayOrder.address.province}`
+  : "Chưa có địa chỉ";
   return (
     <>
       <style>
@@ -386,6 +371,18 @@ export function OrderDetail() {
                 </div>
               </div>
               <div className="flex items-center gap-3">
+                <User className="h-5 w-5 text-gray-400" />
+                <div>
+                  <p className="text-sm text-gray-600">Người nhận</p>
+                  <p className="font-medium">
+                    {displayOrder?.address?.recipient || "-"}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {displayOrder?.address?.phone_number || ""}
+                  </p>
+                </div>
+              </div>
+            <div className="flex items-center gap-3">
                 <MapPin className="h-5 w-5 text-gray-400" />
                 <div>
                   <p className="text-sm text-gray-600">Địa chỉ giao hàng</p>
@@ -499,16 +496,6 @@ export function OrderDetail() {
                   {paymentStatusConfig[order.payment_status].label}
                 </Badge>
               </div>
-              {order.payment_status === "paid" &&
-                (orderStatus === "cancelled" || orderStatus === "failed") && (
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => setRefundDialogOpen(true)}
-                  >
-                    Hoàn tiền
-                  </Button>
-                )}
             </CardContent>
           </Card>
 
@@ -531,7 +518,57 @@ export function OrderDetail() {
           </Card>
         </div>
       </div>
-
+      <Card>
+        <CardHeader>
+          <CardTitle>Lịch sử trạng thái</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {(displayOrder as any)?.timeline?.length > 0 ? (
+            <div>
+              {(displayOrder as any).timeline.map((entry: any, index: number) => (
+                <div key={entry.id} className="flex gap-4">
+                  <div className="flex flex-col items-center">
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#E0872B] mt-1.5 flex-shrink-0" />
+                    {index < (displayOrder as any).timeline.length - 1 && (
+                      <div className="w-0.5 bg-gray-200 flex-1 my-1" />
+                    )}
+                  </div>
+                  <div className="pb-4 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge
+                        className={`${
+                          orderStatusConfig[entry.new_status as OrderStatus]?.bgColor ?? "bg-gray-100"
+                        } ${
+                          orderStatusConfig[entry.new_status as OrderStatus]?.color ?? "text-gray-700"
+                        }`}
+                      >
+                        {orderStatusConfig[entry.new_status as OrderStatus]?.label ?? entry.new_status}
+                      </Badge>
+                      <p className="text-sm text-gray-600">{formatDate(entry.changed_at)}</p>
+                    </div>
+                    {entry.note && (
+                      <p className="text-sm text-gray-600 mt-1">{entry.note}</p>
+                    )}
+                    <p className="text-sm text-gray-600 mt-1">
+                      Bởi:{" "}
+                      <span className="font-medium">
+                        {entry.changed_by?.full_name ?? "Hệ thống"}
+                      </span>
+                      {entry.changed_by?.role === "admin"
+                        ? " (Admin)"
+                        : entry.changed_by?.role === "customer"
+                        ? " (Khách hàng)"
+                        : ""}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-600">Chưa có lịch sử trạng thái</p>
+          )}
+        </CardContent>
+      </Card>
       <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -565,71 +602,6 @@ export function OrderDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <Dialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Xác nhận hoàn tiền</DialogTitle>
-            <DialogDescription>
-              Xác nhận hoàn tiền cho khách hàng qua phương thức thanh toán đã sử
-              dụng.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Xác nhận hoàn tiền {formatCurrency(order.total)} cho khách hàng?
-            </p>
-            <div className="p-4 bg-[#FFE0B2] rounded-lg">
-              <p className="text-sm text-[#E0872B]">
-                Số tiền sẽ được hoàn lại qua phương thức thanh toán:{" "}
-                {paymentMethodLabels[order.payment_method]}
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setRefundDialogOpen(false)}
-            >
-              Hủy
-            </Button>
-            <Button onClick={handleRefund}>Xác nhận hoàn tiền</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={returnDialogOpen} onOpenChange={setReturnDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Tạo yêu cầu trả hàng</DialogTitle>
-            <DialogDescription>
-              Nhập lý do trả hàng để tạo yêu cầu mới trong hệ thống.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Vui lòng nhập lý do trả hàng
-            </p>
-            <Textarea
-              value={returnReason}
-              onChange={(e) => setReturnReason(e.target.value)}
-              placeholder="Ví dụ: Sản phẩm không đúng, khách hàng yêu cầu trả lại..."
-              rows={4}
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setReturnDialogOpen(false)}
-            >
-              Đóng
-            </Button>
-            <Button onClick={handleCreateReturnRequest}>
-              Xác nhận tạo yêu cầu
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
       </div>
 
       {/* Trang in cỡ A6 */}
@@ -654,10 +626,11 @@ export function OrderDetail() {
         <div className="mb-4 border-b border-dashed border-gray-300 pb-3">
           <h2 className="font-bold text-sm mb-2 text-gray-800">Thông tin người nhận</h2>
           <div className="space-y-1 text-[11px]">
-            <p className="flex"><span className="text-gray-600 w-16 flex-shrink-0">Khách hàng:</span> <span className="font-medium">{order.user?.full_name}</span></p>
-            <p className="flex"><span className="text-gray-600 w-16 flex-shrink-0">Địa chỉ:</span> <span className="font-medium">{shippingAddress}</span></p>
-            {order.note && <p className="flex"><span className="text-gray-600 w-16 flex-shrink-0">Ghi chú:</span> <span className="font-medium">{order.note}</span></p>}
-            <p className="flex"><span className="text-gray-600 w-16 flex-shrink-0">Thanh toán:</span> <span className="font-medium whitespace-nowrap">{paymentMethodLabels[order.payment_method]}</span></p>
+            <p className="flex"><span className="text-gray-600 w-18 flex-shrink-0">Khách hàng:</span> <span className="font-medium">{displayOrder?.address?.recipient}</span></p>
+            <p className="flex"><span className="text-gray-600 w-18 flex-shrink-0">Số điện thoại:</span> <span className="font-medium">{displayOrder?.address?.phone_number}</span></p>
+            <p className="flex"><span className="text-gray-600 w-18 flex-shrink-0">Địa chỉ:</span> <span className="font-medium">{shippingAddress}</span></p>
+            {order.note && <p className="flex"><span className="text-gray-600 w-18 flex-shrink-0">Ghi chú:</span> <span className="font-medium">{order.note}</span></p>}
+            <p className="flex"><span className="text-gray-600 w-18 flex-shrink-0">Thanh toán:</span> <span className="font-medium whitespace-nowrap">{paymentMethodLabels[order.payment_method]}</span></p>
           </div>
         </div>
 

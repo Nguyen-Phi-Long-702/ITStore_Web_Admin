@@ -20,7 +20,7 @@ import {
 import { toast } from "sonner";
 import { useData } from "../../contexts/DataContext";
 
-export function PromotionForm() {
+export function CouponForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { coupons, addCoupon, updateCoupon } = useData();
@@ -112,7 +112,7 @@ export function PromotionForm() {
         toast.success("Tạo mã giảm giá mới thành công");
       }
 
-      navigate("/promotions");
+      navigate("/coupon");
     } catch (error) {
       const message =
         error instanceof Error
@@ -128,7 +128,7 @@ export function PromotionForm() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => navigate("/promotions")}
+          onClick={() => navigate("/coupon")}
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
@@ -336,7 +336,7 @@ export function PromotionForm() {
                 type="button"
                 variant="outline"
                 className="w-full"
-                onClick={() => navigate("/promotions")}
+                onClick={() => navigate("/coupon")}
               >
                 Hủy
               </Button>

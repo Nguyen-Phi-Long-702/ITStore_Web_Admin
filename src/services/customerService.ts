@@ -7,6 +7,11 @@ export const customerService = {
     return unwrapList<Customer>(res);
   },
 
+  async getDetail(id: number): Promise<Customer> {
+    const res = await api.get<any>(`/api/admin/users/${id}`);
+    return res.data ?? res;
+  },
+
   async updateStatus(id: number, isActive: boolean): Promise<void> {
     await api.patch(`/api/admin/users/${id}/status`, { is_active: isActive });
   },

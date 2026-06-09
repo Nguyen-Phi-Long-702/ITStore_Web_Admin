@@ -12,7 +12,6 @@ import {
   ProductImage,
   StockMovement,
   ReturnRequest,
-  SystemConfig,
 } from "../types";
 import { productService } from "../services/productService";
 import { categoryService } from "../services/categoryService";
@@ -22,7 +21,6 @@ import { customerService } from "../services/customerService";
 import { couponService } from "../services/couponService";
 import { returnService } from "../services/returnService";
 import type { ReturnRequestUpdate } from "../services/returnService";
-import { systemService } from "../services/systemService";
 
 interface DataContextType {
   products: Product[];
@@ -36,7 +34,6 @@ interface DataContextType {
   productImages: ProductImage[];
   stockMovements: StockMovement[];
   returnRequests: ReturnRequest[];
-  systemConfig: SystemConfig;
   productFetchError: string | null;
   brandFetchError: string | null;
   refreshData: () => Promise<void>;
@@ -80,37 +77,9 @@ interface DataContextType {
   deleteStockMovement: (id: number) => Promise<void>;
 
   updateReturnRequest: (id: number, updates: ReturnRequestUpdate) => Promise<void>;
-  updateSystemConfig: (updates: Partial<SystemConfig>) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
-
-const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
-  paymentConfig: {
-    codEnabled: false,
-    bankTransferEnabled: false,
-    creditCardEnabled: false,
-    momoEnabled: false,
-    vnpayEnabled: false,
-  },
-  shippingConfig: {
-    baseShippingFee: 0,
-    freeShippingThreshold: 0,
-    distanceFeePerKm: 0,
-    urgentShippingFee: 0,
-  },
-  bankInfo: {
-    bankName: "",
-    accountNumber: "",
-    accountName: "",
-  },
-  banners: [],
-  notificationTemplates: {
-    orderNotification: "",
-    lowStockNotification: "",
-    shipmentNotification: "",
-  },
-};
 
 function normalizeReturnRequests(
   requests: ReturnRequest[],
@@ -179,7 +148,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [productImages, setProductImages] = useState<ProductImage[]>([]);
   const [stockMovements, setStockMovements] = useState<StockMovement[]>([]);
   const [returnRequests, setReturnRequests] = useState<ReturnRequest[]>([]);
-  const [systemConfig, setSystemConfig] = useState<SystemConfig>(DEFAULT_SYSTEM_CONFIG);
   const [productFetchError, setProductFetchError] = useState<string | null>(null);
   const [brandFetchError, setBrandFetchError] = useState<string | null>(null);
 
@@ -195,7 +163,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       productService.getImages(),
       productService.getStockMovements(),
       returnService.getAll(),
-      systemService.getConfig(),
     ]);
 
     const [
@@ -209,7 +176,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       imagesRes,
       stockRes,
       returnsRes,
-      configRes,
     ] = results;
 
     let loadedVariants: ProductVariant[] = [];
@@ -275,7 +241,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         ),
       );
     }
-    if (configRes.status === "fulfilled" && configRes.value) setSystemConfig(configRes.value);
   }, []);
 
   useEffect(() => {
@@ -433,12 +398,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const updateReturnRequest = (id: number, updates: ReturnRequestUpdate) =>
     withRefresh(() => returnService.update(id, updates));
 
-  const updateSystemConfig = async (updates: Partial<SystemConfig>) => {
-    const payload = { ...systemConfig, ...updates };
-    await withRefresh(() => systemService.updateConfig(payload));
-    setSystemConfig(payload);
-  };
-
   const value: DataContextType = {
     products,
     categories,
@@ -451,7 +410,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     productImages,
     stockMovements,
     returnRequests,
-    systemConfig,
     productFetchError,
     brandFetchError,
     refreshData: fetchAll,
@@ -483,7 +441,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     updateStockMovement,
     deleteStockMovement,
     updateReturnRequest,
-    updateSystemConfig,
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

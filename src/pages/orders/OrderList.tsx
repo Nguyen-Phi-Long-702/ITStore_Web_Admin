@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { Search, Eye, CheckCircle, Package } from "lucide-react";
+import { Search, Eye, CheckCircle, Clock, Hourglass, Truck } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -86,7 +86,7 @@ export function OrderList() {
                   {ordersByStatus.pending.length}
                 </p>
               </div>
-              <Package className="h-8 w-8 text-yellow-600" />
+              <Clock className="h-8 w-8 text-yellow-600" />
             </div>
           </CardContent>
         </Card>
@@ -100,7 +100,7 @@ export function OrderList() {
                   {ordersByStatus.confirmed.length}
                 </p>
               </div>
-              <CheckCircle className="h-8 w-8 text-[#E0872B]" />
+              <Hourglass className="h-8 w-8 text-[#E0872B]" />
             </div>
           </CardContent>
         </Card>
@@ -114,7 +114,7 @@ export function OrderList() {
                   {ordersByStatus.shipping.length}
                 </p>
               </div>
-              <Package className="h-8 w-8 text-cyan-600" />
+              <Truck className="h-8 w-8 text-cyan-600" />
             </div>
           </CardContent>
         </Card>

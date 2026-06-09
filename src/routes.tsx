@@ -7,12 +7,12 @@ import { Dashboard } from "./pages/Dashboard";
 import { ProductList } from "./pages/products/ProductList";
 import { ProductForm } from "./pages/products/ProductForm";
 import { ProductVariantsView } from "./pages/products/ProductVariantsView";
-import { InventoryManagement } from "./pages/products/InventoryManagement";
+import { Stock } from "./pages/products/Stock";
 import { OrderList } from "./pages/orders/OrderList";
 import { OrderDetail } from "./pages/orders/OrderDetail";
 import { CustomerList } from "./pages/users/CustomerList";
-import { PromotionList } from "./pages/promotions/PromotionList";
-import { PromotionForm } from "./pages/promotions/PromotionForm";
+import { CouponList } from "./pages/Coupon/CouponList";
+import { CouponForm } from "./pages/Coupon/CouponForm";
 import { NotificationList } from "./pages/notifications/NotificationList";
 import { NotificationForm } from "./pages/notifications/NotificationForm";
 import { ReturnList } from "./pages/returns/ReturnList";
@@ -23,6 +23,7 @@ import { CategoryList } from "./pages/categories/CategoryList";
 import { BannerList } from "./pages/banners/BannerList";
 import { Account } from "./pages/Account";
 import { PaymentList } from "./pages/payments/PaymentList";
+import { CustomerDetail } from "./pages/users/CustomerDetail";
 
 export const router = createBrowserRouter([
   {
@@ -30,10 +31,7 @@ export const router = createBrowserRouter([
     Component: RootLayout,
     ErrorBoundary: ErrorBoundary,
     children: [
-      {
-        path: "login",
-        Component: Login,
-      },
+      { path: "login", Component: Login},
       {
         path: "/",
         Component: DashboardLayout,
@@ -43,26 +41,18 @@ export const router = createBrowserRouter([
           { path: "products", Component: ProductList },
           { path: "products/new", Component: ProductForm },
           { path: "products/edit/:id", Component: ProductForm },
-          {
-            path: "products/variants/:id",
-            Component: ProductVariantsView,
-          },
-          {
-            path: "products/inventory",
-            Component: InventoryManagement,
-          },
+          { path: "products/variants/:id", Component: ProductVariantsView},
+          { path: "products/stock", Component: Stock},
           { path: "brands", Component: BrandList },
           { path: "categories", Component: CategoryList },
           { path: "banners", Component: BannerList },
           { path: "orders", Component: OrderList },
           { path: "orders/:id", Component: OrderDetail },
           { path: "customers", Component: CustomerList },
-          { path: "promotions", Component: PromotionList },
-          { path: "promotions/new", Component: PromotionForm },
-          {
-            path: "promotions/edit/:id",
-            Component: PromotionForm,
-          },
+          { path: "customers/:id", Component: CustomerDetail },
+          { path: "coupon", Component: CouponList },
+          { path: "coupon/new", Component: CouponForm },
+          { path: "coupon/edit/:id", Component: CouponForm},
           { path: "notifications", Component: NotificationList },
           { path: "notifications/new", Component: NotificationForm },
           { path: "returns", Component: ReturnList },

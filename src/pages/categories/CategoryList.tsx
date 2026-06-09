@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Search, Plus, Edit, Trash2 } from "lucide-react";
+import { Search, Plus, Edit, Trash2, FolderOpen } from "lucide-react";
+import {Package} from "lucide-react";
 import {
   Card,
   CardContent,
@@ -46,13 +47,11 @@ import {
 import { Category } from "../../types";
 import { toast } from "sonner";
 import { useData } from "../../contexts/DataContext";
-import { useAuth } from "../../contexts/AuthContext";
 import { generateSlug } from "../../utils/slugUtils";
 
 export function CategoryList() {
   const { categories, products, addCategory, updateCategory, deleteCategory } =
     useData();
-  const { permissions } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -162,32 +161,36 @@ export function CategoryList() {
           <h2 className="text-2xl font-bold text-gray-900">Quản lý danh mục</h2>
           <p className="text-gray-600">Quản lý các danh mục sản phẩm</p>
         </div>
-        {permissions.canCreateCategory && (
           <Button onClick={handleAdd}>
             <Plus className="h-4 w-4 mr-2" />
             Thêm danh mục
           </Button>
-        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-3xl font-bold text-[#E0872B]">
-                {categories.length}
-              </p>
-              <p className="text-sm text-gray-600 mt-1">Tổng danh mục</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Tổng danh mục</p>
+                <p className="text-2xl font-bold text-[#E0872B]">
+                  {categories.length}
+                </p>
+              </div>
+              <FolderOpen className="h-8 w-8 text-[#E0872B]" />
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-3xl font-bold text-[#E0872B]">
-                {products.length}
-              </p>
-              <p className="text-sm text-gray-600 mt-1">Tổng sản phẩm</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Tổng sản phẩm</p>
+                <p className="text-2xl font-bold text-[#E0872B]">
+                  {products.length}
+                </p>
+              </div>
+              <Package className="h-8 w-8 text-[#E0872B]" />
             </div>
           </CardContent>
         </Card>
@@ -262,7 +265,6 @@ export function CategoryList() {
 
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          {permissions.canEditCategory && (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -271,8 +273,6 @@ export function CategoryList() {
                               <Edit className="h-4 w-4 mr-1" />
                               Sửa
                             </Button>
-                          )}
-                          {permissions.canDeleteCategory && (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -281,7 +281,6 @@ export function CategoryList() {
                               <Trash2 className="h-4 w-4 mr-1 text-red-600" />
                               Xóa
                             </Button>
-                          )}
                         </div>
                       </TableCell>
                     </TableRow>

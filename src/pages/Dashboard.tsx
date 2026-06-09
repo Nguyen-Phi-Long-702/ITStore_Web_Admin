@@ -13,6 +13,7 @@ import {
   Users,
   Package,
   AlertTriangle,
+  Clock,
 } from "lucide-react";
 import {
   LineChart,
@@ -248,7 +249,7 @@ export function Dashboard() {
       title: "Chờ xử lý",
       value: stats.pendingOrders.toString(),
       change: stats.pendingChange,
-      icon: Package,
+      icon: Clock,
       color: "text-orange-600",
       bgColor: "bg-orange-100",
     },
@@ -410,7 +411,7 @@ export function Dashboard() {
               <AlertTriangle className="h-5 w-5 text-red-600" />
               Cảnh báo tồn kho thấp
             </CardTitle>
-            <Link to="/products/inventory">
+            <Link to="/products/stock">
               <Button variant="ghost" size="sm">
                 Quản lý kho
               </Button>
@@ -429,8 +430,19 @@ export function Dashboard() {
                     className="flex items-center justify-between pb-4 border-b last:border-0 last:pb-0"
                   >
                     <div className="flex items-center gap-3 flex-1">
-                      <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
-                        <Package className="h-6 w-6 text-gray-400" />
+                      <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {(() => {
+                          const product = products.find((p) => p.id === variant.product_id) ?? variant.product;
+                          return product?.primary_image ? (
+                            <img
+                              src={product.primary_image}
+                              alt={product.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Package className="h-6 w-6 text-gray-400" />
+                          );
+                        })()}
                       </div>
                       <div>
                         <p className="font-medium">{variant.product?.name}</p>

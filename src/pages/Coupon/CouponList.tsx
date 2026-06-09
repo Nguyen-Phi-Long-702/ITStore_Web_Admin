@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { Plus, Search, Edit, Trash2 } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Percent, BarChart2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -22,7 +22,7 @@ import { formatCurrency, formatDateOnly } from "../../utils/statusUtils";
 import { toast } from "sonner";
 import { useData } from "../../contexts/DataContext";
 
-export function PromotionList() {
+export function CouponList() {
   const { coupons, deleteCoupon } = useData();
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -37,50 +37,50 @@ export function PromotionList() {
     }
   };
 
-  const isExpired = (promotion: (typeof coupons)[0]) => {
+  const isExpired = (coupon: (typeof coupons)[0]) => {
     return !!(
-      promotion.expires_at && new Date(promotion.expires_at) < new Date()
+      coupon.expires_at && new Date(coupon.expires_at) < new Date()
     );
   };
 
-  const isOutOfUses = (promotion: (typeof coupons)[0]) => {
+  const isOutOfUses = (coupon: (typeof coupons)[0]) => {
     return !!(
-      promotion.max_uses !== undefined &&
-      promotion.max_uses !== null &&
-      promotion.max_uses > 0 &&
-      (promotion.used_count || 0) >= promotion.max_uses
+      coupon.max_uses !== undefined &&
+      coupon.max_uses !== null &&
+      coupon.max_uses > 0 &&
+      (coupon.used_count || 0) >= coupon.max_uses
     );
   };
 
-  const getStatusBadge = (promotion: (typeof coupons)[0]) => {
-    if (isExpired(promotion)) {
+  const getStatusBadge = (coupon: (typeof coupons)[0]) => {
+    if (isExpired(coupon)) {
       return <Badge className="bg-rose-100 text-rose-700">Đã hết hạn</Badge>;
     }
 
-    if (isOutOfUses(promotion)) {
+    if (isOutOfUses(coupon)) {
       return (
         <Badge className="bg-orange-100 text-orange-700">Đã hết lượt</Badge>
       );
     }
 
-    if (!promotion.is_active) {
+    if (!coupon.is_active) {
       return <Badge className="bg-slate-100 text-slate-700">Tạm dừng</Badge>;
     }
 
     return <Badge className="bg-emerald-100 text-emerald-700">Đang chạy</Badge>;
   };
 
-  const getStatusOrder = (promotion: (typeof coupons)[0]) => {
-    if (isExpired(promotion)) return 3;
-    if (isOutOfUses(promotion)) return 2;
-    if (!promotion.is_active) return 1;
+  const getStatusOrder = (coupon: (typeof coupons)[0]) => {
+    if (isExpired(coupon)) return 3;
+    if (isOutOfUses(coupon)) return 2;
+    if (!coupon.is_active) return 1;
     return 0;
   };
 
-  const isActuallyActive = (promotion: (typeof coupons)[0]) => {
-    if (isExpired(promotion)) return false;
-    if (isOutOfUses(promotion)) return false;
-    if (!promotion.is_active) return false;
+  const isActuallyActive = (coupon: (typeof coupons)[0]) => {
+    if (isExpired(coupon)) return false;
+    if (isOutOfUses(coupon)) return false;
+    if (!coupon.is_active) return false;
     return true;
   };
 
@@ -104,7 +104,7 @@ export function PromotionList() {
           </h2>
           <p className="text-gray-600">Tạo và quản lý mã giảm giá</p>
         </div>
-        <Link to="/promotions/new">
+        <Link to="/coupon/new">
           <Button>
             <Plus className="h-4 w-4 mr-2" />
             Tạo mã giảm giá
@@ -189,33 +189,33 @@ export function PromotionList() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedCoupons.map((promotion) => (
-                <TableRow key={promotion.id}>
+              {sortedCoupons.map((coupon) => (
+                <TableRow key={coupon.id}>
                   <TableCell>
-                    <p className="font-medium font-mono">{promotion.code}</p>
+                    <p className="font-medium font-mono">{coupon.code}</p>
                   </TableCell>
                   <TableCell>
-                    {promotion.discount_type === "percent"
+                    {coupon.discount_type === "percent"
                       ? "Phần trăm"
                       : "Cố định"}
                   </TableCell>
                   <TableCell className="font-medium">
-                    {promotion.discount_type === "percent"
-                      ? `${promotion.discount_value}%`
-                      : formatCurrency(promotion.discount_value)}
+                    {coupon.discount_type === "percent"
+                      ? `${coupon.discount_value}%`
+                      : formatCurrency(coupon.discount_value)}
                   </TableCell>
                   <TableCell>
-                    {promotion.min_order_value
-                      ? formatCurrency(promotion.min_order_value)
+                    {coupon.min_order_value
+                      ? formatCurrency(coupon.min_order_value)
                       : "-"}
                   </TableCell>
                   <TableCell>
                     <div>
                       <p className="font-medium">
-                        {promotion.used_count || 0} /{" "}
-                        {promotion.max_uses || "∞"}
+                        {coupon.used_count || 0} /{" "}
+                        {coupon.max_uses || "∞"}
                       </p>
-                      {promotion.max_uses && (
+                      {coupon.max_uses && (
                         <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
                           <div
                             className="bg-[#E0872B] h-2 rounded-full"
@@ -224,8 +224,8 @@ export function PromotionList() {
                                 100,
                                 Math.max(
                                   0,
-                                  ((promotion.used_count || 0) /
-                                    promotion.max_uses) *
+                                  ((coupon.used_count || 0) /
+                                    coupon.max_uses) *
                                     100,
                                 ),
                               )}%`,
@@ -236,14 +236,14 @@ export function PromotionList() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {promotion.expires_at
-                      ? formatDateOnly(promotion.expires_at)
+                    {coupon.expires_at
+                      ? formatDateOnly(coupon.expires_at)
                       : "Không giới hạn"}
                   </TableCell>
-                  <TableCell>{getStatusBadge(promotion)}</TableCell>
+                  <TableCell>{getStatusBadge(coupon)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Link to={`/promotions/edit/${promotion.id}`}>
+                      <Link to={`/coupon/edit/${coupon.id}`}>
                         <Button variant="ghost" size="icon">
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -252,7 +252,7 @@ export function PromotionList() {
                         variant="ghost"
                         size="icon"
                         onClick={() =>
-                          handleDelete(promotion.id, promotion.code)
+                          handleDelete(coupon.id, coupon.code)
                         }
                       >
                         <Trash2 className="h-4 w-4 text-red-600" />

@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
-import { Search, Plus, Edit, Trash2, Upload, X, Image } from "lucide-react";
+import { Search, Plus, Edit, Trash2, Upload, X, Image, Package } from "lucide-react";
+import {Tag} from "lucide-react";
 import {
   Card,
   CardContent,
@@ -39,7 +40,6 @@ import {
 import { Brand } from "../../types";
 import { toast } from "sonner";
 import { useData } from "../../contexts/DataContext";
-import { useAuth } from "../../contexts/AuthContext";
 
 export function BrandList() {
   const {
@@ -50,7 +50,6 @@ export function BrandList() {
     deleteBrand,
     brandFetchError,
   } = useData();
-  const { permissions } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -183,32 +182,36 @@ export function BrandList() {
           </h2>
           <p className="text-gray-600">Quản lý các thương hiệu sản phẩm</p>
         </div>
-        {permissions.canCreateBrand && (
           <Button onClick={handleAdd}>
             <Plus className="h-4 w-4 mr-2" />
             Thêm thương hiệu
           </Button>
-        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-3xl font-bold text-[#E0872B]">
-                {brands.length}
-              </p>
-              <p className="text-sm text-gray-600 mt-1">Tổng thương hiệu</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Tổng thương hiệu</p>
+                <p className="text-2xl font-bold text-[#E0872B]">
+                  {brands.length}
+                </p>
+              </div>
+              <Tag className="h-8 w-8 text-[#E0872B]" />
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-3xl font-bold text-[#E0872B]">
-                {products.length}
-              </p>
-              <p className="text-sm text-gray-600 mt-1">Tổng sản phẩm</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Tổng sản phẩm</p>
+                <p className="text-2xl font-bold text-[#E0872B]">
+                  {products.length}
+                </p>
+              </div>
+              <Package className="h-8 w-8 text-[#E0872B]" />
             </div>
           </CardContent>
         </Card>
@@ -305,7 +308,6 @@ export function BrandList() {
 
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          {permissions.canEditBrand && (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -314,8 +316,6 @@ export function BrandList() {
                               <Edit className="h-4 w-4 mr-1" />
                               Sửa
                             </Button>
-                          )}
-                          {permissions.canDeleteBrand && (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -324,7 +324,6 @@ export function BrandList() {
                               <Trash2 className="h-4 w-4 mr-1 text-red-600" />
                               Xóa
                             </Button>
-                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -450,7 +449,6 @@ export function BrandList() {
             <AlertDialogTitle>Xóa thương hiệu</AlertDialogTitle>
             <AlertDialogDescription>
               Bạn có chắc chắn muốn xóa thương hiệu "{selectedBrand?.name}"?
-              Hành động này không thể hoàn tác.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

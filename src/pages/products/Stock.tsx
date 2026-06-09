@@ -41,7 +41,7 @@ import { ColorSwatch } from "../../components/products/ColorSwatch";
 import { toast } from "sonner";
 import { useData } from "../../contexts/DataContext";
 
-export function InventoryManagement() {
+export function Stock() {
   const navigate = useNavigate();
   const { products, addStockMovement } = useData();
   const [stockInDialogOpen, setStockInDialogOpen] = useState(false);

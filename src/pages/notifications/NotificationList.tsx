@@ -60,9 +60,6 @@ export function NotificationList() {
                 </span>
                 Thông báo hệ thống
               </CardTitle>
-              <p className="mt-2 text-sm text-gray-600">
-                Danh sách thông báo loại system được lưu trong cơ sở dữ liệu.
-              </p>
             </div>
 
             <div className="flex items-center gap-3">
@@ -87,7 +84,6 @@ export function NotificationList() {
             <Table>
               <TableHeader className="bg-gray-50">
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="w-[120px]">Loại</TableHead>
                   <TableHead>Tiêu đề</TableHead>
                   <TableHead>Nội dung</TableHead>
                   <TableHead className="w-[240px]">Ngày tạo</TableHead>
@@ -96,18 +92,13 @@ export function NotificationList() {
               <TableBody>
                 {items.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="py-12 text-center text-gray-500">
+                    <TableCell colSpan={3} className="py-12 text-center text-gray-500">
                       Chưa có thông báo nào.
                     </TableCell>
                   </TableRow>
                 ) : (
                   items.map((item) => (
                     <TableRow key={item._id ?? item.id} className="align-top">
-                      <TableCell>
-                        <Badge variant="secondary" className="rounded-full bg-orange-100 text-[#E0872B]">
-                          {item.type ?? "system"}
-                        </Badge>
-                      </TableCell>
                       <TableCell className="font-medium text-gray-900 whitespace-normal">
                         {item.title}
                       </TableCell>
