@@ -457,8 +457,7 @@ export function ProductList() {
           <AlertDialogHeader>
             <AlertDialogTitle>Xác nhận xóa sản phẩm</AlertDialogTitle>
             <AlertDialogDescription>
-              Bạn có chắc chắn muốn xóa sản phẩm "{productToDelete?.name}"? Hành động này
-              không thể hoàn tác.
+              Bạn có chắc chắn muốn xóa sản phẩm "{productToDelete?.name}"?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

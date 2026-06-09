@@ -506,9 +506,9 @@ export function ProductForm() {
         );
 
         if (removedImageIds.length > 0) {
-          await Promise.all(
-            removedImageIds.map((imageId) => deleteProductImage(imageId)),
-          );
+          for (const imageId of removedImageIds) {
+            await deleteProductImage(imageId);
+          }
         }
 
         const existingImageEntries = images.filter((img) => img.id);
@@ -517,18 +517,8 @@ export function ProductForm() {
           (img) => !img.id && img.imageFile,
         );
         if (newImageEntries.length > 0) {
-          await Promise.all(
-            newImageEntries.map((img, index) =>
-              addProductImage({
-                product_id: existingProduct.id,
-                variant_id: undefined,
-                image_url: img.url,
-                is_primary: img.is_primary,
-                sort_order: existingImageEntries.length + index,
-                image_file: img.imageFile,
-              }),
-            ),
-          );
+          const newFiles = newImageEntries.map((img) => img.imageFile!);
+          await productService.uploadImages(existingProduct.id, newFiles);
         }
 
         const primaryExistingImageId = images.find(
@@ -539,6 +529,7 @@ export function ProductForm() {
         }
 
         toast.success("Cập nhật sản phẩm thành công");
+        await refreshData();
       } else {
         createdProductId = await productService.create({
           sku: autoProductCode,
