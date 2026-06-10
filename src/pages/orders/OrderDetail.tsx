@@ -142,12 +142,13 @@ export function OrderDetail() {
         "packed",
         "shipping",
         "delivered",
+        "received",
       ].includes(orderStatus),
     },
     {
       status: "preparing",
       label: "Chuẩn bị hàng",
-      completed: ["preparing", "packed", "shipping", "delivered"].includes(
+      completed: ["preparing", "packed", "shipping", "delivered", "received"].includes(
         orderStatus,
       ),
     },
@@ -159,12 +160,12 @@ export function OrderDetail() {
     {
       status: "shipping",
       label: "Đang giao",
-      completed: ["shipping", "delivered"].includes(orderStatus),
+      completed: ["shipping", "delivered", "received"].includes(orderStatus),
     },
     {
       status: "delivered",
       label: "Hoàn thành",
-      completed: orderStatus === "delivered",
+      completed: orderStatus === "delivered" || orderStatus === "received",
     },
   ];
 
@@ -220,7 +221,7 @@ export function OrderDetail() {
               Xem yêu cầu trả hàng
             </Button>
           )}
-          {orderStatus !== "cancelled" && orderStatus !== "delivered" && (
+          {orderStatus !== "cancelled" && orderStatus !== "delivered" && orderStatus !== "received" && (
             <Button
               variant="destructive"
               onClick={() => setCancelDialogOpen(true)}

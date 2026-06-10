@@ -46,7 +46,9 @@ export function OrderList() {
       orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customerName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus =
-      statusFilter === "all" || order.order_status === statusFilter;
+      statusFilter === "all" ||
+      order.order_status === statusFilter ||
+      (statusFilter === "delivered" && order.order_status === "received");
     const matchesPayment =
       paymentFilter === "all" || order.payment_status === paymentFilter;
 
@@ -61,7 +63,9 @@ export function OrderList() {
     ),
     packed: orders.filter((o) => o.order_status === "packed"),
     shipping: orders.filter((o) => o.order_status === "shipping"),
-    completed: orders.filter((o) => o.order_status === "delivered"),
+    completed: orders.filter((o) =>
+      o.order_status === "delivered" || o.order_status === "received"
+    ),
     cancelled: orders.filter(
       (o) => o.order_status === "cancelled" || o.order_status === "failed",
     ),

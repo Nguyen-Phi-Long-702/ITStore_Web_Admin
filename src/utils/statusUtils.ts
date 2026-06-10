@@ -50,6 +50,11 @@ export const orderStatusConfig: Record<
     color: "text-gray-700",
     bgColor: "bg-gray-100",
   },
+  received: {
+    label: "Giao hàng thành công",
+    color: "text-green-700",
+    bgColor: "bg-green-100",
+  },
 };
 
 export const productStatusConfig: Record<
