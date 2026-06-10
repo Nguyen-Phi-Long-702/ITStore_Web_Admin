@@ -155,7 +155,7 @@ export function OrderDetail() {
     {
       status: "packed",
       label: "Đã đóng gói",
-      completed: ["packed", "shipping", "delivered"].includes(orderStatus),
+      completed: ["packed", "shipping", "delivered", "received"].includes(orderStatus),
     },
     {
       status: "shipping",
