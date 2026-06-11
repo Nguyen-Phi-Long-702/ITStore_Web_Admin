@@ -63,7 +63,7 @@ export function CategoryList() {
     description: "",
     parent_id: undefined as number | undefined,
   });
-
+  const [formLoading, setFormLoading] = useState(false);
   const getProductCount = (categoryId: number) => {
     return products.filter((p) => p.category?.id === categoryId).length;
   };
@@ -104,7 +104,7 @@ export function CategoryList() {
     }
 
     const slug = generateSlug(formData.name);
-
+    setFormLoading(true);
     try {
       if (selectedCategory) {
         await updateCategory(selectedCategory.id, {
@@ -128,6 +128,8 @@ export function CategoryList() {
       setFormData({ name: "", description: "", parent_id: undefined });
     } catch {
       toast.error("Không thể lưu dữ liệu lên backend");
+    } finally {
+      setFormLoading(false);
     }
   };
 
@@ -142,7 +144,7 @@ export function CategoryList() {
         setSelectedCategory(null);
         return;
       }
-
+      setFormLoading(true);
       try {
         await deleteCategory(selectedCategory.id);
         toast.success(`Đã xóa danh mục "${selectedCategory.name}"`);
@@ -150,6 +152,8 @@ export function CategoryList() {
         setSelectedCategory(null);
       } catch {
         toast.error("Không thể xóa danh mục trên backend");
+      } finally {
+        setFormLoading(false);
       }
     }
   };
@@ -364,11 +368,11 @@ export function CategoryList() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={formLoading}>
               Hủy
             </Button>
-            <Button onClick={handleSubmit}>
-              {selectedCategory ? "Cập nhật" : "Thêm"}
+            <Button onClick={handleSubmit} disabled={formLoading}>
+              {formLoading ? "Đang xử lý..." : selectedCategory ? "Cập nhật" : "Thêm"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -390,12 +394,13 @@ export function CategoryList() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogCancel disabled={formLoading}>Hủy</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               className="bg-red-600 hover:bg-red-700"
+              disabled={formLoading}
             >
-              Xóa
+              {formLoading ? "Đang xóa..." : "Xóa"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

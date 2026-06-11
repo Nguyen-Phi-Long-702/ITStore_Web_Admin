@@ -30,6 +30,7 @@ export function CouponForm() {
     ? coupons.find((c) => c.id.toString() === id)
     : null;
   const hydratedCouponIdRef = useRef<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [formData, setFormData] = useState({
     code: existingCoupon?.code || "",
@@ -97,6 +98,7 @@ export function CouponForm() {
       expires_at: normalizeExpiresAt(formData.expires_at) || "",
     };
 
+    setIsSaving(true);
     try {
       if (isEdit && existingCoupon) {
         await updateCoupon(existingCoupon.id, {
@@ -119,6 +121,8 @@ export function CouponForm() {
           ? error.message
           : "Không thể lưu mã giảm giá lên backend";
       toast.error(message);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -328,15 +332,16 @@ export function CouponForm() {
             )}
 
             <div className="flex flex-col gap-2">
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full" disabled={isSaving}>
                 <Save className="h-4 w-4 mr-2" />
-                {isEdit ? "Cập nhật" : "Tạo mới"}
+                {isSaving ? "Đang lưu..." : isEdit ? "Cập nhật" : "Tạo mới"}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 className="w-full"
                 onClick={() => navigate("/coupon")}
+                disabled={isSaving}
               >
                 Hủy
               </Button>

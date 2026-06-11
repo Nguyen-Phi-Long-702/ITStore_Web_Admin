@@ -726,10 +726,13 @@ export function ReturnDetail() {
             <Button
               variant="outline"
               onClick={() => setApproveDialogOpen(false)}
+              disabled={isSubmitting} 
             >
               Hủy
             </Button>
-            <Button onClick={handleApprove}>Xác nhận chấp nhận</Button>
+            <Button onClick={handleApprove} disabled={isSubmitting}> 
+              {isSubmitting ? "Đang xử lý..." : "Xác nhận chấp nhận"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -757,11 +760,12 @@ export function ReturnDetail() {
             <Button
               variant="outline"
               onClick={() => setRejectDialogOpen(false)}
+              disabled={isSubmitting}
             >
               Hủy
             </Button>
-            <Button variant="destructive" onClick={handleReject}>
-              Xác nhận từ chối
+            <Button variant="destructive" onClick={handleReject} disabled={isSubmitting}>
+              {isSubmitting ? "Đang xử lý..." : "Xác nhận từ chối"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -267,10 +267,10 @@ export interface DashboardStats {
   totalOrders: number;
   totalCustomers: number;
   pendingOrders: number;
-  revenueChange: number;
-  ordersChange: number;
-  customersChange: number;
-  pendingChange: number;
+  revenueChange: number | null;
+  ordersChange: number | null;
+  customersChange: number | null;
+  pendingChange: number | null;
   lowStockProducts?: number;
   returnRequests?: number;
 }

@@ -115,7 +115,7 @@ export function ProductForm() {
     null,
   );
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
-
+  const [isSaving, setIsSaving] = useState(false);
   const [variants, setVariants] = useState<VariantFormData[]>([
     {
       sku: "",
@@ -445,7 +445,7 @@ export function ProductForm() {
     }
 
     let createdProductId: number | null = null;
-
+    setIsSaving(true);
     try {
       if (isEdit && existingProduct) {
         await updateProduct(existingProduct.id, {
@@ -577,6 +577,8 @@ export function ProductForm() {
       } else {
         toast.error(message);
       }
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -989,9 +991,11 @@ export function ProductForm() {
             </Card>
 
             <div className="flex flex-col gap-2">
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full" disabled={isSaving}>
                 <Save className="h-4 w-4 mr-2" />
-                {isEdit ? "Cập nhật sản phẩm" : "Thêm sản phẩm"}
+                {isSaving
+                  ? (isEdit ? "Đang cập nhật..." : "Đang thêm...")
+                  : (isEdit ? "Cập nhật sản phẩm" : "Thêm sản phẩm")}
               </Button>
               <Button
                 type="button"

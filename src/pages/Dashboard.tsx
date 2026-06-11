@@ -116,24 +116,16 @@ export function Dashboard() {
 
     const calcChange = (current: number, previous: number) => {
       if (previous === 0) {
-        return current === 0 ? 0 : 100;
+        return current === 0 ? 0 : null;
       }
       return Number((((current - previous) / previous) * 100).toFixed(1));
     };
 
     return {
-      totalRevenue: orders.reduce(
-        (sum, order) =>
-          isRevenueOrder(order.payment_status, order.order_status)
-            ? sum + order.total
-            : sum,
-        0,
-      ),
-      totalOrders: orders.length,
-      totalCustomers: customers.length,
-      pendingOrders: orders.filter((order) =>
-        pendingStatuses.has(order.order_status),
-      ).length,
+      totalRevenue: currentRevenue,       
+      totalOrders: currentOrders.length, 
+      totalCustomers: currentCustomers,   
+      pendingOrders: currentPending,
       revenueChange: calcChange(currentRevenue, previousRevenue),
       ordersChange: calcChange(currentOrders.length, previousOrders.length),
       customersChange: calcChange(currentCustomers, previousCustomers),
@@ -222,7 +214,7 @@ export function Dashboard() {
 
   const statCards = [
     {
-      title: "Doanh thu",
+      title: "Doanh thu tuần này",
       value: formatCurrency(stats.totalRevenue),
       change: stats.revenueChange,
       icon: DollarSign,
@@ -230,7 +222,7 @@ export function Dashboard() {
       bgColor: "bg-green-100",
     },
     {
-      title: "Đơn hàng",
+      title: "Đơn hàng tuần này",
       value: stats.totalOrders.toString(),
       change: stats.ordersChange,
       icon: ShoppingCart,
@@ -238,7 +230,7 @@ export function Dashboard() {
       bgColor: "bg-[#FFE0B2]",
     },
     {
-      title: "Khách hàng",
+      title: "Khách hàng mới",
       value: stats.totalCustomers.toString(),
       change: stats.customersChange,
       icon: Users,
@@ -271,21 +263,21 @@ export function Dashboard() {
                   <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
                   <p className="text-2xl font-bold">{stat.value}</p>
                   <div className="flex items-center gap-1 mt-2">
-                    {stat.change > 0 ? (
-                      <TrendingUp className="h-4 w-4 text-green-600" />
+                    {stat.change === null ? (
+                      <span className="text-sm text-gray-400">Chưa có dữ liệu tuần trước</span>
                     ) : (
-                      <TrendingDown className="h-4 w-4 text-red-600" />
+                      <>
+                        {stat.change > 0 ? (
+                          <TrendingUp className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <TrendingDown className="h-4 w-4 text-red-600" />
+                        )}
+                        <span className={`text-sm ${stat.change > 0 ? "text-green-600" : "text-red-600"}`}>
+                          {Math.abs(stat.change)}%
+                        </span>
+                        <span className="text-sm text-gray-500">so với tuần trước</span>
+                      </>
                     )}
-                    <span
-                      className={`text-sm ${
-                        stat.change > 0 ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {Math.abs(stat.change)}%
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      so với tuần trước
-                    </span>
                   </div>
                 </div>
                 <div className={`${stat.bgColor} p-3 rounded-lg`}>

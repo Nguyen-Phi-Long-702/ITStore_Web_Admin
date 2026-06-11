@@ -55,6 +55,7 @@ export function BrandList() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [formLoading, setFormLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     logo_url: "",
@@ -92,56 +93,61 @@ export function BrandList() {
     setDeleteDialogOpen(true);
   };
 
-  const handleSubmit = async () => {
-    if (!formData.name.trim()) {
-      toast.error("Vui lòng nhập tên thương hiệu");
-      return;
-    }
+const handleSubmit = async () => {
+  if (!formData.name.trim()) {
+    toast.error("Vui lòng nhập tên thương hiệu");
+    return;
+  }
 
-    try {
-      if (selectedBrand) {
-        await updateBrand(selectedBrand.id, {
-          name: formData.name,
-          logo_file: formData.logo_file,
-        });
-        toast.success(`Đã cập nhật thương hiệu "${formData.name}"`);
-      } else {
-        if (!formData.logo_file) {
-          toast.error("Vui lòng chọn logo thương hiệu");
-          return;
-        }
-
-        await addBrand({
-          name: formData.name,
-          logo_file: formData.logo_file,
-        });
-        toast.success(`Đã thêm thương hiệu "${formData.name}"`);
-      }
-
-      setDialogOpen(false);
-      setFormData({ name: "", logo_url: "", logo_file: undefined });
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Không thể lưu thương hiệu lên backend";
-      toast.error(message);
-    }
-  };
-
-  const confirmDelete = async () => {
+  setFormLoading(true); 
+  try {
     if (selectedBrand) {
-      try {
-        await deleteBrand(selectedBrand.id);
-        toast.success(`Đã xóa thương hiệu "${selectedBrand.name}"`);
-        setDeleteDialogOpen(false);
-        setSelectedBrand(null);
-      } catch {
-        toast.error("Không thể xóa thương hiệu trên backend");
+      await updateBrand(selectedBrand.id, {
+        name: formData.name,
+        logo_file: formData.logo_file,
+      });
+      toast.success(`Đã cập nhật thương hiệu "${formData.name}"`);
+    } else {
+      if (!formData.logo_file) {
+        toast.error("Vui lòng chọn logo thương hiệu");
+        return;
       }
-    }
-  };
 
+      await addBrand({
+        name: formData.name,
+        logo_file: formData.logo_file,
+      });
+      toast.success(`Đã thêm thương hiệu "${formData.name}"`);
+    }
+
+    setDialogOpen(false);
+    setFormData({ name: "", logo_url: "", logo_file: undefined });
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Không thể lưu thương hiệu lên backend";
+    toast.error(message);
+  } finally {
+    setFormLoading(false); 
+  }
+};
+
+const confirmDelete = async () => {
+  if (selectedBrand) {
+    setFormLoading(true); 
+    try {
+      await deleteBrand(selectedBrand.id);
+      toast.success(`Đã xóa thương hiệu "${selectedBrand.name}"`);
+      setDeleteDialogOpen(false);
+      setSelectedBrand(null);
+    } catch {
+      toast.error("Không thể xóa thương hiệu trên backend");
+    } finally {
+      setFormLoading(false);
+    }
+  }
+};
   const handleFileSelect = () => {
     fileInputRef.current?.click();
   };
@@ -433,11 +439,11 @@ export function BrandList() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={formLoading}>
               Hủy
             </Button>
-            <Button onClick={handleSubmit}>
-              {selectedBrand ? "Cập nhật" : "Thêm"}
+            <Button onClick={handleSubmit} disabled={formLoading}>
+              {formLoading ? "Đang xử lý..." : selectedBrand ? "Cập nhật" : "Thêm"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -452,12 +458,13 @@ export function BrandList() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogCancel disabled={formLoading}>Hủy</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               className="bg-red-600 hover:bg-red-700"
+              disabled={formLoading}
             >
-              Xóa
+              {formLoading ? "Đang xóa..." : "Xóa"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

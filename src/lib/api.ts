@@ -20,6 +20,33 @@ const processQueue = (error: Error | null, token: string | null = null) => {
   failedQueue = [];
 };
 
+async function refreshAccessToken(): Promise<string> {
+  const refreshToken = localStorage.getItem("auth_refresh_token");
+  if (!refreshToken) throw new Error("No refresh token");
+
+  const res = await fetch(`${BASE_URL}/api/auth/refresh`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  });
+
+  if (!res.ok) throw new Error("Refresh failed");
+
+  const data = await res.json();
+  if (!data.access_token) throw new Error("Refresh failed");
+
+  return data.access_token;
+}
+
+function clearAuthAndRedirect() {
+  localStorage.removeItem("auth_access_token");
+  localStorage.removeItem("auth_refresh_token");
+  localStorage.removeItem("auth_user");
+  if (window.location.pathname !== "/login") {
+    window.location.href = "/login";
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -32,58 +59,46 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       signal: controller.signal,
     });
 
-    if (res.status === 401 && !path.includes('/auth/login') && !path.includes('/auth/refresh')) {
-      const refreshToken = localStorage.getItem("auth_refresh_token");
-      if (refreshToken) {
-        if (!isRefreshing) {
-          isRefreshing = true;
-          fetch(`${BASE_URL}/api/auth/refresh`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ refresh_token: refreshToken })
-          })
-            .then(async (refreshRes) => {
-              if (refreshRes.ok) {
-                const data = await refreshRes.json();
-                if (data.access_token) {
-                  localStorage.setItem("auth_access_token", data.access_token);
-                  processQueue(null, data.access_token);
-                } else {
-                  processQueue(new Error("Refresh failed"));
-                }
-              } else {
-                processQueue(new Error("Refresh failed"));
-              }
-            })
-            .catch((err) => processQueue(err))
-            .finally(() => {
-              isRefreshing = false;
-            });
-        }
+    if (res.status === 401 && !path.includes("/auth/login") && !path.includes("/auth/refresh")) {
+      let newToken: string;
 
+      if (isRefreshing) {
+        newToken = await new Promise<string>((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        });
+      } else {
+        // Mình sẽ refresh
+        isRefreshing = true;
         try {
-          await new Promise<string>((resolve, reject) => {
-            failedQueue.push({ resolve, reject });
-          });
-          res = await fetch(`${BASE_URL}${path}`, {
-            credentials: "include",
-            ...init,
-            headers: getAuthHeaders(init?.headers),
-            signal: controller.signal,
-          });
-        } catch {
+          newToken = await refreshAccessToken();
+          localStorage.setItem("auth_access_token", newToken);
+          processQueue(null, newToken);
+        } catch (err) {
+          processQueue(err as Error);
+          isRefreshing = false;
+          clearAuthAndRedirect();
+          throw new Error("Session expired");
         }
+        isRefreshing = false;
+      }
+
+      const retryController = new AbortController();
+      const retryTimeout = setTimeout(() => retryController.abort(), TIMEOUT_MS);
+      try {
+        res = await fetch(`${BASE_URL}${path}`, {
+          credentials: "include",
+          ...init,
+          headers: getAuthHeaders(init?.headers),
+          signal: retryController.signal,
+        });
+      } finally {
+        clearTimeout(retryTimeout);
       }
     }
 
     if (!res.ok) {
       if (res.status === 401) {
-        localStorage.removeItem("auth_access_token");
-        localStorage.removeItem("auth_refresh_token");
-        localStorage.removeItem("auth_user");
-        if (window.location.pathname !== "/login") {
-          window.location.href = "/login";
-        }
+        clearAuthAndRedirect();
       }
       const body = await res.json().catch(() => ({})) as Record<string, unknown>;
       throw new Error((body?.message as string) ?? `HTTP ${res.status}`);

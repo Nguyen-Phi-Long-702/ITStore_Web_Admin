@@ -41,6 +41,7 @@ export function ProductVariantsView() {
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [stockChange, setStockChange] = useState(0);
   const [stockNote, setStockNote] = useState("");
+  const [isStockSaving, setIsStockSaving] = useState(false);
 
   if (!product) {
     return (
@@ -60,28 +61,35 @@ export function ProductVariantsView() {
     setStockDialogOpen(true);
   };
 
-  const confirmStockUpdate = () => {
-    if (stockChange === 0) {
-      toast.error("Vui lòng nhập số lượng thay đổi");
-      return;
-    }
+const confirmStockUpdate = async () => {   
+  if (stockChange === 0) {
+    toast.error("Vui lòng nhập số lượng thay đổi");
+    return;
+  }
 
-    const newStock = selectedVariant.stock + stockChange;
-    if (newStock < 0) {
-      toast.error("Số lượng tồn kho không thể âm");
-      return;
-    }
+  const newStock = selectedVariant.stock + stockChange;
+  if (newStock < 0) {
+    toast.error("Số lượng tồn kho không thể âm");
+    return;
+  }
+
+  setIsStockSaving(true);                 
+  try {
+    await updateProductVariant(selectedVariant.id, {
+      ...selectedVariant,
+      stock: newStock,
+    });
 
     toast.success(
       `Đã ${stockChange > 0 ? "nhập" : "xuất"} ${Math.abs(stockChange)} sản phẩm`,
     );
     setStockDialogOpen(false);
-
-    updateProductVariant(selectedVariant.id, {
-      ...selectedVariant,
-      stock: newStock,
-    });
-  };
+  } catch (error) {                         
+    toast.error("Không thể cập nhật tồn kho, vui lòng thử lại");
+  } finally {
+    setIsStockSaving(false);               
+  }
+};
 
   const variantsByColor = product.variants?.reduce((acc: any, variant) => {
     const key = variant.color || "Không phân loại";
@@ -320,7 +328,9 @@ export function ProductVariantsView() {
             <Button variant="outline" onClick={() => setStockDialogOpen(false)}>
               Hủy
             </Button>
-            <Button onClick={confirmStockUpdate}>Xác nhận</Button>
+            <Button onClick={confirmStockUpdate} disabled={isStockSaving}>
+              {isStockSaving ? "Đang xử lý..." : "Xác nhận"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

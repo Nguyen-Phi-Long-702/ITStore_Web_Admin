@@ -49,6 +49,7 @@ export function Stock() {
   const [selectedVariant, setSelectedVariant] = useState<string>("");
   const [quantity, setQuantity] = useState(0);
   const [note, setNote] = useState("");
+  const [isStockSaving, setIsStockSaving] = useState(false);
 
   const lowStockProducts = products.filter(
     (p) => p.variants && p.variants.some((v) => v.stock > 0 && v.stock < 10),
@@ -62,22 +63,24 @@ export function Stock() {
     setStockInDialogOpen(true);
   };
 
-  const confirmStockIn = async () => {
-    if (!quantity || quantity <= 0) {
-      toast.error("Vui lòng nhập số lượng hợp lệ");
-      return;
-    }
+const confirmStockIn = async () => {
+  if (!quantity || quantity <= 0) {
+    toast.error("Vui lòng nhập số lượng hợp lệ");
+    return;
+  }
 
-    if (!selectedVariant) {
-      toast.error("Vui lòng chọn biến thể");
-      return;
-    }
+  if (!selectedVariant) {
+    toast.error("Vui lòng chọn biến thể");
+    return;
+  }
 
-    const variant = selectedProduct?.variants?.find(
-      (v) => v.id.toString() === selectedVariant,
-    );
+  const variant = selectedProduct?.variants?.find(
+    (v) => v.id.toString() === selectedVariant,
+  );
 
-    if (variant) {
+  if (variant) {
+    setIsStockSaving(true);           
+    try {
       await addStockMovement({
         variant_id: variant.id,
         change_qty: quantity,
@@ -89,14 +92,19 @@ export function Stock() {
           variant?.color ? ` - ${variant.color}` : ""
         }${variant?.version ? ` - ${variant.version}` : ""} vào kho`,
       );
-    }
 
-    setStockInDialogOpen(false);
-    setSelectedProduct(null);
-    setSelectedVariant("");
-    setQuantity(0);
-    setNote("");
-  };
+      setStockInDialogOpen(false);
+      setSelectedProduct(null);
+      setSelectedVariant("");
+      setQuantity(0);
+      setNote("");
+    } catch (error) {                
+      toast.error("Không thể nhập kho, vui lòng thử lại");
+    } finally {
+      setIsStockSaving(false);      
+    }
+  }
+};
 
   return (
     <div className="space-y-6">
@@ -535,7 +543,9 @@ export function Stock() {
             >
               Hủy
             </Button>
-            <Button onClick={confirmStockIn}>Xác nhận nhập kho</Button>
+            <Button onClick={confirmStockIn} disabled={isStockSaving}>
+              {isStockSaving ? "Đang xử lý..." : "Xác nhận nhập kho"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

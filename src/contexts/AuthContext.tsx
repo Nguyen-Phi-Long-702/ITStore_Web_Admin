@@ -60,29 +60,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (!token) {
-      setIsLoading(false);
-      return;
-    }
+  const token = localStorage.getItem(TOKEN_KEY);
+  const refreshToken = localStorage.getItem(REFRESH_KEY);
 
-    api
-      .get<Record<string, unknown>>("/api/users/me")
-      .then((res) => {
-        const raw = (res as any)?.data ?? res;
-        if (raw?.id && raw?.email) {
-          const parsed = parseUser(raw);
-          setUser(parsed);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
-        }
-      })
-      .catch(() => {
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(REFRESH_KEY);
-        localStorage.removeItem(STORAGE_KEY);
-      })
-      .finally(() => setIsLoading(false));
-  }, []);
+  if (!token && !refreshToken) {
+    setIsLoading(false);
+    return;
+  }
+
+  api
+    .get<Record<string, unknown>>("/api/users/me")
+    .then((res) => {
+      const raw = (res as any)?.data ?? res;
+      if (raw?.id && raw?.email) {
+        const parsed = parseUser(raw);
+        setUser(parsed);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+      }
+    })
+    .catch(() => {
+      setUser(null);
+      localStorage.removeItem(STORAGE_KEY);
+    })
+    .finally(() => setIsLoading(false));
+}, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
   try {

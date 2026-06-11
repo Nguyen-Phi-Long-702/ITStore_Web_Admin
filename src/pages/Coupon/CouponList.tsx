@@ -21,19 +21,45 @@ import {
 import { formatCurrency, formatDateOnly } from "../../utils/statusUtils";
 import { toast } from "sonner";
 import { useData } from "../../contexts/DataContext";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../../components/ui/alert-dialog";
 
 export function CouponList() {
   const { coupons, deleteCoupon } = useData();
   const [searchTerm, setSearchTerm] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);       
+  const [couponToDelete, setCouponToDelete] = useState<{ id: number; code: string } | null>(null); 
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const filteredCoupons = coupons.filter((coupon) =>
     coupon.code.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const handleDelete = (id: number, code: string) => {
-    if (confirm(`Bạn có chắc chắn muốn xóa mã giảm giá "${code}"?`)) {
-      deleteCoupon(id);
+    setCouponToDelete({ id, code });
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!couponToDelete || isDeleting) return;
+    setIsDeleting(true);
+    try {
+      await deleteCoupon(couponToDelete.id);
       toast.success("Đã xóa mã giảm giá");
+      setDeleteDialogOpen(false);
+      setCouponToDelete(null);
+    } catch (error) {
+      toast.error("Không thể xóa mã giảm giá");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -265,6 +291,26 @@ export function CouponList() {
           </Table>
         </CardContent>
       </Card>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xóa mã giảm giá</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa mã "{couponToDelete?.code}"?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? "Đang xóa..." : "Xóa"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

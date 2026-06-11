@@ -76,7 +76,8 @@ export function OrderDetail() {
   );
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
-
+  const [isUpdating, setIsUpdating] = useState(false); 
+  const [isCancelling, setIsCancelling] = useState(false);
   if (!order) {
     return (
       <div className="text-center py-12">
@@ -93,6 +94,7 @@ export function OrderDetail() {
   const hasReturnRequest = returnRequests.some((r) => r.order_id === order.id);
 
   const handleUpdateStatus = async (newStatus: OrderStatus) => {
+    setIsUpdating(true);
     try {
       await updateOrder(order.id, { order_status: newStatus });
       setOrderStatus(newStatus);
@@ -103,6 +105,8 @@ export function OrderDetail() {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Không thể cập nhật trạng thái";
       toast.error(message);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -111,6 +115,7 @@ export function OrderDetail() {
       toast.error("Vui lòng nhập lý do hủy đơn");
       return;
     }
+    setIsCancelling(true);
     try {
       await updateOrder(order.id, {
         order_status: "cancelled",
@@ -124,6 +129,8 @@ export function OrderDetail() {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Không thể hủy đơn hàng";
       toast.error(message);
+    } finally {      
+      setIsCancelling(false);
     }
   };
 
@@ -424,13 +431,14 @@ export function OrderDetail() {
 
               {orderStatus === "pending" && (
                 <div className="space-y-2">
-                  <Button
-                    className="w-full"
-                    onClick={() => handleUpdateStatus("confirmed")}
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Xác nhận đơn hàng
-                  </Button>
+                <Button
+                  className="w-full"
+                  onClick={() => handleUpdateStatus("confirmed")}
+                  disabled={isUpdating} 
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  {isUpdating ? "Đang xử lý..." : "Xác nhận đơn hàng"}
+                </Button>
                 </div>
               )}
 
@@ -438,9 +446,10 @@ export function OrderDetail() {
                 <Button
                   className="w-full"
                   onClick={() => handleUpdateStatus("preparing")}
+                  disabled={isUpdating} 
                 >
                   <Package className="h-4 w-4 mr-2" />
-                  Bắt đầu chuẩn bị hàng
+                  {isUpdating ? "Đang xử lý..." : "Bắt đầu chuẩn bị hàng"}
                 </Button>
               )}
 
@@ -448,9 +457,10 @@ export function OrderDetail() {
                 <Button
                   className="w-full"
                   onClick={() => handleUpdateStatus("packed")}
+                  disabled={isUpdating} 
                 >
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  Đã đóng gói xong
+                  {isUpdating ? "Đang xử lý..." : "Đã đóng gói xong"}
                 </Button>
               )}
 
@@ -458,9 +468,10 @@ export function OrderDetail() {
                 <Button
                   className="w-full"
                   onClick={() => handleUpdateStatus("shipping")}
+                  disabled={isUpdating} 
                 >
                   <Truck className="h-4 w-4 mr-2" />
-                  Giao cho đơn vị vận chuyển
+                  {isUpdating ? "Đang xử lý..." : "Giao cho đơn vị vận chuyển"}
                 </Button>
               )}
 
@@ -468,9 +479,10 @@ export function OrderDetail() {
                 <Button
                   className="w-full"
                   onClick={() => handleUpdateStatus("delivered")}
+                  disabled={isUpdating} 
                 >
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  Giao hàng thành công
+                  {isUpdating ? "Đang xử lý..." : "Giao hàng thành công"}
                 </Button>
               )}
             </CardContent>
@@ -594,11 +606,12 @@ export function OrderDetail() {
             <Button
               variant="outline"
               onClick={() => setCancelDialogOpen(false)}
+              disabled={isCancelling} 
             >
               Đóng
             </Button>
-            <Button variant="destructive" onClick={handleCancelOrder}>
-              Xác nhận hủy
+            <Button variant="destructive" onClick={handleCancelOrder} disabled={isCancelling}>
+              {isCancelling ? "Đang hủy..." : "Xác nhận hủy"}
             </Button>
           </DialogFooter>
         </DialogContent>

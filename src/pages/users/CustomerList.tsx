@@ -269,6 +269,7 @@ export function CustomerList() {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleToggleBlock(customer)}
+                        disabled={isUpdatingStatus}
                       >
                         {customer.is_active ? (
                           <XCircle className="h-4 w-4 mr-1 text-red-600" />
@@ -299,7 +300,7 @@ export function CustomerList() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogCancel disabled={isUpdatingStatus}>Hủy</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmToggleBlock}
               disabled={isUpdatingStatus}

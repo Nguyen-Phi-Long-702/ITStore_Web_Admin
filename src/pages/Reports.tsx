@@ -36,7 +36,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { Download, TrendingUp, Package, DollarSign, Users, ShoppingCart } from "lucide-react";
+import { Download, TrendingUp, Package, DollarSign, Users, ShoppingCart, TrendingDown } from "lucide-react";
 import { formatCurrency } from "../utils/statusUtils";
 import { useData } from "../contexts/DataContext";
 import { orderService } from "../services/orderService";
@@ -465,10 +465,13 @@ export function Reports() {
                   {formatCurrency(reportData.totalRevenue)}
                 </p>
                 <div className="flex items-center gap-1 mt-1">
-                  <TrendingUp className="h-4 w-4 text-green-600" />
-                  <span className="text-sm text-green-600">
-                    {growth.revenue > 0 ? "+" : ""}
-                    {growth.revenue}%
+                  {growth.revenue >= 0 ? (
+                    <TrendingUp className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <TrendingDown className="h-4 w-4 text-red-600" />
+                  )}
+                  <span className={`text-sm ${growth.revenue >= 0 ? "text-green-600" : "text-red-600"}`}>
+                    {Math.abs(growth.revenue)}%
                   </span>
                 </div>
               </div>
@@ -486,10 +489,13 @@ export function Reports() {
                   {reportData.totalOrders}
                 </p>
                 <div className="flex items-center gap-1 mt-1">
-                  <TrendingUp className="h-4 w-4 text-[#E0872B]" />
-                  <span className="text-sm text-[#E0872B]">
-                    {growth.orders > 0 ? "+" : ""}
-                    {growth.orders}%
+                  {growth.orders >= 0 ? (
+                    <TrendingUp className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <TrendingDown className="h-4 w-4 text-red-600" />
+                  )}
+                  <span className={`text-sm ${growth.orders >= 0 ? "text-green-600" : "text-red-600"}`}>
+                    {Math.abs(growth.orders)}%
                   </span>
                 </div>
               </div>
@@ -507,10 +513,13 @@ export function Reports() {
                   {formatCurrency(reportData.avgOrderValue)}
                 </p>
                 <div className="flex items-center gap-1 mt-1">
-                  <TrendingUp className="h-4 w-4 text-[#E0872B]" />
-                  <span className="text-sm text-[#E0872B]">
-                    {growth.avgOrderValue > 0 ? "+" : ""}
-                    {growth.avgOrderValue}%
+                  {growth.avgOrderValue >= 0 ? (
+                    <TrendingUp className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <TrendingDown className="h-4 w-4 text-red-600" />
+                  )}
+                  <span className={`text-sm ${growth.avgOrderValue >= 0 ? "text-green-600" : "text-red-600"}`}>
+                    {Math.abs(growth.avgOrderValue)}%
                   </span>
                 </div>
               </div>
@@ -528,10 +537,13 @@ export function Reports() {
                   {reportData.newCustomers}
                 </p>
                 <div className="flex items-center gap-1 mt-1">
-                  <TrendingUp className="h-4 w-4 text-orange-600" />
-                  <span className="text-sm text-orange-600">
-                    {growth.customers > 0 ? "+" : ""}
-                    {growth.customers}%
+                  {growth.customers >= 0 ? (
+                    <TrendingUp className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <TrendingDown className="h-4 w-4 text-red-600" />
+                  )}
+                  <span className={`text-sm ${growth.customers >= 0 ? "text-green-600" : "text-red-600"}`}>
+                    {Math.abs(growth.customers)}%
                   </span>
                 </div>
               </div>
