@@ -211,24 +211,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     if (customersRes.status === "fulfilled") setRawCustomers(customersRes.value);
     if (ordersRes.status === "fulfilled") setRawOrders(ordersRes.value);
     if (itemsRes.status === "fulfilled") setOrderItems(itemsRes.value);
-    if (ordersRes.status === "fulfilled" && itemsRes.status !== "fulfilled") {
-      try {
-        const detailResults = await Promise.allSettled(
-          ordersRes.value.map((o: Order) => orderService.getDetail(o.id)),
-        );
-        const enrichedOrders = ordersRes.value.map((o: Order, idx: number) => {
-          const dr = detailResults[idx] as PromiseSettledResult<any>;
-          if (dr && dr.status === "fulfilled" && dr.value) {
-            const detail = dr.value;
-            const itemsFromDetail = (detail as any).items ?? (detail as any).order_items ?? [];
-            return { ...o, ...(itemsFromDetail.length ? { items: itemsFromDetail } : {}) };
-          }
-          return o;
-        });
-        setRawOrders(enrichedOrders);
-      } catch (e) {
-      }
-    }
     if (couponsRes.status === "fulfilled") setCoupons(couponsRes.value);
     if (imagesRes.status === "fulfilled") setProductImages(imagesRes.value);
     if (stockRes.status === "fulfilled") setStockMovements(stockRes.value);

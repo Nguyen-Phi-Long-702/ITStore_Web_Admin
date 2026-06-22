@@ -194,7 +194,6 @@ export function OrderList() {
               <TableRow>
                 <TableHead>Mã đơn</TableHead>
                 <TableHead>Khách hàng</TableHead>
-                <TableHead>Sản phẩm</TableHead>
                 <TableHead className="text-right">Tổng tiền</TableHead>
                 <TableHead>Thanh toán</TableHead>
                 <TableHead>Trạng thái</TableHead>
@@ -218,15 +217,6 @@ export function OrderList() {
                           {order.user?.phone_number || order.address?.phone_number}
                         </p>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                      {(order as any).item_count != null
-                        ? `${(order as any).item_count} sản phẩm`
-                        : order.items && order.items.length > 0
-                          ? `${order.items.reduce((sum, it) => sum + (it.quantity || 0), 0)} sản phẩm`
-                          : "-"}
-                    </div>
                     </TableCell>
                     <TableCell className="text-right font-medium">
                       {formatCurrency(order.total)}
