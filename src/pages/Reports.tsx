@@ -44,8 +44,25 @@ import { Order } from "../types";
 
 export function Reports() {
   const [timeRange, setTimeRange] = useState("week");
-  const { orders, customers, productVariants, products, categories } =
-    useData();
+  const {
+    orders,
+    customers,
+    productVariants,
+    products,
+    categories,
+    fetchOrders,
+    fetchCustomers,
+    fetchProducts,
+    fetchCategories,
+  } = useData();
+
+  useEffect(() => {
+    fetchOrders();
+    fetchCustomers();
+    fetchProducts();
+    fetchCategories();
+  }, [fetchOrders, fetchCustomers, fetchProducts, fetchCategories]);
+
   const [detailedOrders, setDetailedOrders] = useState<Record<number, Order>>({});
 
   const isRevenueOrder = (paymentStatus: string, orderStatus: string) =>

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Search, Plus, Edit, Trash2, Upload, X, Image } from "lucide-react";
 import {
   Card,
@@ -48,7 +48,13 @@ export function BrandList() {
     updateBrand,
     deleteBrand,
     brandFetchError,
+    fetchBrands,
   } = useData();
+
+  useEffect(() => {
+    fetchBrands();
+  }, [fetchBrands]);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

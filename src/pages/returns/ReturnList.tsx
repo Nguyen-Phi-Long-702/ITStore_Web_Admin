@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Filter, ArrowUpDown, Eye, RotateCcw, Clock, Check, CheckCircle } from "lucide-react";
 import {
@@ -58,7 +58,12 @@ const returnStatusConfig: Record<
 
 export function ReturnList() {
   const navigate = useNavigate();
-  const { returnRequests } = useData();
+  const { returnRequests, fetchReturnRequests } = useData();
+
+  useEffect(() => {
+    fetchReturnRequests();
+  }, [fetchReturnRequests]);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"date" | "amount">("date");

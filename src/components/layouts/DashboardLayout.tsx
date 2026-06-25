@@ -25,7 +25,7 @@ import {
   Lock,
   CreditCard,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import {
@@ -44,8 +44,13 @@ export function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout, isAuthenticated, isLoading } = useAuth();
-  const { orders, returnRequests } = useData();
+  const { orders, returnRequests, fetchOrders, fetchReturnRequests } = useData();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  useEffect(() => {
+    fetchOrders();
+    fetchReturnRequests();
+  }, [fetchOrders, fetchReturnRequests]);
 
   const pendingOrderCount = orders.filter((order) =>
     ["pending", "confirmed", "preparing", "packed", "shipping"].includes(

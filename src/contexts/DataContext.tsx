@@ -38,6 +38,16 @@ interface DataContextType {
   brandFetchError: string | null;
   refreshData: () => Promise<void>;
 
+  fetchCategories: (force?: boolean) => Promise<void>;
+  fetchBrands: (force?: boolean) => Promise<void>;
+  fetchCustomers: (force?: boolean) => Promise<void>;
+  fetchOrders: (force?: boolean) => Promise<void>;
+  fetchCoupons: (force?: boolean) => Promise<void>;
+  fetchProducts: (force?: boolean) => Promise<void>;
+  fetchProductImages: (force?: boolean) => Promise<void>;
+  fetchStockMovements: (force?: boolean) => Promise<void>;
+  fetchReturnRequests: (force?: boolean) => Promise<void>;
+
   addProduct: (product: Omit<Product, "id" | "created_at" | "updated_at" | "slug"> & { slug?: string }) => Promise<number>;
   updateProduct: (id: number, updates: Partial<Product>) => Promise<void>;
   deleteProduct: (id: number) => Promise<void>;
@@ -151,68 +161,125 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [productFetchError, setProductFetchError] = useState<string | null>(null);
   const [brandFetchError, setBrandFetchError] = useState<string | null>(null);
 
-  const fetchAll = useCallback(async () => {
-    // We'll skip fetching products initially inside DataContext,
-    // as we want to handle fetching them locally or dynamically.
-    const results = await Promise.allSettled([
-      categoryService.getAll(),
-      brandService.getAll(),
-      customerService.getAll(),
-      orderService.getAll(),
-      couponService.getAll(),
-      productService.getImages(),
-      productService.getStockMovements(),
-      returnService.getAll(),
-    ]);
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
+  const [brandsLoaded, setBrandsLoaded] = useState(false);
+  const [customersLoaded, setCustomersLoaded] = useState(false);
+  const [ordersLoaded, setOrdersLoaded] = useState(false);
+  const [couponsLoaded, setCouponsLoaded] = useState(false);
+  const [productsLoaded, setProductsLoaded] = useState(false);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [stockLoaded, setStockLoaded] = useState(false);
+  const [returnsLoaded, setReturnsLoaded] = useState(false);
 
-    const [
-      categoriesRes,
-      brandsRes,
-      customersRes,
-      ordersRes,
-      couponsRes,
-      imagesRes,
-      stockRes,
-      returnsRes,
-    ] = results;
+  const fetchCategories = useCallback(async (force = false) => {
+    if (categoriesLoaded && !force) return;
+    try {
+      const res = await categoryService.getAll();
+      setCategories(res);
+      setCategoriesLoaded(true);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [categoriesLoaded]);
 
-    let loadedVariants: ProductVariant[] = [];
-
-    if (categoriesRes.status === "fulfilled") setCategories(categoriesRes.value);
-    if (brandsRes.status === "fulfilled") {
-      setBrands(brandsRes.value);
+  const fetchBrands = useCallback(async (force = false) => {
+    if (brandsLoaded && !force) return;
+    try {
+      const res = await brandService.getAll();
+      setBrands(res);
       setBrandFetchError(null);
-    } else {
-      setBrandFetchError(brandsRes.reason?.message ?? "Không thể tải thương hiệu");
+      setBrandsLoaded(true);
+    } catch (e) {
+      setBrandFetchError(e instanceof Error ? e.message : "Không thể tải thương hiệu");
     }
-    if (customersRes.status === "fulfilled") setRawCustomers(customersRes.value);
-    if (ordersRes.status === "fulfilled") {
-      setRawOrders(ordersRes.value);
-    }
-    if (couponsRes.status === "fulfilled") setCoupons(couponsRes.value);
-    if (imagesRes.status === "fulfilled") setProductImages(imagesRes.value);
-    if (stockRes.status === "fulfilled") setStockMovements(stockRes.value);
-    if (returnsRes.status === "fulfilled") {
-      setReturnRequests(
-        normalizeReturnRequests(
-          returnsRes.value,
-          [],
-          loadedVariants,
-        ),
-      );
-    }
-  }, []);
+  }, [brandsLoaded]);
 
-  useEffect(() => {
-    fetchAll();
-  }, [fetchAll]);
+  const fetchCustomers = useCallback(async (force = false) => {
+    if (customersLoaded && !force) return;
+    try {
+      const res = await customerService.getAll();
+      setRawCustomers(res);
+      setCustomersLoaded(true);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [customersLoaded]);
+
+  const fetchOrders = useCallback(async (force = false) => {
+    if (ordersLoaded && !force) return;
+    try {
+      const res = await orderService.getAll();
+      setRawOrders(res);
+      setOrdersLoaded(true);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [ordersLoaded]);
+
+  const fetchCoupons = useCallback(async (force = false) => {
+    if (couponsLoaded && !force) return;
+    try {
+      const res = await couponService.getAll();
+      setCoupons(res);
+      setCouponsLoaded(true);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [couponsLoaded]);
+
+  const fetchProducts = useCallback(async (force = false) => {
+    if (productsLoaded && !force) return;
+    try {
+      const res = await productService.getAll({ page: 1, limit: 1000 });
+      setRawProducts(res.data);
+      const variants = res.data.flatMap((p) =>
+        (p.variants || []).map((v) => ({ ...v, product_id: p.id })),
+      );
+      setProductVariants(variants);
+      setProductsLoaded(true);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [productsLoaded]);
+
+  const fetchProductImages = useCallback(async (force = false) => {
+    if (imagesLoaded && !force) return;
+    try {
+      const res = await productService.getImages();
+      setProductImages(res);
+      setImagesLoaded(true);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [imagesLoaded]);
+
+  const fetchStockMovements = useCallback(async (force = false) => {
+    if (stockLoaded && !force) return;
+    try {
+      const res = await productService.getStockMovements();
+      setStockMovements(res);
+      setStockLoaded(true);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [stockLoaded]);
+
+  const fetchReturnRequests = useCallback(async (force = false) => {
+    if (returnsLoaded && !force) return;
+    try {
+      const res = await returnService.getAll();
+      setReturnRequests(normalizeReturnRequests(res, [], []));
+      setReturnsLoaded(true);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [returnsLoaded]);
 
   const products: Product[] = rawProducts.map((p) => ({
     ...p,
     variants: productVariants.filter((v) => v.product_id === p.id),
     images: productImages.filter((img) => img.product_id === p.id),
   }));
-
 
   const customers: Customer[] = useMemo(
     () =>
@@ -233,15 +300,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     () =>
       rawOrders.map((o) => {
         const rawItemsFromOrder =
-              (o as any).items ?? (o as any).order_items ?? (o as any).orderItems ?? [];
+          (o as any).items ?? (o as any).order_items ?? (o as any).orderItems ?? [];
         const itemsSource = (Array.isArray(rawItemsFromOrder) && rawItemsFromOrder.length)
           ? rawItemsFromOrder
           : orderItems.filter((i) => String(i.order_id) === String(o.id));
 
         const items = itemsSource.map((item) => {
-              const variant = productVariants.find((v) => String(v.id) === String(item.variant_id));
-              return { ...item, variant };
-            });
+          const variant = productVariants.find((v) => String(v.id) === String(item.variant_id));
+          return { ...item, variant };
+        });
         return {
           ...o,
           user: rawCustomers.find((c) => c.id === o.user_id) ?? o.user,
@@ -251,14 +318,33 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     [rawOrders, orderItems, productVariants, rawCustomers],
   );
 
-  async function withRefresh<T>(fn: () => Promise<T>): Promise<T> {
-    const result = await fn();
-    await fetchAll();
-    return result;
-  }
+  const refreshData = useCallback(async () => {
+    const promises = [];
+    if (categoriesLoaded) promises.push(fetchCategories(true));
+    if (brandsLoaded) promises.push(fetchBrands(true));
+    if (customersLoaded) promises.push(fetchCustomers(true));
+    if (ordersLoaded) promises.push(fetchOrders(true));
+    if (couponsLoaded) promises.push(fetchCoupons(true));
+    if (productsLoaded) promises.push(fetchProducts(true));
+    if (imagesLoaded) promises.push(fetchProductImages(true));
+    if (stockLoaded) promises.push(fetchStockMovements(true));
+    if (returnsLoaded) promises.push(fetchReturnRequests(true));
+    await Promise.allSettled(promises);
+  }, [
+    categoriesLoaded, fetchCategories,
+    brandsLoaded, fetchBrands,
+    customersLoaded, fetchCustomers,
+    ordersLoaded, fetchOrders,
+    couponsLoaded, fetchCoupons,
+    productsLoaded, fetchProducts,
+    imagesLoaded, fetchProductImages,
+    stockLoaded, fetchStockMovements,
+    returnsLoaded, fetchReturnRequests
+  ]);
 
   const addProduct = async (data: Omit<Product, "id" | "created_at" | "updated_at" | "slug"> & { slug?: string }) => {
-    const created = await withRefresh(() => productService.create(data));
+    const created = await productService.create(data);
+    await fetchProducts(true);
     return created.id;
   };
 
@@ -270,35 +356,56 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     if (Object.keys(rest).length > 0) {
       await productService.update(id, rest);
     }
-    await fetchAll();
+    await fetchProducts(true);
   };
 
+  const deleteProduct = async (id: number) => {
+    await productService.remove(id);
+    await fetchProducts(true);
+  };
 
-  const deleteProduct = (id: number) => withRefresh(() => productService.remove(id));
+  const addCategory = async (data: Omit<Category, "id" | "created_at">) => {
+    await categoryService.create(data);
+    await fetchCategories(true);
+  };
 
-  const addCategory = (data: Omit<Category, "id" | "created_at">) =>
-    withRefresh(() => categoryService.create(data).then(() => undefined));
+  const updateCategory = async (id: number, updates: Partial<Category>) => {
+    await categoryService.update(id, updates);
+    await fetchCategories(true);
+  };
 
-  const updateCategory = (id: number, updates: Partial<Category>) =>
-    withRefresh(() => categoryService.update(id, updates));
+  const deleteCategory = async (id: number) => {
+    await categoryService.remove(id);
+    await fetchCategories(true);
+  };
 
-  const deleteCategory = (id: number) => withRefresh(() => categoryService.remove(id));
+  const addBrand = async (data: Omit<Brand, "id" | "created_at"> & { logo_file?: File }) => {
+    await brandService.create(data);
+    await fetchBrands(true);
+  };
 
-  const addBrand = (data: Omit<Brand, "id" | "created_at"> & { logo_file?: File }) =>
-    withRefresh(() => brandService.create(data));
+  const updateBrand = async (id: number, updates: Partial<Brand> & { logo_file?: File }) => {
+    await brandService.update(id, updates);
+    await fetchBrands(true);
+  };
 
-  const updateBrand = (id: number, updates: Partial<Brand> & { logo_file?: File }) =>
-    withRefresh(() => brandService.update(id, updates));
+  const deleteBrand = async (id: number) => {
+    await brandService.remove(id);
+    await fetchBrands(true);
+  };
 
-  const deleteBrand = (id: number) => withRefresh(() => brandService.remove(id));
+  const updateCustomer = async (id: number, updates: Partial<Customer>) => {
+    await customerService.updateStatus(id, updates.is_active ?? true);
+    await fetchCustomers(true);
+  };
 
-  const updateCustomer = (id: number, updates: Partial<Customer>) =>
-    withRefresh(() => customerService.updateStatus(id, updates.is_active ?? true));
-
-  const deleteCustomer = (id: number) => withRefresh(() => customerService.remove(id));
+  const deleteCustomer = async (id: number) => {
+    await customerService.remove(id);
+    await fetchCustomers(true);
+  };
 
   const addOrder = async (_data: Omit<Order, "id" | "created_at" | "updated_at">): Promise<void> => {
-    await fetchAll();
+    await fetchOrders(true);
   };
 
   const updateOrder = async (id: number, updates: Partial<Order>) => {
@@ -307,56 +414,87 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     } else if (updates.order_status) {
       await orderService.updateStatus(id, updates.order_status);
     }
-    await fetchAll();
+    await fetchOrders(true);
   };
 
-  const deleteOrder = (id: number) => withRefresh(() => orderService.remove(id));
+  const deleteOrder = async (id: number) => {
+    await orderService.remove(id);
+    await fetchOrders(true);
+  };
 
-  const addCoupon = (data: Omit<Coupon, "id" | "created_at">) =>
-    withRefresh(() => couponService.create(data).then(() => undefined));
+  const addCoupon = async (data: Omit<Coupon, "id" | "created_at">) => {
+    await couponService.create(data);
+    await fetchCoupons(true);
+  };
 
-  const updateCoupon = (id: number, updates: Partial<Coupon>) =>
-    withRefresh(() => couponService.update(id, updates));
+  const updateCoupon = async (id: number, updates: Partial<Coupon>) => {
+    await couponService.update(id, updates);
+    await fetchCoupons(true);
+  };
 
-  const deleteCoupon = (id: number) => withRefresh(() => couponService.remove(id));
+  const deleteCoupon = async (id: number) => {
+    await couponService.remove(id);
+    await fetchCoupons(true);
+  };
 
-  const addProductVariant = (
+  const addProductVariant = async (
     data: Omit<ProductVariant, "id" | "created_at"> & { variant_image_file?: File },
-  ) => withRefresh(() => productService.createVariant(data.product_id, data));
+  ) => {
+    await productService.createVariant(data.product_id, data);
+    await fetchProducts(true);
+  };
 
-  const updateProductVariant = (id: number, updates: Partial<ProductVariant> & { variant_image_file?: File }) =>
-    withRefresh(() => productService.updateVariant(id, updates));
+  const updateProductVariant = async (id: number, updates: Partial<ProductVariant> & { variant_image_file?: File }) => {
+    await productService.updateVariant(id, updates);
+    await fetchProducts(true);
+  };
 
-  const deleteProductVariant = (id: number) =>
-    withRefresh(() => productService.removeVariant(id));
+  const deleteProductVariant = async (id: number) => {
+    await productService.removeVariant(id);
+    await fetchProducts(true);
+  };
 
   const addProductImage = async (data: Omit<ProductImage, "id"> & { image_file?: File }) => {
     if (data.image_file) {
-      await withRefresh(() =>
-        productService.uploadImages(data.product_id, [data.image_file!]),
-      );
+      await productService.uploadImages(data.product_id, [data.image_file!]);
+      await fetchProductImages(true);
     }
   };
 
-  const updateProductImage = (id: number, updates: Partial<ProductImage>) =>
-    withRefresh(() => productService.updateImage(id, updates));
+  const updateProductImage = async (id: number, updates: Partial<ProductImage>) => {
+    await productService.updateImage(id, updates);
+    await fetchProductImages(true);
+  };
 
-  const deleteProductImage = (id: number) => withRefresh(() => productService.removeImage(id));
+  const deleteProductImage = async (id: number) => {
+    await productService.removeImage(id);
+    await fetchProductImages(true);
+  };
 
-  const setPrimaryProductImage = (id: number) =>
-    withRefresh(() => productService.setPrimaryImage(id));
+  const setPrimaryProductImage = async (id: number) => {
+    await productService.setPrimaryImage(id);
+    await fetchProductImages(true);
+  };
 
-  const addStockMovement = (data: Omit<StockMovement, "id" | "created_at">) =>
-    withRefresh(() => productService.createStockMovement(data));
+  const addStockMovement = async (data: Omit<StockMovement, "id" | "created_at">) => {
+    await productService.createStockMovement(data);
+    await fetchStockMovements(true);
+  };
 
-  const updateStockMovement = (id: number, updates: Partial<StockMovement>) =>
-    withRefresh(() => productService.updateStockMovement(id, updates));
+  const updateStockMovement = async (id: number, updates: Partial<StockMovement>) => {
+    await productService.updateStockMovement(id, updates);
+    await fetchStockMovements(true);
+  };
 
-  const deleteStockMovement = (id: number) =>
-    withRefresh(() => productService.removeStockMovement(id));
+  const deleteStockMovement = async (id: number) => {
+    await productService.removeStockMovement(id);
+    await fetchStockMovements(true);
+  };
 
-  const updateReturnRequest = (id: number, updates: ReturnRequestUpdate) =>
-    withRefresh(() => returnService.update(id, updates));
+  const updateReturnRequest = async (id: number, updates: ReturnRequestUpdate) => {
+    await returnService.update(id, updates);
+    await fetchReturnRequests(true);
+  };
 
   const value: DataContextType = {
     products,
@@ -372,7 +510,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     returnRequests,
     productFetchError,
     brandFetchError,
-    refreshData: fetchAll,
+    refreshData,
+    fetchCategories,
+    fetchBrands,
+    fetchCustomers,
+    fetchOrders,
+    fetchCoupons,
+    fetchProducts,
+    fetchProductImages,
+    fetchStockMovements,
+    fetchReturnRequests,
     addProduct,
     updateProduct,
     deleteProduct,

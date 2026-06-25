@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Plus, Edit, Trash2 } from "lucide-react";
 import {
   Card,
@@ -49,8 +49,13 @@ import { useData } from "../../contexts/DataContext";
 import { generateSlug } from "../../utils/slugUtils";
 
 export function CategoryList() {
-  const { categories, products, addCategory, updateCategory, deleteCategory } =
+  const { categories, products, addCategory, updateCategory, deleteCategory, fetchCategories } =
     useData();
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

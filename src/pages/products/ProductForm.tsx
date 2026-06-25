@@ -115,7 +115,19 @@ export function ProductForm() {
     deleteProductImage,
     setPrimaryProductImage,
     refreshData,
+    fetchCategories,
+    fetchBrands,
+    fetchProducts,
+    fetchProductImages,
   } = useData();
+
+  useEffect(() => {
+    fetchCategories();
+    fetchBrands();
+    fetchProducts();
+    fetchProductImages();
+  }, [fetchCategories, fetchBrands, fetchProducts, fetchProductImages]);
+
   const isEdit = !!id;
 
   const [products, setProducts] = useState<Product[]>([]);

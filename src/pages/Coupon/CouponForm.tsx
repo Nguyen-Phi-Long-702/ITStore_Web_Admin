@@ -23,7 +23,12 @@ import { useData } from "../../contexts/DataContext";
 export function CouponForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { coupons, addCoupon, updateCoupon } = useData();
+  const { coupons, addCoupon, updateCoupon, fetchCoupons } = useData();
+  
+  useEffect(() => {
+    fetchCoupons();
+  }, [fetchCoupons]);
+
   const isEdit = !!id;
 
   const existingCoupon = isEdit

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -35,7 +35,13 @@ import { useData } from "../contexts/DataContext";
 import { DashboardStats, RevenueData, TopProduct } from "../types";
 
 export function Dashboard() {
-  const { orders, customers, productVariants, products } = useData();
+  const { orders, customers, productVariants, products, fetchOrders, fetchCustomers, fetchProducts } = useData();
+
+  useEffect(() => {
+    fetchOrders();
+    fetchCustomers();
+    fetchProducts();
+  }, [fetchOrders, fetchCustomers, fetchProducts]);
 
   const isRevenueOrder = (paymentStatus: string, orderStatus: string) =>
     paymentStatus === "paid" && (orderStatus === "delivered" || orderStatus === "received");

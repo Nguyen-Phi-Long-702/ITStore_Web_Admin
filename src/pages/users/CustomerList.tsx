@@ -1,6 +1,6 @@
 import { Link } from "react-router";
-import { useState, useMemo } from "react";
-import { Search, User, XCircle, CheckCircle, Eye } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { Search, User, XCircle, CheckCircle, Eye, ShieldAlert, ShieldCheck } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -34,7 +34,13 @@ import { toast } from "sonner";
 import { useData } from "../../contexts/DataContext";
 
 export function CustomerList() {
-  const { customers, orders, updateCustomer } = useData();
+  const { customers, orders, updateCustomer, fetchCustomers, fetchOrders } = useData();
+
+  useEffect(() => {
+    fetchCustomers();
+    fetchOrders();
+  }, [fetchCustomers, fetchOrders]);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(

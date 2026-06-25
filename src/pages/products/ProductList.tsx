@@ -73,7 +73,13 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export function ProductList() {
-  const { deleteProduct, categories: contextCategories, brands: contextBrands } = useData();
+  const { deleteProduct, categories: contextCategories, brands: contextBrands, fetchCategories, fetchBrands } = useData();
+
+  useEffect(() => {
+    fetchCategories();
+    fetchBrands();
+  }, [fetchCategories, fetchBrands]);
+
   const [products, setProducts] = useState<Product[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
   const [page, setPage] = useState(1);

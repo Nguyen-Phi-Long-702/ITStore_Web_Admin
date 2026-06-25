@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { Plus, Search, Edit, Trash2, Percent, BarChart2 } from "lucide-react";
 import {
@@ -33,7 +33,12 @@ import {
 } from "../../components/ui/alert-dialog";
 
 export function CouponList() {
-  const { coupons, deleteCoupon } = useData();
+  const { coupons, deleteCoupon, fetchCoupons } = useData();
+
+  useEffect(() => {
+    fetchCoupons();
+  }, [fetchCoupons]);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);       
   const [couponToDelete, setCouponToDelete] = useState<{ id: number; code: string } | null>(null); 

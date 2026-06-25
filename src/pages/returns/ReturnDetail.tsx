@@ -78,7 +78,13 @@ const returnStatusConfig: Record<
 export function ReturnDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { returnRequests, updateReturnRequest, orderItems, productVariants, orders } = useData();
+  const { returnRequests, updateReturnRequest, orderItems, productVariants, orders, fetchReturnRequests, fetchProducts } = useData();
+
+  useEffect(() => {
+    fetchReturnRequests();
+    fetchProducts();
+  }, [fetchReturnRequests, fetchProducts]);
+
   const listReturnRequest = returnRequests.find((r) => r.id.toString() === id);
   const [returnRequest, setReturnRequest] = useState(listReturnRequest);
   const [orderDetail, setOrderDetail] = useState<Order | undefined>(undefined);

@@ -53,7 +53,12 @@ import { orderService } from "../../services/orderService";
 export function OrderDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { returnRequests, updateOrder, products, productVariants } = useData();
+  const { returnRequests, updateOrder, products, productVariants, fetchReturnRequests, fetchProducts } = useData();
+
+  useEffect(() => {
+    fetchReturnRequests();
+    fetchProducts();
+  }, [fetchReturnRequests, fetchProducts]);
 
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
