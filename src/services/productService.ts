@@ -27,9 +27,51 @@ export type ProductDetail = {
 };
 
 export const productService = {
-  async getAll(): Promise<Product[]> {
-    const res = await api.get("/api/admin/products");
-    return unwrapList<Product>(res);
+  async getAll(params?: {
+    page?: number;
+    limit?: number;
+    keyword?: string;
+    category_id?: number;
+    brand_id?: number;
+    price_min?: number;
+    price_max?: number;
+    status?: string;
+  }): Promise<{ data: Product[]; total: number; page: number; limit: number }> {
+    const query = new URLSearchParams();
+    if (params) {
+      if (params.page !== undefined) query.append("page", String(params.page));
+      if (params.limit !== undefined) query.append("limit", String(params.limit));
+      if (params.keyword !== undefined) query.append("keyword", params.keyword);
+      if (params.category_id !== undefined) query.append("category_id", String(params.category_id));
+      if (params.brand_id !== undefined) query.append("brand_id", String(params.brand_id));
+      if (params.price_min !== undefined) query.append("price_min", String(params.price_min));
+      if (params.price_max !== undefined) query.append("price_max", String(params.price_max));
+      if (params.status !== undefined) query.append("status", params.status);
+    }
+    const queryString = query.toString() ? `?${query.toString()}` : "";
+    const res = await api.get<any>(`/api/admin/products${queryString}`);
+    
+    // Unwrap the list or return structured pagination data
+    const data = unwrapList<Product>(res);
+    
+    let total = data.length;
+    let page = 1;
+    let limit = 20;
+
+    if (res && typeof res === "object") {
+      const pagination = (res as any).pagination;
+      if (pagination && typeof pagination === "object") {
+        if (pagination.total !== undefined) total = Number(pagination.total);
+        if (pagination.page !== undefined) page = Number(pagination.page);
+        if (pagination.limit !== undefined) limit = Number(pagination.limit);
+      } else {
+        if ((res as any).total !== undefined) total = Number((res as any).total);
+        if ((res as any).page !== undefined) page = Number((res as any).page);
+        if ((res as any).limit !== undefined) limit = Number((res as any).limit);
+      }
+    }
+
+    return { data, total, page, limit };
   },
 
   async getDetail(slug: string): Promise<ProductDetail> {

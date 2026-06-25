@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import { ArrowLeft, Edit, Package, AlertCircle } from "lucide-react";
 import {
@@ -30,18 +30,38 @@ import {
 import { formatCurrency } from "../../utils/statusUtils";
 import { toast } from "sonner";
 import { useData } from "../../contexts/DataContext";
+import { productService } from "../../services/productService";
+import { Product } from "../../types";
 
 export function ProductVariantsView() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { products, updateProductVariant } = useData();
-  const product = products.find((p) => p.id.toString() === id);
+  const { updateProductVariant } = useData();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (id) {
+      productService.getAll({ page: 1, limit: 1000 }).then((res) => {
+        const found = res.data.find((p) => p.id.toString() === id);
+        setProduct(found || null);
+      }).catch(console.error).finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+  }, [id]);
 
   const [stockDialogOpen, setStockDialogOpen] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [stockChange, setStockChange] = useState(0);
   const [stockNote, setStockNote] = useState("");
   const [isStockSaving, setIsStockSaving] = useState(false);
+
+  if (loading) {
+    return (
+      <div className="py-12 text-center text-gray-500">Đang tải sản phẩm...</div>
+    );
+  }
 
   if (!product) {
     return (

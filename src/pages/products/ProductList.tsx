@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { Plus, Search, Edit, Trash2, Package, Eye } from "lucide-react";
 import {
@@ -38,6 +38,7 @@ import {
 import { formatCurrency, productStatusConfig } from "../../utils/statusUtils";
 import { Product } from "../../types";
 import { useData } from "../../contexts/DataContext";
+import { productService } from "../../services/productService";
 import { toast } from "sonner";
 
 function ProductThumbnail({ src, alt }: { src?: string | null; alt: string }) {
@@ -72,31 +73,76 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export function ProductList() {
-  const { products, productFetchError, deleteProduct } = useData();
+  const { deleteProduct, categories: contextCategories, brands: contextBrands } = useData();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(20);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [brandFilter, setBrandFilter] = useState<string>("all");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const categories = Array.from(
-    new Set(products.map((p) => p.category?.name).filter(Boolean)),
-  ) as string[];
+  // Debounced/state-based fetching triggers
+  const fetchProducts = async (currentPage: number) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const selectedCategory = contextCategories.find(c => c.name === categoryFilter);
+      const selectedBrand = contextBrands.find(b => b.name === brandFilter);
 
-  const filteredProducts = products.filter((product) => {
-    const term = searchTerm.toLowerCase();
-    const matchesSearch =
-      product.name.toLowerCase().includes(term) ||
-      (product.sku ?? "").toLowerCase().includes(term) ||
-      (product.variants?.some((v) => v.sku.toLowerCase().includes(term)) ?? false);
+      const params: Parameters<typeof productService.getAll>[0] = {
+        page: currentPage,
+        limit,
+      };
 
-    const matchesStatus = statusFilter === "all" || product.status === statusFilter;
-    const matchesCategory =
-      categoryFilter === "all" || product.category?.name === categoryFilter;
+      if (searchTerm.trim()) {
+        params.keyword = searchTerm.trim();
+      }
+      if (statusFilter !== "all") {
+        params.status = statusFilter;
+      }
+      if (categoryFilter !== "all" && selectedCategory) {
+        params.category_id = selectedCategory.id;
+      }
+      if (brandFilter !== "all" && selectedBrand) {
+        params.brand_id = selectedBrand.id;
+      }
 
-    return matchesSearch && matchesStatus && matchesCategory;
-  });
+      const res = await productService.getAll(params);
+      setProducts(res.data);
+      setTotalProducts(res.total);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không thể tải sản phẩm");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Reset to first page when search or filters change
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
+
+  useEffect(() => {
+    if (isFirstLoad) {
+      setIsFirstLoad(false);
+      fetchProducts(page);
+    } else {
+      setPage(1);
+      fetchProducts(1);
+    }
+  }, [statusFilter, categoryFilter, brandFilter, searchTerm]);
+
+  useEffect(() => {
+    if (!isFirstLoad) {
+      fetchProducts(page);
+    }
+  }, [page]);
 
   const handleDelete = (product: Product) => {
     setProductToDelete(product);
@@ -173,9 +219,23 @@ export function ProductList() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tất cả danh mục</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
+                {contextCategories.map((category) => (
+                  <SelectItem key={category.id} value={category.name}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={brandFilter} onValueChange={setBrandFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Thương hiệu" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả thương hiệu</SelectItem>
+                {contextBrands.map((brand) => (
+                  <SelectItem key={brand.id} value={brand.name}>
+                    {brand.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -186,104 +246,143 @@ export function ProductList() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Danh sách sản phẩm ({filteredProducts.length})</CardTitle>
-          {productFetchError && (
+          <CardTitle>Danh sách sản phẩm ({totalProducts})</CardTitle>
+          {error && (
             <p className="text-sm text-red-600">
-              Không thể đồng bộ sản phẩm từ backend: {productFetchError}
+              Không thể đồng bộ sản phẩm từ backend: {error}
             </p>
           )}
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Sản phẩm</TableHead>
-                <TableHead>Danh mục</TableHead>
-                <TableHead>Thương hiệu</TableHead>
-                <TableHead className="text-right">Giá bán</TableHead>
-                <TableHead className="text-right">Tồn kho</TableHead>
-                <TableHead>Trạng thái</TableHead>
-                <TableHead className="text-right">Thao tác</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredProducts.map((product) => {
-                const totalStock = product.variants && product.variants.length > 0
-                  ? product.variants.reduce((sum, v) => sum + v.stock, 0)
-                  : null;
-
-                return (
-                  <TableRow key={product.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <ProductThumbnail src={product.primary_image} alt={product.name} />
-                        <div>
-                          <p className="font-medium">{product.name}</p>
-                          <p className="text-xs text-gray-500">
-                            {product.sku || ""}
-                            {product.variants && product.variants.length > 0 && (
-                              <span className="text-gray-400"> ({product.variants.length} biến thể)</span>
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{product.category?.name || "-"}</TableCell>
-                    <TableCell>{product.brand?.name || "-"}</TableCell>
-                    <TableCell className="text-right">
-                      {product.price_min != null ? (
-                        <span>
-                          {formatCurrency(product.price_min)}
-                          {product.price_max != null &&
-                            product.price_max !== product.price_min && (
-                              <span className="text-gray-400">
-                                {" "}– {formatCurrency(product.price_max)}
-                              </span>
-                            )}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {totalStock != null ? (
-                        <span className={totalStock < 10 ? "text-red-600 font-semibold" : ""}>
-                          {totalStock}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={product.status} />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Link to={`/products/variants/${product.id}`}>
-                          <Button variant="ghost" size="icon" title="Xem biến thể">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </Link>
-                        <Link to={`/products/edit/${product.id}`}>
-                          <Button variant="ghost" size="icon" title="Chỉnh sửa">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </Link>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(product)}
-                          title="Xóa"
-                        >
-                          <Trash2 className="h-4 w-4 text-red-600" />
-                        </Button>
-                      </div>
-                    </TableCell>
+          {loading ? (
+            <div className="py-8 text-center text-gray-500">Đang tải sản phẩm...</div>
+          ) : (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Sản phẩm</TableHead>
+                    <TableHead>Danh mục</TableHead>
+                    <TableHead>Thương hiệu</TableHead>
+                    <TableHead className="text-right">Giá bán</TableHead>
+                    <TableHead className="text-right">Tồn kho</TableHead>
+                    <TableHead>Trạng thái</TableHead>
+                    <TableHead className="text-right">Thao tác</TableHead>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                </TableHeader>
+                <TableBody>
+                  {products.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                        Không tìm thấy sản phẩm nào
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    products.map((product) => {
+                      const totalStock = product.variants && product.variants.length > 0
+                        ? product.variants.reduce((sum, v) => sum + v.stock, 0)
+                        : null;
+
+                      return (
+                        <TableRow key={product.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <ProductThumbnail src={product.primary_image} alt={product.name} />
+                              <div>
+                                <p className="font-medium">{product.name}</p>
+                                <p className="text-xs text-gray-500">
+                                  {product.sku || ""}
+                                  {product.variants && product.variants.length > 0 && (
+                                    <span className="text-gray-400"> ({product.variants.length} biến thể)</span>
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{product.category?.name || "-"}</TableCell>
+                          <TableCell>{product.brand?.name || "-"}</TableCell>
+                          <TableCell className="text-right">
+                            {product.price_min != null ? (
+                              <span>
+                                {formatCurrency(product.price_min)}
+                                {product.price_max != null &&
+                                  product.price_max !== product.price_min && (
+                                    <span className="text-gray-400">
+                                      {" "}– {formatCurrency(product.price_max)}
+                                    </span>
+                                  )}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {totalStock != null ? (
+                              <span className={totalStock < 10 ? "text-red-600 font-semibold" : ""}>
+                                {totalStock}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <StatusBadge status={product.status} />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Link to={`/products/variants/${product.id}`}>
+                                <Button variant="ghost" size="icon" title="Xem biến thể">
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </Link>
+                              <Link to={`/products/edit/${product.id}`}>
+                                <Button variant="ghost" size="icon" title="Chỉnh sửa">
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </Link>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDelete(product)}
+                                title="Xóa"
+                              >
+                                <Trash2 className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+
+              {/* Pagination Controls */}
+              <div className="flex items-center justify-between space-x-2 py-4">
+                <div className="text-sm text-gray-500">
+                  Hiển thị {(page - 1) * limit + 1} - {Math.min(page * limit, totalProducts)} của {totalProducts} sản phẩm
+                </div>
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                    disabled={page === 1}
+                  >
+                    Trước
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => (p * limit < totalProducts ? p + 1 : p))}
+                    disabled={page * limit >= totalProducts}
+                  >
+                    Sau
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 

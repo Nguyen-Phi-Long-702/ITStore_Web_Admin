@@ -152,8 +152,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [brandFetchError, setBrandFetchError] = useState<string | null>(null);
 
   const fetchAll = useCallback(async () => {
+    // We'll skip fetching products initially inside DataContext,
+    // as we want to handle fetching them locally or dynamically.
     const results = await Promise.allSettled([
-      productService.getAll(),
       categoryService.getAll(),
       brandService.getAll(),
       customerService.getAll(),
@@ -165,7 +166,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     ]);
 
     const [
-      productsRes,
       categoriesRes,
       brandsRes,
       customersRes,
@@ -177,31 +177,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     ] = results;
 
     let loadedVariants: ProductVariant[] = [];
-
-    if (productsRes.status === "fulfilled") {
-      const loadedProducts = productsRes.value;
-      setRawProducts(loadedProducts);
-      setProductFetchError(null);
-
-      // Extract variants directly from the product object if they are returned by getAll()
-      const allVariants: ProductVariant[] = [];
-      loadedProducts.forEach((product) => {
-        if (product.variants && Array.isArray(product.variants)) {
-          product.variants.forEach((v) => {
-            allVariants.push({
-              ...v,
-              product_id: product.id,
-              product,
-            });
-          });
-        }
-      });
-
-      loadedVariants = allVariants;
-      setProductVariants(loadedVariants);
-    } else {
-      setProductFetchError(productsRes.reason?.message ?? "Không thể tải sản phẩm");
-    }
 
     if (categoriesRes.status === "fulfilled") setCategories(categoriesRes.value);
     if (brandsRes.status === "fulfilled") {

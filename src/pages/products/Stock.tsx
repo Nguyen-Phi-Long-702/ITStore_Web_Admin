@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, Plus, AlertTriangle, Package, Eye } from "lucide-react";
 import { useNavigate, Link } from "react-router";
 import {
@@ -40,10 +40,20 @@ import { Product } from "../../types";
 import { ColorSwatch } from "../../components/products/ColorSwatch";
 import { toast } from "sonner";
 import { useData } from "../../contexts/DataContext";
+import { productService } from "../../services/productService";
 
 export function Stock() {
   const navigate = useNavigate();
-  const { products, addStockMovement } = useData();
+  const { addStockMovement } = useData();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    productService.getAll({ page: 1, limit: 1000 }).then((res) => {
+      setProducts(res.data);
+    }).catch(console.error).finally(() => setLoading(false));
+  }, []);
+
   const [stockInDialogOpen, setStockInDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<string>("");
@@ -93,6 +103,11 @@ const confirmStockIn = async () => {
         }${variant?.version ? ` - ${variant.version}` : ""} vào kho`,
       );
 
+      // Refresh products local list to show the new stock quantity immediately
+      productService.getAll({ page: 1, limit: 1000 }).then((res) => {
+        setProducts(res.data);
+      }).catch(console.error);
+
       setStockInDialogOpen(false);
       setSelectedProduct(null);
       setSelectedVariant("");
@@ -105,6 +120,12 @@ const confirmStockIn = async () => {
     }
   }
 };
+
+  if (loading) {
+    return (
+      <div className="py-12 text-center text-gray-500">Đang tải dữ liệu kho...</div>
+    );
+  }
 
   return (
     <div className="space-y-6">

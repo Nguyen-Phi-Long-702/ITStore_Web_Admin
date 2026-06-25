@@ -101,7 +101,6 @@ export function ProductForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const {
-    products,
     categories,
     brands,
     productVariants,
@@ -118,6 +117,14 @@ export function ProductForm() {
     refreshData,
   } = useData();
   const isEdit = !!id;
+
+  const [products, setProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    productService.getAll({ page: 1, limit: 1000 }).then(res => {
+      setProducts(res.data);
+    }).catch(console.error);
+  }, []);
 
   const existingProduct = isEdit
     ? products.find((p) => p.id.toString() === id)
