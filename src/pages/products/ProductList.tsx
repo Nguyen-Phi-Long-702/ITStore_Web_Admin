@@ -76,26 +76,12 @@ export function ProductList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [colorFilter, setColorFilter] = useState<string>("all");
-  const [versionFilter, setVersionFilter] = useState<string>("all");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const categories = Array.from(
     new Set(products.map((p) => p.category?.name).filter(Boolean)),
-  ) as string[];
-
-  const colors = Array.from(
-    new Set(
-      products.flatMap((p) => p.variants?.map((v) => v.color).filter(Boolean) ?? []),
-    ),
-  ) as string[];
-
-  const versions = Array.from(
-    new Set(
-      products.flatMap((p) => p.variants?.map((v) => v.version).filter(Boolean) ?? []),
-    ),
   ) as string[];
 
   const filteredProducts = products.filter((product) => {
@@ -108,14 +94,8 @@ export function ProductList() {
     const matchesStatus = statusFilter === "all" || product.status === statusFilter;
     const matchesCategory =
       categoryFilter === "all" || product.category?.name === categoryFilter;
-    const matchesColor =
-      colorFilter === "all" ||
-      (product.variants?.some((v) => v.color === colorFilter) ?? false);
-    const matchesVersion =
-      versionFilter === "all" ||
-      (product.variants?.some((v) => v.version === versionFilter) ?? false);
 
-    return matchesSearch && matchesStatus && matchesCategory && matchesColor && matchesVersion;
+    return matchesSearch && matchesStatus && matchesCategory;
   });
 
   const handleDelete = (product: Product) => {
@@ -164,7 +144,7 @@ export function ProductList() {
 
       <Card>
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <div className="md:col-span-2 lg:col-span-2 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -200,60 +180,7 @@ export function ProductList() {
                 ))}
               </SelectContent>
             </Select>
-
-            <Select value={colorFilter} onValueChange={setColorFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Màu sắc" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả màu</SelectItem>
-                {colors.map((color) => (
-                  <SelectItem key={color} value={color}>
-                    {color}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={versionFilter} onValueChange={setVersionFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Phiên bản" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả phiên bản</SelectItem>
-                {versions.map((version) => (
-                  <SelectItem key={version} value={version}>
-                    {version}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
-
-          {(colorFilter !== "all" || versionFilter !== "all") && (
-            <div className="flex items-center gap-2 mt-4 pt-4 border-t">
-              <span className="text-sm text-gray-600">Lọc theo:</span>
-              {colorFilter !== "all" && (
-                <Badge variant="outline" className="bg-[#FFE0B2]">
-                  Màu: {colorFilter}
-                  <button onClick={() => setColorFilter("all")} className="ml-2 hover:text-red-600">
-                    ×
-                  </button>
-                </Badge>
-              )}
-              {versionFilter !== "all" && (
-                <Badge variant="outline" className="bg-green-50">
-                  Phiên bản: {versionFilter}
-                  <button
-                    onClick={() => setVersionFilter("all")}
-                    className="ml-2 hover:text-red-600"
-                  >
-                    ×
-                  </button>
-                </Badge>
-              )}
-            </div>
-          )}
         </CardContent>
       </Card>
 
@@ -271,9 +198,6 @@ export function ProductList() {
             <TableHeader>
               <TableRow>
                 <TableHead>Sản phẩm</TableHead>
-                <TableHead>SKU biến thể</TableHead>
-                <TableHead>Màu sắc</TableHead>
-                <TableHead>Phiên bản</TableHead>
                 <TableHead>Danh mục</TableHead>
                 <TableHead>Thương hiệu</TableHead>
                 <TableHead className="text-right">Giá bán</TableHead>
@@ -284,168 +208,79 @@ export function ProductList() {
             </TableHeader>
             <TableBody>
               {filteredProducts.map((product) => {
-                const variants = product.variants ?? [];
+                const totalStock = product.variants && product.variants.length > 0
+                  ? product.variants.reduce((sum, v) => sum + v.stock, 0)
+                  : null;
 
-                if (variants.length === 0) {
-                  return (
-                    <TableRow key={`${product.id}-empty`}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <ProductThumbnail src={product.primary_image} alt={product.name} />
-                          <div>
-                            <p className="font-medium">{product.name}</p>
-                            <p className="text-xs text-gray-500">{product.sku || ""}</p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-gray-400">-</TableCell>
-                      <TableCell className="text-gray-400">-</TableCell>
-                      <TableCell className="text-gray-400">-</TableCell>
-                      <TableCell>{product.category?.name || "-"}</TableCell>
-                      <TableCell>{product.brand?.name || "-"}</TableCell>
-                      <TableCell className="text-right">
-                        {product.price_min != null ? (
-                          <span>
-                            {formatCurrency(product.price_min)}
-                            {product.price_max != null &&
-                              product.price_max !== product.price_min && (
-                                <span className="text-gray-400">
-                                  {" "}– {formatCurrency(product.price_max)}
-                                </span>
-                              )}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right text-gray-400">-</TableCell>
-                      <TableCell>
-                        <StatusBadge status={product.status} />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Link to={`/products/variants/${product.id}`}>
-                            <Button variant="ghost" size="icon" title="Xem biến thể">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </Link>
-                            <Link to={`/products/edit/${product.id}`}>
-                              <Button variant="ghost" size="icon" title="Chỉnh sửa">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            </Link>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDelete(product)}
-                              title="Xóa"
-                            >
-                              <Trash2 className="h-4 w-4 text-red-600" />
-                            </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                }
-
-                return variants.map((variant, index) => (
-                  <TableRow key={`${product.id}-${variant.id}`}>
-                    {index === 0 && (
-                      <TableCell rowSpan={variants.length} className="align-top">
-                        <div className="flex items-center gap-3">
-                          <ProductThumbnail src={product.primary_image} alt={product.name} />
-                          <div>
-                            <p className="font-medium">{product.name}</p>
-                            <p className="text-xs text-gray-500">
-                              {variants.length} biến thể
-                            </p>
-                          </div>
-                        </div>
-                      </TableCell>
-                    )}
-
+                return (
+                  <TableRow key={product.id}>
                     <TableCell>
-                      <Badge variant="outline" className="text-xs font-mono">
-                        {variant.sku}
-                      </Badge>
+                      <div className="flex items-center gap-3">
+                        <ProductThumbnail src={product.primary_image} alt={product.name} />
+                        <div>
+                          <p className="font-medium">{product.name}</p>
+                          <p className="text-xs text-gray-500">
+                            {product.sku || ""}
+                            {product.variants && product.variants.length > 0 && (
+                              <span className="text-gray-400"> ({product.variants.length} biến thể)</span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
                     </TableCell>
-
-                    <TableCell>
-                      {variant.color ? (
-                        <span className="text-sm">{variant.color}</span>
+                    <TableCell>{product.category?.name || "-"}</TableCell>
+                    <TableCell>{product.brand?.name || "-"}</TableCell>
+                    <TableCell className="text-right">
+                      {product.price_min != null ? (
+                        <span>
+                          {formatCurrency(product.price_min)}
+                          {product.price_max != null &&
+                            product.price_max !== product.price_min && (
+                              <span className="text-gray-400">
+                                {" "}– {formatCurrency(product.price_max)}
+                              </span>
+                            )}
+                        </span>
                       ) : (
-                        <span className="text-sm text-gray-400">-</span>
+                        <span className="text-gray-400">-</span>
                       )}
                     </TableCell>
-
-                    <TableCell>
-                      {variant.version ? (
-                        <Badge variant="outline" className="text-xs">
-                          {variant.version}
-                        </Badge>
+                    <TableCell className="text-right">
+                      {totalStock != null ? (
+                        <span className={totalStock < 10 ? "text-red-600 font-semibold" : ""}>
+                          {totalStock}
+                        </span>
                       ) : (
-                        <span className="text-sm text-gray-400">-</span>
+                        <span className="text-gray-400">-</span>
                       )}
                     </TableCell>
-
-                    {index === 0 && (
-                      <TableCell rowSpan={variants.length} className="align-top">
-                        {product.category?.name || "-"}
-                      </TableCell>
-                    )}
-
-                    {index === 0 && (
-                      <TableCell rowSpan={variants.length} className="align-top">
-                        {product.brand?.name || "-"}
-                      </TableCell>
-                    )}
-
-                    <TableCell className="text-right">
-                      {formatCurrency(variant.price)}
+                    <TableCell>
+                      <StatusBadge status={product.status} />
                     </TableCell>
-
                     <TableCell className="text-right">
-                      <span className={variant.stock < 10 ? "text-red-600 font-semibold" : ""}>
-                        {variant.stock}
-                      </span>
+                      <div className="flex justify-end gap-2">
+                        <Link to={`/products/variants/${product.id}`}>
+                          <Button variant="ghost" size="icon" title="Xem biến thể">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                        <Link to={`/products/edit/${product.id}`}>
+                          <Button variant="ghost" size="icon" title="Chỉnh sửa">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(product)}
+                          title="Xóa"
+                        >
+                          <Trash2 className="h-4 w-4 text-red-600" />
+                        </Button>
+                      </div>
                     </TableCell>
-
-                    {index === 0 && (
-                      <TableCell rowSpan={variants.length} className="align-top">
-                        <StatusBadge status={product.status} />
-                      </TableCell>
-                    )}
-
-                    {index === 0 && (
-                      <TableCell
-                        className="text-right align-top"
-                        rowSpan={variants.length}
-                      >
-                        <div className="flex justify-end gap-2">
-                          <Link to={`/products/variants/${product.id}`}>
-                            <Button variant="ghost" size="icon" title="Xem biến thể">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </Link>
-
-                            <Link to={`/products/edit/${product.id}`}>
-                              <Button variant="ghost" size="icon" title="Chỉnh sửa">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            </Link>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDelete(product)}
-                              title="Xóa"
-                            >
-                              <Trash2 className="h-4 w-4 text-red-600" />
-                            </Button>
-                        </div>
-                      </TableCell>
-                    )}
                   </TableRow>
-                ));
+                );
               })}
             </TableBody>
           </Table>

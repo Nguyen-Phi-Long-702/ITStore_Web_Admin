@@ -183,16 +183,20 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setRawProducts(loadedProducts);
       setProductFetchError(null);
 
-      const variantResults = await Promise.allSettled(
-        loadedProducts.map((p) => productService.getVariantsByProduct(p.id)),
-      );
-      const allVariants = variantResults
-        .filter((r) => r.status === "fulfilled")
-        .flatMap((r) => (r as PromiseFulfilledResult<ProductVariant[]>).value)
-        .map((variant) => ({
-          ...variant,
-          product: loadedProducts.find((product) => product.id === variant.product_id),
-        }));
+      // Extract variants directly from the product object if they are returned by getAll()
+      const allVariants: ProductVariant[] = [];
+      loadedProducts.forEach((product) => {
+        if (product.variants && Array.isArray(product.variants)) {
+          product.variants.forEach((v) => {
+            allVariants.push({
+              ...v,
+              product_id: product.id,
+              product,
+            });
+          });
+        }
+      });
+
       loadedVariants = allVariants;
       setProductVariants(loadedVariants);
     } else {
