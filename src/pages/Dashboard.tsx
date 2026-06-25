@@ -38,7 +38,7 @@ export function Dashboard() {
   const { orders, customers, productVariants, products } = useData();
 
   const isRevenueOrder = (paymentStatus: string, orderStatus: string) =>
-    paymentStatus === "paid" && orderStatus === "delivered";
+    paymentStatus === "paid" && (orderStatus === "delivered" || orderStatus === "received");
 
   const recentOrders = useMemo(
     () =>

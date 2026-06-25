@@ -158,7 +158,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       brandService.getAll(),
       customerService.getAll(),
       orderService.getAll(),
-      orderService.getItems(),
       couponService.getAll(),
       productService.getImages(),
       productService.getStockMovements(),
@@ -171,7 +170,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       brandsRes,
       customersRes,
       ordersRes,
-      itemsRes,
       couponsRes,
       imagesRes,
       stockRes,
@@ -209,8 +207,23 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setBrandFetchError(brandsRes.reason?.message ?? "Không thể tải thương hiệu");
     }
     if (customersRes.status === "fulfilled") setRawCustomers(customersRes.value);
-    if (ordersRes.status === "fulfilled") setRawOrders(ordersRes.value);
-    if (itemsRes.status === "fulfilled") setOrderItems(itemsRes.value);
+    if (ordersRes.status === "fulfilled") {
+      const loadedOrders = ordersRes.value;
+      const detailResults = await Promise.allSettled(
+        loadedOrders.map((o) => orderService.getDetail(o.id))
+      );
+      const allItems: OrderItem[] = [];
+      const ordersWithItems = loadedOrders.map((o, i) => {
+        const detailRes = detailResults[i];
+        if (detailRes.status === "fulfilled" && Array.isArray(detailRes.value?.items)) {
+          detailRes.value.items.forEach((item: any) => allItems.push({ ...item, order_id: o.id }));
+          return { ...o, items: detailRes.value.items };
+        }
+        return o;
+      });
+      setRawOrders(ordersWithItems);
+      setOrderItems(allItems);
+    }
     if (couponsRes.status === "fulfilled") setCoupons(couponsRes.value);
     if (imagesRes.status === "fulfilled") setProductImages(imagesRes.value);
     if (stockRes.status === "fulfilled") setStockMovements(stockRes.value);
@@ -218,7 +231,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setReturnRequests(
         normalizeReturnRequests(
           returnsRes.value,
-          itemsRes.status === "fulfilled" ? itemsRes.value : [],
+          [],
           loadedVariants,
         ),
       );

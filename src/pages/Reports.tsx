@@ -49,7 +49,7 @@ export function Reports() {
   const [detailedOrders, setDetailedOrders] = useState<Record<number, Order>>({});
 
   const isRevenueOrder = (paymentStatus: string, orderStatus: string) =>
-    paymentStatus === "paid" && orderStatus === "delivered";
+    paymentStatus === "paid" && (orderStatus === "delivered" || orderStatus === "received");
 
   useEffect(() => {
     const missingIds = orders
