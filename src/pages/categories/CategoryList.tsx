@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Search, Plus, Edit, Trash2, FolderOpen } from "lucide-react";
-import {Package} from "lucide-react";
+import { Search, Plus, Edit, Trash2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -64,9 +63,6 @@ export function CategoryList() {
     parent_id: undefined as number | undefined,
   });
   const [formLoading, setFormLoading] = useState(false);
-  const getProductCount = (categoryId: number) => {
-    return products.filter((p) => p.category?.id === categoryId).length;
-  };
 
   const filteredCategories = categories.filter(
     (category) =>
@@ -135,15 +131,6 @@ export function CategoryList() {
 
   const confirmDelete = async () => {
     if (selectedCategory) {
-      const productCount = getProductCount(selectedCategory.id);
-      if (productCount > 0) {
-        toast.error(
-          `Không thể xóa danh mục "${selectedCategory.name}" vì còn ${productCount} sản phẩm`,
-        );
-        setDeleteDialogOpen(false);
-        setSelectedCategory(null);
-        return;
-      }
       setFormLoading(true);
       try {
         await deleteCategory(selectedCategory.id);
@@ -171,34 +158,7 @@ export function CategoryList() {
           </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Tổng danh mục</p>
-                <p className="text-2xl font-bold text-[#E0872B]">
-                  {categories.length}
-                </p>
-              </div>
-              <FolderOpen className="h-8 w-8 text-[#E0872B]" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Tổng sản phẩm</p>
-                <p className="text-2xl font-bold text-[#E0872B]">
-                  {products.length}
-                </p>
-              </div>
-              <Package className="h-8 w-8 text-[#E0872B]" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+
 
       <Card>
         <CardContent className="pt-6">
@@ -226,7 +186,6 @@ export function CategoryList() {
               <TableRow>
                 <TableHead>Mã danh mục</TableHead>
                 <TableHead>Danh mục</TableHead>
-                <TableHead>Số sản phẩm</TableHead>
                 <TableHead className="text-right">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
@@ -234,7 +193,7 @@ export function CategoryList() {
               {filteredCategories.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={4}
+                    colSpan={3}
                     className="text-center py-8 text-gray-500"
                   >
                     Không tìm thấy danh mục nào
@@ -242,7 +201,6 @@ export function CategoryList() {
                 </TableRow>
               ) : (
                 filteredCategories.map((category) => {
-                  const productCount = getProductCount(category.id);
                   return (
                     <TableRow key={category.id}>
                       <TableCell className="font-medium text-[#E0872B]">
@@ -254,16 +212,6 @@ export function CategoryList() {
                           <div>
                             <p className="font-medium">{category.name}</p>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-[#E0872B]">
-                            {productCount}
-                          </span>
-                          <span className="text-gray-500 text-sm">
-                            sản phẩm
-                          </span>
                         </div>
                       </TableCell>
 
@@ -384,13 +332,6 @@ export function CategoryList() {
             <AlertDialogTitle>Xóa danh mục</AlertDialogTitle>
             <AlertDialogDescription>
               Bạn có chắc chắn muốn xóa danh mục "{selectedCategory?.name}"?
-              {selectedCategory && getProductCount(selectedCategory.id) > 0 && (
-                <span className="block mt-2 text-red-600 font-semibold">
-                  Danh mục này còn {getProductCount(selectedCategory.id)} sản
-                  phẩm. Vui lòng chuyển sản phẩm sang danh mục khác trước khi
-                  xóa.
-                </span>
-              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

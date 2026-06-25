@@ -1,6 +1,5 @@
 import { useState, useRef } from "react";
-import { Search, Plus, Edit, Trash2, Upload, X, Image, Package } from "lucide-react";
-import {Tag} from "lucide-react";
+import { Search, Plus, Edit, Trash2, Upload, X, Image } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -61,10 +60,6 @@ export function BrandList() {
     logo_url: "",
     logo_file: undefined as File | undefined,
   });
-
-  const getProductCount = (brandId: number) => {
-    return products.filter((p) => p.brand?.id === brandId).length;
-  };
 
   const filteredBrands = brands.filter(
     (brand) =>
@@ -194,34 +189,7 @@ const confirmDelete = async () => {
           </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Tổng thương hiệu</p>
-                <p className="text-2xl font-bold text-[#E0872B]">
-                  {brands.length}
-                </p>
-              </div>
-              <Tag className="h-8 w-8 text-[#E0872B]" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Tổng sản phẩm</p>
-                <p className="text-2xl font-bold text-[#E0872B]">
-                  {products.length}
-                </p>
-              </div>
-              <Package className="h-8 w-8 text-[#E0872B]" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+
 
       <Card>
         <CardContent className="pt-6">
@@ -255,7 +223,6 @@ const confirmDelete = async () => {
                 <TableHead>Mã thương hiệu</TableHead>
                 <TableHead>Thương hiệu</TableHead>
                 <TableHead>Logo</TableHead>
-                <TableHead>Số sản phẩm</TableHead>
                 <TableHead className="text-right">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
@@ -263,7 +230,7 @@ const confirmDelete = async () => {
               {filteredBrands.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={6}
+                    colSpan={5}
                     className="text-center py-8 text-gray-500"
                   >
                     Không tìm thấy thương hiệu nào
@@ -271,7 +238,6 @@ const confirmDelete = async () => {
                 </TableRow>
               ) : (
                 filteredBrands.map((brand) => {
-                  const productCount = getProductCount(brand.id);
                   return (
                     <TableRow key={brand.id}>
                       <TableCell className="font-medium text-[#E0872B]">
@@ -300,16 +266,6 @@ const confirmDelete = async () => {
                             Chưa có
                           </Badge>
                         )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-[#E0872B]">
-                            {productCount}
-                          </span>
-                          <span className="text-gray-500 text-sm">
-                            sản phẩm
-                          </span>
-                        </div>
                       </TableCell>
 
                       <TableCell className="text-right">
