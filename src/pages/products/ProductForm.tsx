@@ -137,6 +137,7 @@ export function ProductForm() {
 
 
   const [formData, setFormData] = useState({
+    sku: existingProduct?.sku || "",
     name: existingProduct?.name || "",
     category: existingProduct?.category?.name || "",
     brand: existingProduct?.brand?.name || "",
@@ -189,6 +190,7 @@ export function ProductForm() {
         if (cancelled) return;
 
         setFormData({
+          sku: detail.sku || "",
           name: detail.name,
           category: detail.category?.name || "",
           brand: detail.brand?.name || "",
@@ -230,6 +232,7 @@ export function ProductForm() {
       .catch(() => {
         if (cancelled) return;
         setFormData({
+          sku: existingProduct.sku || "",
           name: existingProduct.name,
           category: existingProduct.category?.name || "",
           brand: existingProduct.brand?.name || "",
@@ -328,8 +331,8 @@ export function ProductForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.category) {
-      toast.error("Vui lòng điền đầy đủ thông tin bắt buộc");
+    if (!formData.name || !formData.category || !formData.sku) {
+      toast.error("Vui lòng điền đầy đủ thông tin bắt buộc (gồm SKU sản phẩm)");
       return;
     }
 
@@ -502,6 +505,7 @@ export function ProductForm() {
 
       if (isEdit && existingProduct) {
         await updateProduct(existingProduct.id, {
+          sku: formData.sku,
           name: formData.name,
           category_id: selectedCategory.id,
           brand_id: selectedBrand.id,
@@ -587,7 +591,7 @@ export function ProductForm() {
         await refreshData();
       } else {
         createdProductId = await productService.create({
-          sku: autoProductCode,
+          sku: formData.sku,
           name: formData.name,
           category_id: selectedCategory.id,
           brand_id: selectedBrand.id,
@@ -713,6 +717,17 @@ export function ProductForm() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2">
+                    <Label htmlFor="sku">SKU sản phẩm *</Label>
+                    <Input
+                      id="sku"
+                      value={formData.sku}
+                      onChange={(e) => handleChange("sku", e.target.value)}
+                      placeholder="Nhập SKU sản phẩm (Ví dụ: LAP-DELL-G15)"
+                      required
+                    />
+                  </div>
+
                   <div className="col-span-2">
                     <Label htmlFor="name">Tên sản phẩm *</Label>
                     <Input
