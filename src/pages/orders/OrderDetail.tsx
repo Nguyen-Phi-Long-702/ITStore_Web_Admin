@@ -53,41 +53,57 @@ import { orderService } from "../../services/orderService";
 export function OrderDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { orders, returnRequests, updateOrder, products, productVariants } = useData();
-  const order = orders.find((o) => o.id.toString() === id);
+  const { returnRequests, updateOrder, products, productVariants } = useData();
 
-  const [detailOrder, setDetailOrder] = useState(order);
+  const [order, setOrder] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchDetail = () => {
-    if (!id) return;
-    orderService.getDetail(Number(id))
-      .then((data) => setDetailOrder(data as any))
-      .catch(() => {});
-  };
-
-  useEffect(() => {
-    fetchDetail();
-  }, [id]);
-
-  const displayOrder = detailOrder || order;
-
-  const [orderStatus, setOrderStatus] = useState(
-    order?.order_status || "pending",
-  );
+  const [orderStatus, setOrderStatus] = useState("pending");
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [isUpdating, setIsUpdating] = useState(false); 
   const [isCancelling, setIsCancelling] = useState(false);
-  if (!order) {
+
+  const fetchDetail = async () => {
+    if (!id) return;
+    try {
+      const data = await orderService.getDetail(Number(id));
+      setOrder(data);
+      setOrderStatus(data.order_status || "pending");
+    } catch (err: any) {
+      setError(err?.message || "Không thể tải chi tiết đơn hàng");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    fetchDetail();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (error || !order) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600">Không tìm thấy đơn hàng</p>
+        <p className="text-gray-600">{error || "Không tìm thấy đơn hàng"}</p>
         <Button onClick={() => navigate("/orders")} className="mt-4">
           Quay lại danh sách
         </Button>
       </div>
     );
   }
+
+  const displayOrder = order;
 
   const orderNumber = `DH${order.id.toString().padStart(6, "0")}`;
 
@@ -98,7 +114,7 @@ export function OrderDetail() {
     try {
       await updateOrder(order.id, { order_status: newStatus });
       setOrderStatus(newStatus);
-      fetchDetail();
+      await fetchDetail();
       toast.success(
         `Đã cập nhật trạng thái: ${orderStatusConfig[newStatus].label}`,
       );
@@ -122,7 +138,7 @@ export function OrderDetail() {
         cancel_reason: cancelReason.trim(),
       } as any);
       setOrderStatus("cancelled");
-      fetchDetail();
+      await fetchDetail();
       toast.success("Đã hủy đơn hàng");
       setCancelDialogOpen(false);
       setCancelReason("");

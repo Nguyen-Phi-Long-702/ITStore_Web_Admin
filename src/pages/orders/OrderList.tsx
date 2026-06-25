@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { Search, Eye, CheckCircle, Clock, Hourglass, Truck } from "lucide-react";
 import {
@@ -33,11 +33,32 @@ import {
 } from "../../utils/statusUtils";
 import { useData } from "../../contexts/DataContext";
 
+import { orderService } from "../../services/orderService";
+
 export function OrderList() {
-  const { orders } = useData();
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
+
+  const fetchOrders = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await orderService.getAll();
+      setOrders(data);
+    } catch (err: any) {
+      setError(err?.message || "Không thể tải danh sách đơn hàng");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
 
   const filteredOrders = orders.filter((order) => {
     const orderNumber = `DH${order.id.toString().padStart(6, "0")}`;
@@ -70,6 +91,25 @@ export function OrderList() {
       (o) => o.order_status === "cancelled" || o.order_status === "failed",
     ),
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-600">{error}</p>
+        <Button onClick={fetchOrders} className="mt-4">
+          Thử lại
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
