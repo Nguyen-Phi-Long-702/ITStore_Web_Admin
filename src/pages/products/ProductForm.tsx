@@ -40,6 +40,43 @@ function buildImageUrl(url: string | null): string {
   return `${BASE_URL}${url}`;
 }
 
+function parseSpecifications(specField: any): { key: string; value: string }[] {
+  if (!specField) return [{ key: "", value: "" }];
+  
+  let parsed: any = specField;
+  if (typeof specField === "string") {
+    try {
+      parsed = JSON.parse(specField);
+    } catch {
+      return [{ key: "Thông số", value: specField }];
+    }
+  }
+
+  if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+    const entries = Object.entries(parsed);
+    if (entries.length === 0) return [{ key: "", value: "" }];
+    return entries.map(([key, value]) => ({
+      key,
+      value: typeof value === "object" ? JSON.stringify(value) : String(value),
+    }));
+  }
+
+  if (Array.isArray(parsed)) {
+    if (parsed.length === 0) return [{ key: "", value: "" }];
+    return parsed.map((item: any) => {
+      if (item && typeof item === "object") {
+        return {
+          key: String(item.key || item.name || Object.keys(item)[0] || ""),
+          value: String(item.value || Object.values(item)[0] || ""),
+        };
+      }
+      return { key: "Thông số", value: String(item) };
+    });
+  }
+
+  return [{ key: "", value: "" }];
+}
+
 type ImageEntry = {
   id?: number;
   url: string;
@@ -105,7 +142,13 @@ export function ProductForm() {
     brand: existingProduct?.brand?.name || "",
     status: existingProduct?.status || "available",
     description: existingProduct?.description || "",
-    specifications: typeof existingProduct?.specifications === "string" ? existingProduct.specifications : (existingProduct?.specifications ? JSON.stringify(existingProduct.specifications) : ""),
+  });
+
+  const [specifications, setSpecifications] = useState<{ key: string; value: string }[]>(() => {
+    if (existingProduct) {
+      return parseSpecifications(existingProduct.specifications);
+    }
+    return [{ key: "", value: "" }];
   });
 
   const [images, setImages] = useState<ImageEntry[]>([]);
@@ -151,8 +194,9 @@ export function ProductForm() {
           brand: detail.brand?.name || "",
           status: detail.status as ProductStatus,
           description: detail.description || "",
-          specifications: typeof detail.specifications === "string" ? detail.specifications : (detail.specifications ? JSON.stringify(detail.specifications) : ""),
         });
+
+        setSpecifications(parseSpecifications(detail.specifications));
 
         if (detail.variants.length > 0) {
           setVariants(
@@ -191,8 +235,9 @@ export function ProductForm() {
           brand: existingProduct.brand?.name || "",
           status: existingProduct.status,
           description: existingProduct.description || "",
-          specifications: typeof existingProduct.specifications === "string" ? existingProduct.specifications : (existingProduct.specifications ? JSON.stringify(existingProduct.specifications) : ""),
         });
+
+        setSpecifications(parseSpecifications(existingProduct.specifications));
 
         const prodVariants = productVariants.filter((v) => v.product_id === existingProduct.id);
         if (prodVariants.length > 0) {
@@ -447,13 +492,23 @@ export function ProductForm() {
     let createdProductId: number | null = null;
     setIsSaving(true);
     try {
+      const specObj: Record<string, string> = {};
+      specifications.forEach((item) => {
+        if (item.key.trim()) {
+          specObj[item.key.trim()] = item.value;
+        }
+      });
+      const specsJson = JSON.stringify(specObj);
+
       if (isEdit && existingProduct) {
         await updateProduct(existingProduct.id, {
           name: formData.name,
           category_id: selectedCategory.id,
           brand_id: selectedBrand.id,
           status: formData.status as ProductStatus,
-          description: formData.description,          specifications: formData.specifications,        });
+          description: formData.description,
+          specifications: specsJson,
+        });
 
         if (removedVariantIds.length > 0) {
           await Promise.all(
@@ -538,7 +593,7 @@ export function ProductForm() {
           brand_id: selectedBrand.id,
           status: formData.status as ProductStatus,
           description: formData.description,
-          specifications: formData.specifications,
+          specifications: specsJson,
         }).then((p) => p.id);
 
         await Promise.all(
@@ -720,17 +775,86 @@ export function ProductForm() {
                     />
                   </div>
                   
-                  <div className="col-span-2">
-                    <Label htmlFor="specifications">Thông số kỹ thuật (Không bắt buộc)</Label>
-                    <Textarea
-                      id="specifications"
-                      value={formData.specifications}
-                      onChange={(e) =>
-                        handleChange("specifications", e.target.value)
-                      }
-                      placeholder="Nhập thông số kỹ thuật (vd: JSON hoặc văn bản)..."
-                      rows={3}
-                    />
+                  <div className="col-span-2 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label>Thông số kỹ thuật (Không bắt buộc)</Label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setIsFormDirty(true);
+                          setSpecifications((prev) => [...prev, { key: "", value: "" }]);
+                        }}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Thêm thông số
+                      </Button>
+                    </div>
+
+                    {specifications.length > 0 ? (
+                      <div className="border rounded-md divide-y overflow-hidden bg-white">
+                        <div className="grid grid-cols-12 bg-gray-50 p-2 font-medium text-sm text-gray-700">
+                          <div className="col-span-5 px-2">Tên thông số</div>
+                          <div className="col-span-6 px-2">Giá trị</div>
+                          <div className="col-span-1 text-center">Xóa</div>
+                        </div>
+                        <div className="divide-y max-h-80 overflow-y-auto">
+                          {specifications.map((spec, index) => (
+                            <div key={index} className="grid grid-cols-12 gap-2 p-2 items-center">
+                              <div className="col-span-5 px-1">
+                                <Input
+                                  value={spec.key}
+                                  onChange={(e) => {
+                                    setIsFormDirty(true);
+                                    setSpecifications((prev) =>
+                                      prev.map((item, idx) =>
+                                        idx === index ? { ...item, key: e.target.value } : item
+                                      )
+                                    );
+                                  }}
+                                  placeholder="Ví dụ: CPU, RAM, Pin..."
+                                  className="h-9"
+                                />
+                              </div>
+                              <div className="col-span-6 px-1">
+                                <Input
+                                  value={spec.value}
+                                  onChange={(e) => {
+                                    setIsFormDirty(true);
+                                    setSpecifications((prev) =>
+                                      prev.map((item, idx) =>
+                                        idx === index ? { ...item, value: e.target.value } : item
+                                      )
+                                    );
+                                  }}
+                                  placeholder="Giá trị thông số..."
+                                  className="h-9"
+                                />
+                              </div>
+                              <div className="col-span-1 text-center">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    setIsFormDirty(true);
+                                    setSpecifications((prev) => prev.filter((_, idx) => idx !== index));
+                                  }}
+                                  className="h-9 w-9 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 border border-dashed rounded-md bg-gray-50 text-gray-500 text-sm">
+                        Chưa có thông số kỹ thuật nào. Bấm "Thêm thông số" để bắt đầu.
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>
