@@ -164,6 +164,8 @@ export function ProductList() {
       setDeleteDialogOpen(false);
       setProductToDelete(null);
       toast.success("Sản phẩm đã được xóa thành công!");
+      // Reload lại danh sách sản phẩm từ API để phản ánh đúng sau khi xóa
+      await fetchProducts(page);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Không thể xóa sản phẩm");
     } finally {
@@ -271,7 +273,6 @@ export function ProductList() {
                     <TableHead>Danh mục</TableHead>
                     <TableHead>Thương hiệu</TableHead>
                     <TableHead className="text-right">Giá bán</TableHead>
-                    <TableHead className="text-right">Tồn kho</TableHead>
                     <TableHead>Trạng thái</TableHead>
                     <TableHead className="text-right">Thao tác</TableHead>
                   </TableRow>
@@ -279,16 +280,12 @@ export function ProductList() {
                 <TableBody>
                   {products.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                      <TableCell colSpan={6} className="text-center py-8 text-gray-500">
                         Không tìm thấy sản phẩm nào
                       </TableCell>
                     </TableRow>
                   ) : (
                     products.map((product) => {
-                      const totalStock = product.variants && product.variants.length > 0
-                        ? product.variants.reduce((sum, v) => sum + v.stock, 0)
-                        : null;
-
                       return (
                         <TableRow key={product.id}>
                           <TableCell>
@@ -317,15 +314,6 @@ export function ProductList() {
                                       {" "}– {formatCurrency(product.price_max)}
                                     </span>
                                   )}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {totalStock != null ? (
-                              <span className={totalStock < 10 ? "text-red-600 font-semibold" : ""}>
-                                {totalStock}
                               </span>
                             ) : (
                               <span className="text-gray-400">-</span>

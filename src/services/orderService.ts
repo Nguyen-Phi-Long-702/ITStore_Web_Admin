@@ -7,6 +7,11 @@ export const orderService = {
     return unwrapList<Order>(res);
   },
 
+  async getByDateRange(dateFrom: string, dateTo: string): Promise<Order[]> {
+    const res = await api.get(`/api/admin/orders?date_from=${dateFrom}&date_to=${dateTo}`);
+    return unwrapList<Order>(res);
+  },
+
   async getDetail(id: number): Promise<Order> {
     const res = await api.get(`/api/admin/orders/${id}`);
     const unwrapped = unwrapData<any>(res);

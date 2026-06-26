@@ -42,10 +42,21 @@ export function ProductVariantsView() {
 
   useEffect(() => {
     if (id) {
-      productService.getAll({ page: 1, limit: 1000 }).then((res) => {
-        const found = res.data.find((p) => p.id.toString() === id);
-        setProduct(found || null);
-      }).catch(console.error).finally(() => setLoading(false));
+      const productId = Number(id);
+      // Gọi API lấy danh sách variant của sản phẩm
+      Promise.all([
+        productService.getAll({ page: 1, limit: 100 }).then((res) =>
+          res.data.find((p) => p.id === productId) || null
+        ),
+        productService.getVariantsByProduct(productId),
+      ])
+        .then(([foundProduct, variants]) => {
+          if (foundProduct) {
+            setProduct({ ...foundProduct, variants });
+          }
+        })
+        .catch(console.error)
+        .finally(() => setLoading(false));
     } else {
       setLoading(false);
     }

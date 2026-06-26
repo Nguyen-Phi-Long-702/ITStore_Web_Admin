@@ -16,6 +16,7 @@ import {
   CardTitle,
 } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
+import { Badge } from "../../components/ui/badge";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Textarea } from "../../components/ui/textarea";
@@ -229,7 +230,7 @@ export function ProductForm() {
               price: v.price.toString(),
               compare_at_price: v.compare_at_price?.toString() || "",
               stock: v.stock.toString(),
-              is_active: true,
+              is_active: v.is_active !== false,
               imageUrl: buildImageUrl(v.variant_image),
               imageFile: undefined,
             }))
@@ -705,6 +706,32 @@ export function ProductForm() {
     });
   };
 
+  // Toggle bật/tắt variant:
+  // - Nếu variant đã có id (đang edit): gọi API ngay, rollback nếu lỗi
+  // - Nếu variant chưa có id (đang tạo mới): chỉ cập nhật state local
+  const handleToggleVariantStatus = async (index: number) => {
+    const variant = variants[index];
+    const newStatus = !variant.is_active;
+
+    // Cập nhật UI ngay (optimistic)
+    updateVariant(index, "is_active", newStatus);
+
+    if (variant.id) {
+      try {
+        await productService.updateVariantStatus(variant.id, newStatus);
+        toast.success(
+          newStatus
+            ? `Đã bật biến thể ${variant.sku}`
+            : `Đã tắt biến thể ${variant.sku}`,
+        );
+      } catch (err) {
+        // Rollback nếu API lỗi
+        updateVariant(index, "is_active", !newStatus);
+        toast.error("Không thể cập nhật trạng thái biến thể");
+      }
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -995,16 +1022,43 @@ export function ProductForm() {
                       </Button>
                     )}
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="col-span-2">
-                        <Label>SKU *</Label>
-                        <Input
-                          value={variant.sku}
-                          onChange={(e) =>
-                            updateVariant(index, "sku", e.target.value)
-                          }
-                          placeholder="Nhập SKU"
-                          required
-                        />
+                      <div className="col-span-2 flex items-start gap-4">
+                        <div className="flex-1">
+                          <Label>SKU *</Label>
+                          <Input
+                            value={variant.sku}
+                            onChange={(e) =>
+                              updateVariant(index, "sku", e.target.value)
+                            }
+                            placeholder="Nhập SKU"
+                            required
+                          />
+                        </div>
+                        {/* Trạng thái biến thể */}
+                        <div className="flex flex-col gap-1.5 shrink-0 pt-0.5">
+                          <Label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            Trạng thái biến thể
+                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              className={`${
+                                variant.is_active
+                                  ? "bg-green-100 text-green-700 border-green-200"
+                                  : "bg-gray-100 text-gray-700 border-gray-200"
+                              }`}
+                            >
+                              {variant.is_active ? "Đang hoạt động" : "Đã vô hiệu hóa"}
+                            </Badge>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleToggleVariantStatus(index)}
+                            >
+                              {variant.is_active ? "Tắt" : "Bật"}
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                       <div>
                         <Label>Phiên bản</Label>

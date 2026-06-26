@@ -5,7 +5,6 @@ import {
   CardHeader,
   CardTitle,
 } from "../components/ui/card";
-import { Button } from "../components/ui/button";
 import {
   Select,
   SelectContent,
@@ -24,8 +23,6 @@ import {
 import {
   LineChart,
   Line,
-  BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell,
@@ -36,60 +33,77 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { Download, TrendingUp, Package, DollarSign, Users, ShoppingCart, TrendingDown } from "lucide-react";
+import { Package, DollarSign, ShoppingCart } from "lucide-react";
 import { formatCurrency } from "../utils/statusUtils";
-import { useData } from "../contexts/DataContext";
 import { orderService } from "../services/orderService";
-import { Order } from "../types";
+import { productService } from "../services/productService";
+import { Order, ProductVariant } from "../types";
+
+// Format ngày thành YYYY-MM-DD
+function formatDate(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+// Tính khoảng ngày dựa vào timeRange và ngày hiện tại
+function getDateRange(timeRange: string): { dateFrom: string; dateTo: string } {
+  const now = new Date();
+  const days =
+    timeRange === "week"
+      ? 7
+      : timeRange === "month"
+        ? 30
+        : timeRange === "quarter"
+          ? 90
+          : 365;
+
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - (days - 1));
+
+  return {
+    dateFrom: formatDate(start),
+    dateTo: formatDate(now),
+  };
+}
+
+// Rút gọn số tiền cho trục Y biểu đồ
+function formatYAxis(value: number): string {
+  if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1)}tỷ`;
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(0)}tr`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(0)}k`;
+  return String(value);
+}
+
+const isRevenueOrder = (paymentStatus: string, orderStatus: string) =>
+  paymentStatus === "paid" && (orderStatus === "delivered" || orderStatus === "received");
 
 export function Reports() {
   const [timeRange, setTimeRange] = useState("week");
-  const {
-    orders,
-    customers,
-    productVariants,
-    products,
-    categories,
-    fetchOrders,
-    fetchCustomers,
-    fetchProducts,
-    fetchCategories,
-  } = useData();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [lowStockVariants, setLowStockVariants] = useState<ProductVariant[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+  const [loadingStock, setLoadingStock] = useState(true);
 
+  // Gọi API lấy đơn hàng theo khoảng thời gian khi timeRange thay đổi
   useEffect(() => {
-    fetchOrders();
-    fetchCustomers();
-    fetchProducts();
-    fetchCategories();
-  }, [fetchOrders, fetchCustomers, fetchProducts, fetchCategories]);
+    const { dateFrom, dateTo } = getDateRange(timeRange);
+    setLoadingOrders(true);
+    orderService
+      .getByDateRange(dateFrom, dateTo)
+      .then(setOrders)
+      .catch(console.error)
+      .finally(() => setLoadingOrders(false));
+  }, [timeRange]);
 
-  const [detailedOrders, setDetailedOrders] = useState<Record<number, Order>>({});
-
-  const isRevenueOrder = (paymentStatus: string, orderStatus: string) =>
-    paymentStatus === "paid" && (orderStatus === "delivered" || orderStatus === "received");
-
+  // Gọi API lấy danh sách sản phẩm sắp hết hàng (không phụ thuộc timeRange)
   useEffect(() => {
-    const missingIds = orders
-      .filter((o) => isRevenueOrder(o.payment_status, o.order_status))
-      .map((o) => o.id)
-      .filter((id) => !detailedOrders[id]);
-
-    if (missingIds.length === 0) return;
-
-    Promise.allSettled(missingIds.map((id) => orderService.getDetail(id))).then(
-      (results) => {
-        setDetailedOrders((prev) => {
-          const next = { ...prev };
-          results.forEach((res) => {
-            if (res.status === "fulfilled" && res.value) {
-              next[res.value.id] = res.value;
-            }
-          });
-          return next;
-        });
-      }
-    );
-  }, [orders]);
+    setLoadingStock(true);
+    productService
+      .getLowStock(10)
+      .then(setLowStockVariants)
+      .catch(console.error)
+      .finally(() => setLoadingStock(false));
+  }, []);
 
   const reportData = useMemo(() => {
     const now = new Date();
@@ -106,78 +120,40 @@ export function Reports() {
     start.setHours(0, 0, 0, 0);
     start.setDate(start.getDate() - (days - 1));
 
-    const previousStart = new Date(start);
-    previousStart.setDate(previousStart.getDate() - days);
-
-    const inRange = (value: string, rangeStart: Date, rangeEnd: Date) => {
-      const time = new Date(value).getTime();
-      return time >= rangeStart.getTime() && time <= rangeEnd.getTime();
-    };
-
-    const filteredOrders = orders.filter((order) =>
-      inRange(order.created_at, start, now),
-    );
-    const previousOrders = orders.filter((order) => {
-      const time = new Date(order.created_at).getTime();
-      return time >= previousStart.getTime() && time < start.getTime();
-    });
-    const previousRevenue = previousOrders.reduce(
+    // Tổng doanh thu từ đơn hàng đã về từ API (đã lọc sẵn theo date range)
+    const totalRevenue = orders.reduce(
       (sum, order) =>
         isRevenueOrder(order.payment_status, order.order_status)
           ? sum + order.total
           : sum,
       0,
     );
-    const previousAvgOrderValue =
-      previousOrders.length > 0
-        ? Math.floor(previousRevenue / previousOrders.length)
-        : 0;
 
-    const filteredCustomers = customers.filter((customer) =>
-      inRange(customer.created_at, start, now),
-    );
-
-    const totalRevenue = filteredOrders.reduce(
-      (sum, order) =>
-        isRevenueOrder(order.payment_status, order.order_status)
-          ? sum + order.total
-          : sum,
-      0,
-    );
-    const totalOrders = filteredOrders.filter(
+    // Tổng đơn hàng hợp lệ
+    const totalOrders = orders.filter(
       (order) =>
         order.order_status === "delivered" ||
         (order.payment_status === "paid" &&
           !["cancelled", "failed"].includes(order.order_status)),
     ).length;
-    const newCustomers = filteredCustomers.length;
+
     const avgOrderValue =
       totalOrders > 0 ? Math.floor(totalRevenue / totalOrders) : 0;
 
+    // Build biểu đồ xu hướng doanh thu từ dữ liệu đã lấy về
     const revenueData = (() => {
       if (timeRange === "year") {
-        const monthlyMap = new Map<
-          string,
-          { revenue: number; sortValue: number }
-        >();
+        const monthlyMap = new Map<string, { revenue: number; sortValue: number }>();
         for (let i = 0; i < 12; i += 1) {
-          const monthDate = new Date(
-            now.getFullYear(),
-            now.getMonth() - 11 + i,
-            1,
-          );
+          const monthDate = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
           const key = monthDate.toLocaleDateString("vi-VN", {
             month: "2-digit",
             year: "numeric",
           });
           monthlyMap.set(key, { revenue: 0, sortValue: monthDate.getTime() });
         }
-
-        filteredOrders.forEach((order) => {
-          if (!isRevenueOrder(order.payment_status, order.order_status)) {
-            return;
-          }
-
+        orders.forEach((order) => {
+          if (!isRevenueOrder(order.payment_status, order.order_status)) return;
           const date = new Date(order.created_at);
           const key = date.toLocaleDateString("vi-VN", {
             month: "2-digit",
@@ -186,19 +162,12 @@ export function Reports() {
           if (!monthlyMap.has(key)) {
             monthlyMap.set(key, {
               revenue: 0,
-              sortValue: new Date(
-                date.getFullYear(),
-                date.getMonth(),
-                1,
-              ).getTime(),
+              sortValue: new Date(date.getFullYear(), date.getMonth(), 1).getTime(),
             });
           }
           const current = monthlyMap.get(key);
-          if (current) {
-            current.revenue += order.total;
-          }
+          if (current) current.revenue += order.total;
         });
-
         return Array.from(monthlyMap.entries())
           .sort((a, b) => a[1].sortValue - b[1].sortValue)
           .map(([date, data]) => ({
@@ -210,28 +179,19 @@ export function Reports() {
 
       if (timeRange === "quarter") {
         const weekMap = new Map<string, number>();
-
         for (let i = 0; i < 13; i += 1) {
           weekMap.set(`Tuần ${i + 1}`, 0);
         }
-
-        filteredOrders.forEach((order) => {
-          if (!isRevenueOrder(order.payment_status, order.order_status)) {
-            return;
-          }
-
+        orders.forEach((order) => {
+          if (!isRevenueOrder(order.payment_status, order.order_status)) return;
           const orderDate = new Date(order.created_at).getTime();
           const dayOffset = Math.floor(
             (orderDate - start.getTime()) / (1000 * 60 * 60 * 24),
           );
-          const weekIndex = Math.min(
-            12,
-            Math.max(0, Math.floor(dayOffset / 7)),
-          );
+          const weekIndex = Math.min(12, Math.max(0, Math.floor(dayOffset / 7)));
           const weekKey = `Tuần ${weekIndex + 1}`;
           weekMap.set(weekKey, (weekMap.get(weekKey) || 0) + order.total);
         });
-
         return Array.from(weekMap.entries()).map(([date, revenue], index) => ({
           date,
           revenue,
@@ -239,6 +199,7 @@ export function Reports() {
         }));
       }
 
+      // week / month: theo ngày
       const dayMap = new Map<string, number>();
       for (let i = days - 1; i >= 0; i -= 1) {
         const day = new Date(now);
@@ -249,12 +210,8 @@ export function Reports() {
           0,
         );
       }
-
-      filteredOrders.forEach((order) => {
-        if (!isRevenueOrder(order.payment_status, order.order_status)) {
-          return;
-        }
-
+      orders.forEach((order) => {
+        if (!isRevenueOrder(order.payment_status, order.order_status)) return;
         const key = new Date(order.created_at).toLocaleDateString("vi-VN", {
           day: "2-digit",
           month: "2-digit",
@@ -263,7 +220,6 @@ export function Reports() {
           dayMap.set(key, (dayMap.get(key) || 0) + order.total);
         }
       });
-
       return Array.from(dayMap.entries()).map(([date, revenue], index) => ({
         date,
         revenue,
@@ -271,187 +227,52 @@ export function Reports() {
       }));
     })();
 
+    // Phân bổ trạng thái đơn hàng – tính từ orders đã được lọc theo date range bởi API
     const orderStatusData = [
       {
         name: "Hoàn thành",
-        value: filteredOrders.filter(
-          (order) => order.order_status === "delivered",
-        ).length,
+        value: orders.filter((o) => o.order_status === "delivered").length,
         color: "#10b981",
         id: "status-completed",
       },
       {
         name: "Đang giao",
-        value: filteredOrders.filter(
-          (order) => order.order_status === "shipping",
-        ).length,
+        value: orders.filter((o) => o.order_status === "shipping").length,
         color: "#E0872B",
         id: "status-shipping",
       },
       {
         name: "Đang xử lý",
-        value: filteredOrders.filter((order) =>
-          ["pending", "confirmed", "preparing", "packed"].includes(
-            order.order_status,
-          ),
+        value: orders.filter((o) =>
+          ["pending", "confirmed", "preparing", "packed"].includes(o.order_status),
         ).length,
         color: "#f59e0b",
         id: "status-processing",
       },
       {
         name: "Đã hủy",
-        value: filteredOrders.filter(
-          (order) => order.order_status === "cancelled",
-        ).length,
+        value: orders.filter((o) => o.order_status === "cancelled").length,
         color: "#ef4444",
         id: "status-cancelled",
       },
     ];
-
-    const categoryMap = new Map<number, { revenue: number; orders: number }>();
-    filteredOrders.forEach((order) => {
-      if (!isRevenueOrder(order.payment_status, order.order_status)) {
-        return;
-      }
-
-      let items = order.items || detailedOrders[order.id]?.items || (detailedOrders[order.id] as any)?.order_items || [];
-      if (!Array.isArray(items)) {
-        items = [];
-      }
-      items.forEach((item: any) => {
-        const variant = productVariants.find((v) => v.id === item.variant_id);
-        const product = variant
-          ? products.find((p) => p.id === variant.product_id)
-          : undefined;
-        if (!product) {
-          return;
-        }
-
-        const categoryId = product.category_id || product.category?.id;
-        if (!categoryId) {
-          return;
-        }
-
-        const current = categoryMap.get(categoryId) || {
-          revenue: 0,
-          orders: 0,
-        };
-        categoryMap.set(categoryId, {
-          revenue: current.revenue + Number(item.subtotal),
-          orders: current.orders + Number(item.quantity),
-        });
-      });
-    });
-
-    const categoryData = Array.from(categoryMap.entries())
-      .map(([categoryId, data]) => ({
-        category:
-          categories.find((c) => c.id === categoryId)?.name ||
-          `Danh mục ${categoryId}`,
-        revenue: data.revenue,
-        orders: data.orders,
-        id: `cat-${categoryId}`,
-      }))
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 5);
-
-    const topProducts = (() => {
-      const productMap = new Map<
-        number,
-        { totalSold: number; totalRevenue: number }
-      >();
-
-      filteredOrders.forEach((order) => {
-        if (!isRevenueOrder(order.payment_status, order.order_status)) {
-          return;
-        }
-
-        let items = order.items || detailedOrders[order.id]?.items || (detailedOrders[order.id] as any)?.order_items || [];
-        if (!Array.isArray(items)) {
-          items = [];
-        }
-        items.forEach((item: any) => {
-          const variant = productVariants.find((v) => v.id === item.variant_id);
-          if (!variant) {
-            return;
-          }
-
-          const current = productMap.get(variant.product_id) || {
-            totalSold: 0,
-            totalRevenue: 0,
-          };
-          productMap.set(variant.product_id, {
-            totalSold: current.totalSold + Number(item.quantity),
-            totalRevenue: current.totalRevenue + Number(item.subtotal),
-          });
-        });
-      });
-
-      return Array.from(productMap.entries())
-        .map(([productId, data]) => ({
-          product_id: productId,
-          product_name:
-            products.find((product) => product.id === productId)?.name ||
-            `SP-${productId}`,
-          total_sold: data.totalSold,
-          total_revenue: data.totalRevenue,
-        }))
-        .sort((a, b) => b.total_sold - a.total_sold)
-        .slice(0, 5);
-    })();
-
-    const lowStockProducts = productVariants
-      .filter((variant) => variant.stock > 0 && variant.stock < 10)
-      .slice(0, 5);
 
     return {
       revenueData,
       totalRevenue,
       totalOrders,
       avgOrderValue,
-      newCustomers,
       orderStatusData,
-      categoryData,
-      topProducts,
-      lowStockProducts,
-      previousRevenue,
-      previousOrders: previousOrders.length,
-      previousAvgOrderValue,
-      previousCustomers: customers.filter((customer) => {
-        const time = new Date(customer.created_at).getTime();
-        return time >= previousStart.getTime() && time < start.getTime();
-      }).length,
     };
-  }, [timeRange, orders, customers, productVariants, products, categories, detailedOrders]);
-
-  const growth = useMemo(() => {
-    const calcGrowth = (current: number, previous: number) => {
-      if (previous === 0) {
-        return current === 0 ? 0 : 100;
-      }
-      return Number((((current - previous) / previous) * 100).toFixed(1));
-    };
-
-    return {
-      revenue: calcGrowth(reportData.totalRevenue, reportData.previousRevenue),
-      orders: calcGrowth(reportData.totalOrders, reportData.previousOrders),
-      avgOrderValue: calcGrowth(
-        reportData.avgOrderValue,
-        reportData.previousAvgOrderValue,
-      ),
-      customers: calcGrowth(
-        reportData.newCustomers,
-        reportData.previousCustomers,
-      ),
-    };
-  }, [reportData]);
+  }, [timeRange, orders]);
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
-            Báo cáo & Thống kê
+            Báo cáo &amp; Thống kê
           </h2>
           <p className="text-gray-600">
             Phân tích doanh thu và hiệu suất kinh doanh
@@ -472,27 +293,18 @@ export function Reports() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Stat Cards – 3 thẻ, không có so sánh kỳ trước */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Tổng doanh thu</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {formatCurrency(reportData.totalRevenue)}
+                  {loadingOrders ? "Đang tải..." : formatCurrency(reportData.totalRevenue)}
                 </p>
-                <div className="flex items-center gap-1 mt-1">
-                  {growth.revenue >= 0 ? (
-                    <TrendingUp className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <TrendingDown className="h-4 w-4 text-red-600" />
-                  )}
-                  <span className={`text-sm ${growth.revenue >= 0 ? "text-green-600" : "text-red-600"}`}>
-                    {Math.abs(growth.revenue)}%
-                  </span>
-                </div>
               </div>
-              <DollarSign className="h-8 w-8 text-green-600" />
+              <DollarSign className="h-8 w-8 text-green-600 flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -503,20 +315,10 @@ export function Reports() {
               <div>
                 <p className="text-sm text-gray-600">Đơn hàng</p>
                 <p className="text-2xl font-bold text-[#E0872B]">
-                  {reportData.totalOrders}
+                  {loadingOrders ? "Đang tải..." : reportData.totalOrders}
                 </p>
-                <div className="flex items-center gap-1 mt-1">
-                  {growth.orders >= 0 ? (
-                    <TrendingUp className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <TrendingDown className="h-4 w-4 text-red-600" />
-                  )}
-                  <span className={`text-sm ${growth.orders >= 0 ? "text-green-600" : "text-red-600"}`}>
-                    {Math.abs(growth.orders)}%
-                  </span>
-                </div>
               </div>
-              <ShoppingCart className="h-8 w-8 text-[#E0872B]" />
+              <ShoppingCart className="h-8 w-8 text-[#E0872B] flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -527,62 +329,44 @@ export function Reports() {
               <div>
                 <p className="text-sm text-gray-600">Giá trị TB/Đơn</p>
                 <p className="text-2xl font-bold text-[#E0872B]">
-                  {formatCurrency(reportData.avgOrderValue)}
+                  {loadingOrders ? "Đang tải..." : formatCurrency(reportData.avgOrderValue)}
                 </p>
-                <div className="flex items-center gap-1 mt-1">
-                  {growth.avgOrderValue >= 0 ? (
-                    <TrendingUp className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <TrendingDown className="h-4 w-4 text-red-600" />
-                  )}
-                  <span className={`text-sm ${growth.avgOrderValue >= 0 ? "text-green-600" : "text-red-600"}`}>
-                    {Math.abs(growth.avgOrderValue)}%
-                  </span>
-                </div>
               </div>
-              <DollarSign className="h-8 w-8 text-[#E0872B]" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Khách hàng mới</p>
-                <p className="text-2xl font-bold text-orange-600">
-                  {reportData.newCustomers}
-                </p>
-                <div className="flex items-center gap-1 mt-1">
-                  {growth.customers >= 0 ? (
-                    <TrendingUp className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <TrendingDown className="h-4 w-4 text-red-600" />
-                  )}
-                  <span className={`text-sm ${growth.customers >= 0 ? "text-green-600" : "text-red-600"}`}>
-                    {Math.abs(growth.customers)}%
-                  </span>
-                </div>
-              </div>
-              <Users className="h-8 w-8 text-orange-600" />
+              <DollarSign className="h-8 w-8 text-[#E0872B] flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
       </div>
 
+      {/* Charts – 2 biểu đồ song song */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Xu hướng doanh thu */}
         <Card>
           <CardHeader>
             <CardTitle>Xu hướng doanh thu</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={reportData.revenueData} id="revenue-line-chart">
+              <LineChart
+                data={reportData.revenueData}
+                id="revenue-line-chart"
+                margin={{ top: 5, right: 16, left: 8, bottom: 5 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" key="grid-1" />
-                <XAxis dataKey="date" key="xaxis-1" />
-                <YAxis key="yaxis-1" />
+                <XAxis
+                  dataKey="date"
+                  key="xaxis-1"
+                  tick={{ fontSize: 11 }}
+                  interval="preserveStartEnd"
+                />
+                <YAxis
+                  key="yaxis-1"
+                  width={72}
+                  tickFormatter={formatYAxis}
+                  tick={{ fontSize: 11 }}
+                />
                 <Tooltip
-                  formatter={(value: number) => formatCurrency(value)}
+                  formatter={(value: number) => [formatCurrency(value), "Doanh thu"]}
                   key="tooltip-1"
                 />
                 <Legend key="legend-1" />
@@ -593,12 +377,14 @@ export function Reports() {
                   strokeWidth={2}
                   name="Doanh thu"
                   key="line-1"
+                  dot={false}
                 />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
+        {/* Phân bổ trạng thái đơn hàng */}
         <Card>
           <CardHeader>
             <CardTitle>Phân bổ trạng thái đơn hàng</CardTitle>
@@ -621,55 +407,33 @@ export function Reports() {
                   ))}
                 </Pie>
                 <Tooltip key="tooltip-pie" />
-                <Legend 
-                  layout="horizontal" 
-                  verticalAlign="bottom" 
-                  align="center" 
+                <Legend
+                  layout="horizontal"
+                  verticalAlign="bottom"
+                  align="center"
                 />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Doanh thu theo danh mục</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={reportData.categoryData} id="category-bar-chart">
-                <CartesianGrid strokeDasharray="3 3" key="grid-2" />
-                <XAxis
-                  dataKey="category"
-                  angle={-45}
-                  textAnchor="end"
-                  height={100}
-                  key="xaxis-2"
-                />
-                <YAxis key="yaxis-2" />
-                <Tooltip
-                  formatter={(value: number, name: string) =>
-                    name === "revenue" ? formatCurrency(value) : value
-                  }
-                  key="tooltip-2"
-                />
-                <Legend key="legend-2" />
-                <Bar
-                  dataKey="revenue"
-                  fill="#10b981"
-                  name="Doanh thu"
-                  key="bar-1"
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Sản phẩm sắp hết hàng</CardTitle>
-          </CardHeader>
-          <CardContent>
+      {/* Sản phẩm sắp hết hàng – luôn gọi API low-stock, không phụ thuộc timeRange */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5 text-red-600" />
+            Sản phẩm sắp hết hàng
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loadingStock ? (
+            <div className="py-8 text-center text-gray-500">Đang tải...</div>
+          ) : lowStockVariants.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">
+              Tất cả sản phẩm đều đủ hàng
+            </p>
+          ) : (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -679,7 +443,7 @@ export function Reports() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {reportData.lowStockProducts.map((variant) => (
+                {lowStockVariants.map((variant) => (
                   <TableRow key={variant.id}>
                     <TableCell className="font-mono text-sm">
                       {variant.sku}
@@ -705,55 +469,7 @@ export function Reports() {
                 ))}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Sản phẩm bán chạy nhất</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Xếp hạng</TableHead>
-                <TableHead>Sản phẩm</TableHead>
-                <TableHead className="text-right">Số lượng bán</TableHead>
-                <TableHead className="text-right">Doanh thu</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {reportData.topProducts.map((product, index) => (
-                <TableRow key={product.product_id}>
-                  <TableCell>
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                        index === 0
-                          ? "bg-yellow-100 text-yellow-700"
-                          : index === 1
-                            ? "bg-gray-100 text-gray-700"
-                            : index === 2
-                              ? "bg-orange-100 text-orange-700"
-                              : "bg-[#FFE0B2] text-[#E0872B]"
-                      }`}
-                    >
-                      {index + 1}
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {product.product_name}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {product.total_sold}
-                  </TableCell>
-                  <TableCell className="text-right font-medium">
-                    {formatCurrency(product.total_revenue)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          )}
         </CardContent>
       </Card>
     </div>

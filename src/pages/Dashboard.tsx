@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -6,20 +6,14 @@ import {
   CardTitle,
 } from "../components/ui/card";
 import {
-  TrendingUp,
-  TrendingDown,
   DollarSign,
   ShoppingCart,
-  Users,
   Package,
   AlertTriangle,
-  Clock,
 } from "lucide-react";
 import {
   LineChart,
   Line,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -31,20 +25,62 @@ import { formatCurrency, orderStatusConfig } from "../utils/statusUtils";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Link } from "react-router";
-import { useData } from "../contexts/DataContext";
-import { DashboardStats, RevenueData, TopProduct } from "../types";
+import { orderService } from "../services/orderService";
+import { productService } from "../services/productService";
+import { Order, ProductVariant, RevenueData } from "../types";
+
+// Tính ngày đầu tuần (Thứ Hai) và cuối tuần (Chủ Nhật) của ngày hiện tại
+function getCurrentWeekRange(): { dateFrom: string; dateTo: string } {
+  const now = new Date();
+  const day = now.getDay(); // 0 = CN, 1 = T2, ...
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + diffToMonday);
+  monday.setHours(0, 0, 0, 0);
+
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  sunday.setHours(23, 59, 59, 999);
+
+  const fmt = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+  return { dateFrom: fmt(monday), dateTo: fmt(sunday) };
+}
+
+// Rút gọn số tiền cho trục Y biểu đồ
+function formatYAxis(value: number): string {
+  if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1)}tỷ`;
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(0)}tr`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(0)}k`;
+  return String(value);
+}
+
+const isRevenueOrder = (paymentStatus: string, orderStatus: string) =>
+  paymentStatus === "paid" && (orderStatus === "delivered" || orderStatus === "received");
 
 export function Dashboard() {
-  const { orders, customers, productVariants, products, fetchOrders, fetchCustomers, fetchProducts } = useData();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [lowStockVariants, setLowStockVariants] = useState<ProductVariant[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+  const [loadingStock, setLoadingStock] = useState(true);
 
   useEffect(() => {
-    fetchOrders();
-    fetchCustomers();
-    fetchProducts();
-  }, [fetchOrders, fetchCustomers, fetchProducts]);
+    const { dateFrom, dateTo } = getCurrentWeekRange();
+    setLoadingOrders(true);
+    orderService
+      .getByDateRange(dateFrom, dateTo)
+      .then(setOrders)
+      .catch(console.error)
+      .finally(() => setLoadingOrders(false));
 
-  const isRevenueOrder = (paymentStatus: string, orderStatus: string) =>
-    paymentStatus === "paid" && (orderStatus === "delivered" || orderStatus === "received");
+    setLoadingStock(true);
+    productService
+      .getLowStock(10)
+      .then(setLowStockVariants)
+      .catch(console.error)
+      .finally(() => setLoadingStock(false));
+  }, []);
 
   const recentOrders = useMemo(
     () =>
@@ -57,99 +93,33 @@ export function Dashboard() {
     [orders],
   );
 
-  const lowStockProducts = useMemo(
-    () => productVariants.filter((v) => v.stock > 0 && v.stock < 10),
-    [productVariants],
-  );
-
-  const stats = useMemo<DashboardStats>(() => {
-    const now = new Date();
-    const currentStart = new Date(now);
-    currentStart.setHours(0, 0, 0, 0);
-    currentStart.setDate(currentStart.getDate() - 6);
-
-    const previousStart = new Date(currentStart);
-    previousStart.setDate(previousStart.getDate() - 7);
-    const previousEnd = new Date(currentStart);
-
-    const inRange = (dateValue: string, start: Date, end: Date) => {
-      const date = new Date(dateValue).getTime();
-      return date >= start.getTime() && date < end.getTime();
-    };
-
-    const currentOrders = orders.filter((order) =>
-      inRange(order.created_at, currentStart, now),
-    );
-    const previousOrders = orders.filter((order) =>
-      inRange(order.created_at, previousStart, previousEnd),
-    );
-
-    const currentRevenue = currentOrders.reduce(
+  const stats = useMemo(() => {
+    const totalRevenue = orders.reduce(
       (sum, order) =>
         isRevenueOrder(order.payment_status, order.order_status)
           ? sum + order.total
           : sum,
       0,
     );
-    const previousRevenue = previousOrders.reduce(
-      (sum, order) =>
-        isRevenueOrder(order.payment_status, order.order_status)
-          ? sum + order.total
-          : sum,
-      0,
-    );
-
-    const currentCustomers = customers.filter((customer) =>
-      inRange(customer.created_at, currentStart, now),
-    ).length;
-    const previousCustomers = customers.filter((customer) =>
-      inRange(customer.created_at, previousStart, previousEnd),
-    ).length;
-
-    const pendingStatuses = new Set([
-      "pending",
-      "confirmed",
-      "preparing",
-      "packed",
-      "shipping",
-    ]);
-    const currentPending = currentOrders.filter((order) =>
-      pendingStatuses.has(order.order_status),
-    ).length;
-    const previousPending = previousOrders.filter((order) =>
-      pendingStatuses.has(order.order_status),
-    ).length;
-
-    const calcChange = (current: number, previous: number) => {
-      if (previous === 0) {
-        return current === 0 ? 0 : null;
-      }
-      return Number((((current - previous) / previous) * 100).toFixed(1));
-    };
 
     return {
-      totalRevenue: currentRevenue,       
-      totalOrders: currentOrders.length, 
-      totalCustomers: currentCustomers,   
-      pendingOrders: currentPending,
-      revenueChange: calcChange(currentRevenue, previousRevenue),
-      ordersChange: calcChange(currentOrders.length, previousOrders.length),
-      customersChange: calcChange(currentCustomers, previousCustomers),
-      pendingChange: calcChange(currentPending, previousPending),
-      lowStockProducts: lowStockProducts.length,
+      totalRevenue,
+      totalOrders: orders.length,
     };
-  }, [orders, customers, lowStockProducts.length]);
+  }, [orders]);
 
+  // Build biểu đồ doanh thu 7 ngày của tuần hiện tại
   const revenueData = useMemo<RevenueData[]>(() => {
+    const { dateFrom } = getCurrentWeekRange();
+    const weekStart = new Date(dateFrom + "T00:00:00");
     const result: RevenueData[] = [];
 
-    for (let i = 6; i >= 0; i -= 1) {
-      const day = new Date();
-      day.setHours(0, 0, 0, 0);
-      day.setDate(day.getDate() - i);
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(weekStart);
+      day.setDate(weekStart.getDate() + i);
 
       const nextDay = new Date(day);
-      nextDay.setDate(nextDay.getDate() + 1);
+      nextDay.setDate(day.getDate() + 1);
 
       const dayOrders = orders.filter((order) => {
         const time = new Date(order.created_at).getTime();
@@ -165,7 +135,7 @@ export function Dashboard() {
       );
 
       result.push({
-        date: day.toLocaleDateString("vi-VN", { weekday: "short" }),
+        date: day.toLocaleDateString("vi-VN", { weekday: "short", day: "2-digit", month: "2-digit" }),
         revenue: dayRevenue,
         orders: dayOrders.length,
         id: `revenue-${day.getTime()}`,
@@ -175,54 +145,10 @@ export function Dashboard() {
     return result;
   }, [orders]);
 
-  const topProducts = useMemo<TopProduct[]>(() => {
-    const salesByProduct = new Map<
-      number,
-      { total_sold: number; total_revenue: number }
-    >();
-
-    orders.forEach((order) => {
-      if (!isRevenueOrder(order.payment_status, order.order_status)) {
-        return;
-      }
-
-      order.items?.forEach((item) => {
-        const variant = productVariants.find((v) => v.id === item.variant_id);
-        if (!variant) {
-          return;
-        }
-
-        const productId = variant.product_id;
-        const current = salesByProduct.get(productId) || {
-          total_sold: 0,
-          total_revenue: 0,
-        };
-
-        salesByProduct.set(productId, {
-          total_sold: current.total_sold + item.quantity,
-          total_revenue: current.total_revenue + item.subtotal,
-        });
-      });
-    });
-
-    return Array.from(salesByProduct.entries())
-      .map(([product_id, sales]) => ({
-        product_id,
-        product_name:
-          products.find((product) => product.id === product_id)?.name ||
-          `SP-${product_id}`,
-        total_sold: sales.total_sold,
-        total_revenue: sales.total_revenue,
-      }))
-      .sort((a, b) => b.total_sold - a.total_sold)
-      .slice(0, 5);
-  }, [orders, productVariants, products]);
-
   const statCards = [
     {
       title: "Doanh thu tuần này",
       value: formatCurrency(stats.totalRevenue),
-      change: stats.revenueChange,
       icon: DollarSign,
       color: "text-green-600",
       bgColor: "bg-green-100",
@@ -230,26 +156,9 @@ export function Dashboard() {
     {
       title: "Đơn hàng tuần này",
       value: stats.totalOrders.toString(),
-      change: stats.ordersChange,
       icon: ShoppingCart,
       color: "text-[#E0872B]",
       bgColor: "bg-[#FFE0B2]",
-    },
-    {
-      title: "Khách hàng mới",
-      value: stats.totalCustomers.toString(),
-      change: stats.customersChange,
-      icon: Users,
-      color: "text-[#E0872B]",
-      bgColor: "bg-[#FFE0B2]",
-    },
-    {
-      title: "Chờ xử lý",
-      value: stats.pendingOrders.toString(),
-      change: stats.pendingChange,
-      icon: Clock,
-      color: "text-orange-600",
-      bgColor: "bg-orange-100",
     },
   ];
 
@@ -260,31 +169,20 @@ export function Dashboard() {
         <p className="text-gray-600">Tổng quan hệ thống</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {statCards.map((stat) => (
           <Card key={stat.title}>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
-                  <p className="text-2xl font-bold">{stat.value}</p>
-                  <div className="flex items-center gap-1 mt-2">
-                    {stat.change === null ? (
-                      <span className="text-sm text-gray-400">Chưa có dữ liệu tuần trước</span>
+                  <p className="text-2xl font-bold">
+                    {loadingOrders ? (
+                      <span className="text-gray-400">Đang tải...</span>
                     ) : (
-                      <>
-                        {stat.change > 0 ? (
-                          <TrendingUp className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <TrendingDown className="h-4 w-4 text-red-600" />
-                        )}
-                        <span className={`text-sm ${stat.change > 0 ? "text-green-600" : "text-red-600"}`}>
-                          {Math.abs(stat.change)}%
-                        </span>
-                        <span className="text-sm text-gray-500">so với tuần trước</span>
-                      </>
+                      stat.value
                     )}
-                  </div>
+                  </p>
                 </div>
                 <div className={`${stat.bgColor} p-3 rounded-lg`}>
                   <stat.icon className={`h-6 w-6 ${stat.color}`} />
@@ -295,69 +193,48 @@ export function Dashboard() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Doanh thu 7 ngày</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={revenueData} id="revenue-chart">
-                <CartesianGrid key="revenue-grid" strokeDasharray="3 3" />
-                <XAxis key="revenue-xaxis" dataKey="date" />
-                <YAxis key="revenue-yaxis" />
-                <Tooltip
-                  key="revenue-tooltip"
-                  formatter={(value: number) => formatCurrency(value)}
-                />
-                <Legend key="revenue-legend" />
-                <Line
-                  key="revenue-line"
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke="#E0872B"
-                  strokeWidth={2}
-                  name="Doanh thu"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Sản phẩm bán chạy</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={topProducts} id="top-products-chart">
-                <CartesianGrid key="products-grid" strokeDasharray="3 3" />
-                <XAxis
-                  key="products-xaxis"
-                  dataKey="product_name"
-                  angle={-45}
-                  textAnchor="end"
-                  height={100}
-                />
-                <YAxis key="products-yaxis" />
-                <Tooltip
-                  key="products-tooltip"
-                  formatter={(value: number, name: string) =>
-                    name === "total_revenue" ? formatCurrency(value) : value
-                  }
-                />
-                <Legend key="products-legend" />
-                <Bar
-                  key="products-bar"
-                  dataKey="total_sold"
-                  fill="#10b981"
-                  name="Số lượng bán"
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Doanh thu tuần này</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart
+              data={revenueData}
+              id="revenue-chart"
+              margin={{ top: 5, right: 16, left: 8, bottom: 5 }}
+            >
+              <CartesianGrid key="revenue-grid" strokeDasharray="3 3" />
+              <XAxis
+                key="revenue-xaxis"
+                dataKey="date"
+                tick={{ fontSize: 11 }}
+                interval="preserveStartEnd"
+              />
+              <YAxis
+                key="revenue-yaxis"
+                width={72}
+                tickFormatter={formatYAxis}
+                tick={{ fontSize: 11 }}
+              />
+              <Tooltip
+                key="revenue-tooltip"
+                formatter={(value: number) => [formatCurrency(value), "Doanh thu"]}
+              />
+              <Legend key="revenue-legend" />
+              <Line
+                key="revenue-line"
+                type="monotone"
+                dataKey="revenue"
+                stroke="#E0872B"
+                strokeWidth={2}
+                name="Doanh thu"
+                dot={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
@@ -370,36 +247,46 @@ export function Dashboard() {
             </Link>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {recentOrders.map((order) => (
-                <div
-                  key={order.id}
-                  className="flex items-center justify-between pb-4 border-b last:border-0 last:pb-0"
-                >
-                  <div className="flex-1">
-                    <Link
-                      to={`/orders/${order.id}`}
-                      className="font-medium hover:text-[#E0872B]"
+            {loadingOrders ? (
+              <div className="py-8 text-center text-gray-500">Đang tải...</div>
+            ) : (
+              <div className="space-y-4">
+                {recentOrders.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8">
+                    Không có đơn hàng nào trong tuần này
+                  </p>
+                ) : (
+                  recentOrders.map((order) => (
+                    <div
+                      key={order.id}
+                      className="flex items-center justify-between pb-4 border-b last:border-0 last:pb-0"
                     >
-                      DH{order.id.toString().padStart(6, "0")}
-                    </Link>
-                    <p className="text-sm text-gray-600">
-                      {order.user?.full_name}
-                    </p>
-                  </div>
-                  <div className="text-right mr-4">
-                    <p className="font-medium">{formatCurrency(order.total)}</p>
-                  </div>
-                  <Badge
-                    className={`${orderStatusConfig[order.order_status].bgColor} ${
-                      orderStatusConfig[order.order_status].color
-                    }`}
-                  >
-                    {orderStatusConfig[order.order_status].label}
-                  </Badge>
-                </div>
-              ))}
-            </div>
+                      <div className="flex-1">
+                        <Link
+                          to={`/orders/${order.id}`}
+                          className="font-medium hover:text-[#E0872B]"
+                        >
+                          DH{order.id.toString().padStart(6, "0")}
+                        </Link>
+                        <p className="text-sm text-gray-600">
+                          {order.user?.full_name}
+                        </p>
+                      </div>
+                      <div className="text-right mr-4">
+                        <p className="font-medium">{formatCurrency(order.total)}</p>
+                      </div>
+                      <Badge
+                        className={`${orderStatusConfig[order.order_status].bgColor} ${
+                          orderStatusConfig[order.order_status].color
+                        }`}
+                      >
+                        {orderStatusConfig[order.order_status].label}
+                      </Badge>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -416,31 +303,30 @@ export function Dashboard() {
             </Link>
           </CardHeader>
           <CardContent>
-            {lowStockProducts.length === 0 ? (
+            {loadingStock ? (
+              <div className="py-8 text-center text-gray-500">Đang tải...</div>
+            ) : lowStockVariants.length === 0 ? (
               <p className="text-gray-500 text-center py-8">
                 Tất cả sản phẩm đều đủ hàng
               </p>
             ) : (
               <div className="space-y-4">
-                {lowStockProducts.map((variant) => (
+                {lowStockVariants.map((variant) => (
                   <div
                     key={variant.id}
                     className="flex items-center justify-between pb-4 border-b last:border-0 last:pb-0"
                   >
                     <div className="flex items-center gap-3 flex-1">
                       <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center overflow-hidden flex-shrink-0">
-                        {(() => {
-                          const product = products.find((p) => p.id === variant.product_id) ?? variant.product;
-                          return product?.primary_image ? (
-                            <img
-                              src={product.primary_image}
-                              alt={product.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <Package className="h-6 w-6 text-gray-400" />
-                          );
-                        })()}
+                        {(variant as any).variant_image ? (
+                          <img
+                            src={(variant as any).variant_image}
+                            alt={variant.product?.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Package className="h-6 w-6 text-gray-400" />
+                        )}
                       </div>
                       <div>
                         <p className="font-medium">{variant.product?.name}</p>

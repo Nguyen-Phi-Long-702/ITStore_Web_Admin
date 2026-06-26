@@ -24,18 +24,28 @@ async function refreshAccessToken(): Promise<string> {
   const refreshToken = localStorage.getItem("auth_refresh_token");
   if (!refreshToken) throw new Error("No refresh token");
 
-  const res = await fetch(`${BASE_URL}/api/auth/refresh`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh_token: refreshToken }),
-  });
+  const doRefresh = async (): Promise<string> => {
+    const res = await fetch(`${BASE_URL}/api/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
 
-  if (!res.ok) throw new Error("Refresh failed");
+    if (!res.ok) throw new Error("Refresh failed");
 
-  const data = await res.json();
-  if (!data.access_token) throw new Error("Refresh failed");
+    const data = await res.json();
+    if (!data.access_token) throw new Error("Refresh failed");
 
-  return data.access_token;
+    return data.access_token;
+  };
+
+  try {
+    return await doRefresh();
+  } catch {
+    // Thử lại 1 lần sau 600ms để xử lý lỗi tạm thời (ví dụ Redis connection idle timeout)
+    await new Promise(resolve => setTimeout(resolve, 600));
+    return await doRefresh();
+  }
 }
 
 function clearAuthAndRedirect() {
@@ -88,7 +98,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
         res = await fetch(`${BASE_URL}${path}`, {
           credentials: "include",
           ...init,
-          headers: getAuthHeaders(init?.headers),
+          // Dùng newToken trực tiếp thay vì đọc lại từ localStorage
+          // để đảm bảo đúng token mới dù có race condition
+          headers: {
+            ...(init?.headers as Record<string, string> ?? {}),
+            Authorization: `Bearer ${newToken!}`,
+          },
           signal: retryController.signal,
         });
       } finally {
@@ -98,7 +113,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
     if (!res.ok) {
       if (res.status === 401) {
-        clearAuthAndRedirect();
+        // Chỉ redirect khi KHÔNG có refresh token (session thực sự hết hạn)
+        // Không redirect khi refresh đã thành công nhưng retry vẫn 401
+        const hasRefresh = !!localStorage.getItem("auth_refresh_token");
+        if (!hasRefresh) {
+          clearAuthAndRedirect();
+        }
       }
       const body = await res.json().catch(() => ({})) as Record<string, unknown>;
       throw new Error((body?.message as string) ?? `HTTP ${res.status}`);
@@ -110,6 +130,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     clearTimeout(timeoutId);
   }
 }
+
 
 function jsonRequest<T>(path: string, method: string, body: unknown): Promise<T> {
   return request<T>(path, {

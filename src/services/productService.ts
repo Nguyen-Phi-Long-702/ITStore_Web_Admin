@@ -177,6 +177,10 @@ export const productService = {
     await api.delete(`/api/admin/variants/${id}`);
   },
 
+  async updateVariantStatus(id: number, isActive: boolean): Promise<void> {
+    await api.patch(`/api/admin/variants/${id}/status`, { is_active: isActive });
+  },
+
   async getImages(): Promise<ProductImage[]> {
     const res = await api.get("/api/admin/product-images");
     return unwrapList<ProductImage>(res);
@@ -205,6 +209,12 @@ export const productService = {
   async getStockMovements(): Promise<StockMovement[]> {
     const res = await api.get("/api/admin/stock/logs");
     return unwrapList<StockMovement>(res);
+  },
+
+  async getLowStock(threshold?: number): Promise<ProductVariant[]> {
+    const query = threshold !== undefined ? `?threshold=${threshold}` : "";
+    const res = await api.get(`/api/admin/stock/low-stock${query}`);
+    return unwrapList<ProductVariant>(res);
   },
 
   async createStockMovement(data: Omit<StockMovement, "id" | "created_at">): Promise<void> {
