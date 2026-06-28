@@ -52,8 +52,8 @@ export function BrandList() {
   } = useData();
 
   useEffect(() => {
-    fetchBrands();
-  }, [fetchBrands]);
+    fetchBrands(true);
+  }, []);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
