@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Search, User, XCircle, CheckCircle, Eye, ShieldAlert, ShieldCheck } from "lucide-react";
 import {
   Card,
@@ -28,18 +28,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../../components/ui/alert-dialog";
-import { formatCurrency } from "../../utils/statusUtils";
 import { Customer } from "../../types";
 import { toast } from "sonner";
 import { useData } from "../../contexts/DataContext";
 
 export function CustomerList() {
-  const { customers, orders, updateCustomer, fetchCustomers, fetchOrders } = useData();
+  const { customers, updateCustomer, fetchCustomers } = useData();
 
   useEffect(() => {
     fetchCustomers();
-    fetchOrders();
-  }, [fetchCustomers, fetchOrders]);
+  }, [fetchCustomers]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
@@ -47,24 +45,6 @@ export function CustomerList() {
     null,
   );
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-
-  const customerStats = useMemo(() => {
-    const stats: Record<number, { totalOrders: number; totalSpent: number }> = {};
-    customers.forEach((c) => {
-      let totalOrders = 0;
-      let totalSpent = 0;
-      orders.forEach((o) => {
-        if (o.user_id === c.id || o.user?.id === c.id) {
-          if (o.payment_status === "paid" || o.order_status === "delivered") {
-            totalOrders++;
-            totalSpent += o.total;
-          }
-        }
-      });
-      stats[c.id] = { totalOrders, totalSpent };
-    });
-    return stats;
-  }, [customers, orders]);
 
   const filteredCustomers = customers.filter(
     (customer) =>
@@ -186,8 +166,6 @@ export function CustomerList() {
                 <TableHead>Khách hàng</TableHead>
                 <TableHead>Số điện thoại</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead className="text-right">Đơn hàng</TableHead>
-                <TableHead className="text-right">Tổng chi tiêu</TableHead>
                 <TableHead>Xác thực</TableHead>
                 <TableHead>Trạng thái</TableHead>
                 <TableHead className="text-right">Thao tác</TableHead>
@@ -235,12 +213,6 @@ export function CustomerList() {
                   </TableCell>
                   <TableCell>{customer.phone_number || "-"}</TableCell>
                   <TableCell>{customer.email}</TableCell>
-                  <TableCell className="text-right">
-                    {customerStats[customer.id]?.totalOrders || 0}
-                  </TableCell>
-                  <TableCell className="text-right font-medium">
-                    {formatCurrency(customerStats[customer.id]?.totalSpent || 0)}
-                  </TableCell>
                   <TableCell>
                     <Badge
                       className={
