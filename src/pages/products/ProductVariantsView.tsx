@@ -107,13 +107,24 @@ const confirmStockUpdate = async () => {
   setIsStockSaving(true);                 
   try {
     await updateProductVariant(selectedVariant.id, {
-      ...selectedVariant,
-      stock: newStock,
-    });
+    ...selectedVariant,
+    stock: newStock,
+  });
 
-    toast.success(
-      `Đã ${stockChange > 0 ? "nhập" : "xuất"} ${Math.abs(stockChange)} sản phẩm`,
-    );
+  setProduct((prev) => {
+    if (!prev) return prev;
+    return {
+      ...prev,
+      variants: prev.variants?.map((v) =>
+        v.id === selectedVariant.id ? { ...v, stock: newStock } : v
+      ),
+    };
+  });
+
+  toast.success(
+    `Đã ${stockChange > 0 ? "nhập" : "xuất"} ${Math.abs(stockChange)} sản phẩm`,
+  );
+  setStockDialogOpen(false);
     setStockDialogOpen(false);
   } catch (error) {                         
     toast.error("Không thể cập nhật tồn kho, vui lòng thử lại");
