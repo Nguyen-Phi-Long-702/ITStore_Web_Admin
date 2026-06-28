@@ -306,13 +306,11 @@ export function ProductList() {
                           <TableCell>{product.brand?.name || "-"}</TableCell>
                           <TableCell className="text-right">
                             {product.price_min != null ? (
-                              <span>
+                              <span className="font-semibold text-gray-900">
                                 {formatCurrency(product.price_min)}
                                 {product.price_max != null &&
                                   product.price_max !== product.price_min && (
-                                    <span className="text-gray-400">
-                                      {" "}– {formatCurrency(product.price_max)}
-                                    </span>
+                                    <span> – {formatCurrency(product.price_max)}</span>
                                   )}
                               </span>
                             ) : (

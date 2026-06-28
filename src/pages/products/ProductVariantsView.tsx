@@ -234,10 +234,10 @@ const confirmStockUpdate = async () => {
                     )}
                   </TableCell>
                   <TableCell>{variant.version || "-"}</TableCell>
-                  <TableCell className="text-right font-semibold text-green-600">
+                  <TableCell className="text-right font-semibold text-gray-900">
                     {formatCurrency(variant.price)}
                   </TableCell>
-                  <TableCell className="text-right text-gray-500">
+                  <TableCell className="text-right font-semibold text-gray-900">
                     {variant.compare_at_price
                       ? formatCurrency(variant.compare_at_price)
                       : "-"}
